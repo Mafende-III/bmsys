@@ -13,9 +13,11 @@ async function main() {
   const ownerPin   = process.env.OWNER_PIN   ?? "1234";
   const pinHash = await argon2.hash(ownerPin);
 
+  // Always refresh pinHash on re-seed so a partial test-DB pollution
+  // (e.g. a prior test wrote a junk hash at this phone) gets corrected.
   const owner = await prisma.user.upsert({
     where: { phone: ownerPhone },
-    update: {},
+    update: { name: ownerName, pinHash },
     create: {
       name: ownerName,
       phone: ownerPhone,

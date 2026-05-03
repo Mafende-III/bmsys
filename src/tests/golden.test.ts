@@ -29,7 +29,12 @@ const prisma = new PrismaClient({
 
 describe("Golden test: stock + cash + ledger integrity", () => {
   beforeAll(async () => {
-    // Wipe in dependency order. Only safe to run against a test database.
+    // Wipe in dependency order. Only deletes this test's own User row
+    // (phone "+1") so the seeded owner ("+250788000000") survives, which
+    // matters when DATABASE_URL == TEST_DATABASE_URL (single dev DB).
+    // Channels and suppliers are scoped to test-specific slugs/names below
+    // so we wipe them all here without affecting the seed (the seed's
+    // channels are recreated by `pnpm prisma:seed`).
     await prisma.$transaction([
       prisma.saleLine.deleteMany({}),
       prisma.sale.deleteMany({}),
@@ -41,7 +46,7 @@ describe("Golden test: stock + cash + ledger integrity", () => {
       prisma.product.deleteMany({}),
       prisma.supplier.deleteMany({}),
       prisma.channel.deleteMany({}),
-      prisma.user.deleteMany({}),
+      prisma.user.deleteMany({ where: { phone: "+1" } }),
     ]);
   });
 
