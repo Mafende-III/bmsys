@@ -1,0 +1,581 @@
+// Beverage Business Management System
+// Schema version 0.2 — matches docs/spec.md
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ========================================================================
+// ENUMS
+// ========================================================================
+
+enum UserRole {
+  OWNER
+}
+
+enum CartonState {
+  OPENED
+  EMPTY
+}
+
+enum PurchaseStatus {
+  DRAFT
+  RECEIVED
+  CANCELLED
+}
+
+enum PaymentMethod {
+  CASH
+  MOMO
+  BANK
+  CREDIT
+  MIXED
+}
+
+enum SaleStatus {
+  COMPLETE
+  PENDING
+  CONFIRMED
+  OUT_FOR_DELIVERY
+  DELIVERED
+  CANCELLED
+}
+
+enum SaleSource {
+  IN_PERSON
+  ONLINE
+  SUBSCRIPTION_AUTO
+}
+
+enum SaleUnit {
+  UNIT
+  CARTON
+}
+
+enum StockMoveReason {
+  PURCHASE
+  SALE_UNIT
+  SALE_CARTON
+  RETURN
+  CARTON_OPEN
+  ADJUSTMENT_BREAKAGE
+  ADJUSTMENT_EXPIRY
+  ADJUSTMENT_PERSONAL
+  ADJUSTMENT_THEFT
+  ADJUSTMENT_SAMPLE
+  STOCKTAKE_VARIANCE
+}
+
+enum SubscriptionFrequency {
+  WEEKLY
+  BIWEEKLY
+  MONTHLY
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  PAUSED
+  CANCELLED
+}
+
+enum LoyaltyReason {
+  EARNED_PURCHASE
+  EARNED_SUBSCRIPTION_TENURE
+  REDEEMED
+  BONUS
+  EXPIRY
+}
+
+enum ReceiptFormat {
+  PRINT
+  SMS
+  WHATSAPP
+  EMAIL
+}
+
+enum ReceiptDeliveryStatus {
+  QUEUED
+  SENT
+  FAILED
+}
+
+enum AuditAction {
+  INSERT
+  UPDATE
+  DELETE
+}
+
+enum ExpensePaymentMethod {
+  CASH
+  MOMO
+  BANK
+}
+
+enum RecurringFrequency {
+  WEEKLY
+  MONTHLY
+}
+
+// ========================================================================
+// CORE
+// ========================================================================
+
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  phone     String   @unique
+  pinHash   String
+  role      UserRole @default(OWNER)
+  createdAt DateTime @default(now())
+
+  stockMoves        StockMove[]
+  cartonsOpened     Carton[]           @relation("OpenedBy")
+  purchasesCreated  Purchase[]
+  salesCreated      Sale[]
+  creditMovements   CreditMovement[]
+  cashSessionsOpened CashSession[]    @relation("Opened")
+  cashSessionsClosed CashSession[]    @relation("Closed")
+  adjustments       Adjustment[]
+  expenses          Expense[]
+  loyaltyMovements  LoyaltyMovement[]
+  auditLogs         AuditLog[]
+}
+
+model Channel {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  priceOverrides ChannelPriceOverride[]
+  customers      Customer[]
+  sales          Sale[]
+}
+
+model Product {
+  id                       String   @id @default(cuid())
+  sku                      String   @unique
+  name                     String
+  category                 String?
+  unitsPerCarton           Int
+  costPerCarton            Int      // RWF, integer (no decimals)
+  unitPrice                Int      // RWF
+  cartonPrice              Int      // RWF
+  sellableAsUnit           Boolean  @default(true)
+  sellableAsCarton         Boolean  @default(true)
+  lowStockThresholdUnits   Int      @default(0)
+  loyaltyPointsPerUnit     Int      @default(0)
+  active                   Boolean  @default(true)
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+
+  channelPriceOverrides ChannelPriceOverride[]
+  stockMoves            StockMove[]
+  cartons               Carton[]
+  purchaseLines         PurchaseLine[]
+  saleLines             SaleLine[]
+  adjustments           Adjustment[]
+  subscriptions         Subscription[]
+}
+
+model ChannelPriceOverride {
+  id          String  @id @default(cuid())
+  productId   String
+  channelId   String
+  unitPrice   Int?
+  cartonPrice Int?
+
+  product Product @relation(fields: [productId], references: [id])
+  channel Channel @relation(fields: [channelId], references: [id])
+
+  @@unique([productId, channelId])
+}
+
+model Customer {
+  id                  String   @id @default(cuid())
+  name                String
+  phone               String?
+  primaryChannelId    String?
+  deliveryGroup       String?
+  deliveryRouteOrder  Int?
+  notes               String?
+  active              Boolean  @default(true)
+  createdAt           DateTime @default(now())
+
+  primaryChannel    Channel?           @relation(fields: [primaryChannelId], references: [id])
+  sales             Sale[]
+  creditMovements   CreditMovement[]
+  loyaltyMovements  LoyaltyMovement[]
+  subscriptions     Subscription[]
+  customerUser      CustomerUser?
+}
+
+model Supplier {
+  id        String   @id @default(cuid())
+  name      String
+  phone     String?
+  notes     String?
+  createdAt DateTime @default(now())
+
+  purchases Purchase[]
+  expenses  Expense[]
+}
+
+// ========================================================================
+// STOCK
+// ========================================================================
+
+model StockMove {
+  id        String          @id @default(cuid())
+  productId String
+  qtyUnits  Int             // SIGNED delta
+  reason    StockMoveReason
+  refType   String?
+  refId     String?
+  note      String?
+  userId    String
+  createdAt DateTime        @default(now())
+
+  product Product @relation(fields: [productId], references: [id])
+  user    User    @relation(fields: [userId], references: [id])
+
+  @@index([productId, createdAt])
+  @@index([reason, createdAt])
+}
+
+model Carton {
+  id                String      @id @default(cuid())
+  productId         String
+  tag               String      @unique
+  state             CartonState
+  unitsRemaining    Int
+  openedAt          DateTime    @default(now())
+  openedByUserId    String
+  closedAt          DateTime?
+  sourcePurchaseId  String?
+  createdAt         DateTime    @default(now())
+
+  product   Product    @relation(fields: [productId], references: [id])
+  openedBy  User       @relation("OpenedBy", fields: [openedByUserId], references: [id])
+  saleLines SaleLine[]
+
+  @@index([productId, state])
+}
+
+// ========================================================================
+// PURCHASES
+// ========================================================================
+
+model Purchase {
+  id         String         @id @default(cuid())
+  supplierId String
+  date       DateTime
+  status     PurchaseStatus @default(DRAFT)
+  totalCost  Int            @default(0)
+  note       String?
+  userId     String
+  createdAt  DateTime       @default(now())
+
+  supplier Supplier       @relation(fields: [supplierId], references: [id])
+  user     User           @relation(fields: [userId], references: [id])
+  lines    PurchaseLine[]
+}
+
+model PurchaseLine {
+  id              String  @id @default(cuid())
+  purchaseId      String
+  productId       String
+  qtyCartons      Int     @default(0)
+  qtyLooseUnits   Int     @default(0)
+  unitCost        Int     // cost per carton, RWF
+  lineTotal       Int
+
+  purchase Purchase @relation(fields: [purchaseId], references: [id], onDelete: Cascade)
+  product  Product  @relation(fields: [productId], references: [id])
+}
+
+// ========================================================================
+// SALES
+// ========================================================================
+
+model Sale {
+  id               String        @id @default(cuid())
+  channelId        String
+  customerId       String?
+  date             DateTime      @default(now())
+  total            Int           @default(0)
+  paymentMethod    PaymentMethod
+  paymentReference String?
+  amountPaid       Int           @default(0)
+  amountCredit     Int           @default(0)
+  source           SaleSource    @default(IN_PERSON)
+  status           SaleStatus    @default(COMPLETE)
+  note             String?
+  userId           String
+  createdAt        DateTime      @default(now())
+
+  channel  Channel    @relation(fields: [channelId], references: [id])
+  customer Customer?  @relation(fields: [customerId], references: [id])
+  user     User       @relation(fields: [userId], references: [id])
+  lines    SaleLine[]
+  receipts Receipt[]
+
+  @@index([channelId, date])
+  @@index([customerId, date])
+  @@index([status])
+}
+
+model SaleLine {
+  id        String   @id @default(cuid())
+  saleId    String
+  productId String
+  saleUnit  SaleUnit
+  qty       Int
+  unitPrice Int
+  lineTotal Int
+  cartonId  String?
+
+  sale    Sale     @relation(fields: [saleId], references: [id], onDelete: Cascade)
+  product Product  @relation(fields: [productId], references: [id])
+  carton  Carton?  @relation(fields: [cartonId], references: [id])
+}
+
+// ========================================================================
+// CREDIT
+// ========================================================================
+
+model CreditMovement {
+  id         String   @id @default(cuid())
+  customerId String
+  amount     Int      // SIGNED
+  refType    String?
+  refId      String?
+  note       String?
+  userId     String
+  createdAt  DateTime @default(now())
+
+  customer Customer @relation(fields: [customerId], references: [id])
+  user     User     @relation(fields: [userId], references: [id])
+
+  @@index([customerId, createdAt])
+}
+
+// ========================================================================
+// CASH
+// ========================================================================
+
+model CashSession {
+  id            String    @id @default(cuid())
+  openedAt      DateTime  @default(now())
+  openedById    String
+  openingFloat  Int
+  closedAt      DateTime?
+  closedById    String?
+  closingCount  Int?
+  expectedCash  Int?
+  variance      Int?
+  note          String?
+
+  openedBy User  @relation("Opened", fields: [openedById], references: [id])
+  closedBy User? @relation("Closed", fields: [closedById], references: [id])
+}
+
+// ========================================================================
+// ADJUSTMENTS
+// ========================================================================
+
+model Adjustment {
+  id        String          @id @default(cuid())
+  productId String
+  qtyUnits  Int             // SIGNED
+  reason    StockMoveReason
+  note      String?
+  userId    String
+  createdAt DateTime        @default(now())
+
+  product Product @relation(fields: [productId], references: [id])
+  user    User    @relation(fields: [userId], references: [id])
+}
+
+// ========================================================================
+// EXPENSES
+// ========================================================================
+
+model ExpenseCategory {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  expenses          Expense[]
+  recurringExpenses RecurringExpense[]
+}
+
+model Expense {
+  id               String               @id @default(cuid())
+  date             DateTime             @default(now())
+  amount           Int
+  categoryId       String
+  description      String
+  paymentMethod    ExpensePaymentMethod
+  paymentReference String?
+  supplierId       String?
+  recurringId      String?
+  userId           String
+  createdAt        DateTime             @default(now())
+
+  category   ExpenseCategory   @relation(fields: [categoryId], references: [id])
+  supplier   Supplier?         @relation(fields: [supplierId], references: [id])
+  recurring  RecurringExpense? @relation(fields: [recurringId], references: [id])
+  user       User              @relation(fields: [userId], references: [id])
+
+  @@index([date])
+  @@index([categoryId, date])
+}
+
+model RecurringExpense {
+  id            String              @id @default(cuid())
+  categoryId    String
+  amount        Int
+  description   String
+  frequency     RecurringFrequency
+  dayOfPeriod   Int                 // 1 = first of month, 0-6 for weekly
+  active        Boolean             @default(true)
+  lastRunAt     DateTime?
+  createdAt     DateTime            @default(now())
+
+  category ExpenseCategory @relation(fields: [categoryId], references: [id])
+  expenses Expense[]
+}
+
+// ========================================================================
+// SUBSCRIPTIONS
+// ========================================================================
+
+model Subscription {
+  id                  String                @id @default(cuid())
+  customerId          String
+  productId           String
+  frequency           SubscriptionFrequency
+  qty                 Int
+  saleUnit            SaleUnit
+  dayOfWeek           Int?                  // 0-6 for weekly/biweekly
+  unitPriceOverride   Int?
+  startDate           DateTime
+  endDate             DateTime?
+  status              SubscriptionStatus    @default(ACTIVE)
+  pausedUntil         DateTime?
+  createdAt           DateTime              @default(now())
+
+  customer Customer @relation(fields: [customerId], references: [id])
+  product  Product  @relation(fields: [productId], references: [id])
+
+  @@index([status, dayOfWeek])
+}
+
+// ========================================================================
+// LOYALTY
+// ========================================================================
+
+model LoyaltyMovement {
+  id         String         @id @default(cuid())
+  customerId String
+  points     Int            // SIGNED
+  reason     LoyaltyReason
+  refType    String?
+  refId      String?
+  note       String?
+  userId     String
+  createdAt  DateTime       @default(now())
+
+  customer Customer @relation(fields: [customerId], references: [id])
+  user     User     @relation(fields: [userId], references: [id])
+
+  @@index([customerId, createdAt])
+}
+
+model LoyaltyReward {
+  id              String   @id @default(cuid())
+  name            String
+  description     String?
+  pointsRequired  Int
+  discountAmount  Int?
+  discountPercent Int?
+  active          Boolean  @default(true)
+  createdAt       DateTime @default(now())
+}
+
+// ========================================================================
+// CUSTOMER PORTAL (Phase 4)
+// ========================================================================
+
+model CustomerUser {
+  id              String    @id @default(cuid())
+  customerId      String    @unique
+  email           String?   @unique
+  phone           String?   @unique
+  passwordHash    String
+  lastLoginAt     DateTime?
+  emailVerifiedAt DateTime?
+  phoneVerifiedAt DateTime?
+  createdAt       DateTime  @default(now())
+
+  customer Customer @relation(fields: [customerId], references: [id])
+}
+
+// ========================================================================
+// RECEIPTS
+// ========================================================================
+
+model Receipt {
+  id              String                @id @default(cuid())
+  saleId          String
+  format          ReceiptFormat
+  destination     String?               // phone or email
+  deliveredAt     DateTime?
+  deliveryStatus  ReceiptDeliveryStatus @default(QUEUED)
+  deliveryError   String?
+  createdAt       DateTime              @default(now())
+
+  sale Sale @relation(fields: [saleId], references: [id])
+}
+
+// ========================================================================
+// AUDIT
+// ========================================================================
+
+model AuditLog {
+  id         String      @id @default(cuid())
+  tableName  String
+  recordId   String
+  action     AuditAction
+  changes    Json
+  userId     String?
+  createdAt  DateTime    @default(now())
+
+  user User? @relation(fields: [userId], references: [id])
+
+  @@index([tableName, recordId])
+  @@index([userId, createdAt])
+}
+
+// ========================================================================
+// IDEMPOTENCY (for write endpoints)
+// ========================================================================
+
+model IdempotencyKey {
+  key        String   @id
+  endpoint   String
+  resultJson Json?
+  createdAt  DateTime @default(now())
+  expiresAt  DateTime
+
+  @@index([expiresAt])
+}
