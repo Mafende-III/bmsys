@@ -102,11 +102,18 @@ export default async function DashboardPage() {
             Counter sale — category tiles, cart, checkout.
           </p>
         </Link>
+        <Link
+          href="/adjustments"
+          className="block rounded-2xl border border-zinc-200 bg-white p-5 hover:border-zinc-300 hover:shadow-sm"
+        >
+          <h2 className="text-lg font-medium">Adjustments</h2>
+          <p className="mt-1 text-sm text-zinc-600">
+            Record breakage, expiry, theft, personal, or sample losses.
+          </p>
+        </Link>
         <div className="rounded-2xl border border-dashed border-zinc-200 bg-zinc-50 p-5 text-zinc-500 sm:col-span-2">
           <h2 className="text-lg font-medium">Coming next</h2>
           <ul className="mt-1 list-disc pl-5 text-sm">
-            <li>Cash sessions (open with float, close with count)</li>
-            <li>Adjustments (breakage, expiry, theft, sample)</li>
             <li>Expenses + recurring</li>
             <li>Daily summary report</li>
           </ul>
