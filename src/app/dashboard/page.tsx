@@ -40,10 +40,19 @@ export default async function DashboardPage() {
             Catalog — SKUs, prices, stock at a glance.
           </p>
         </Link>
-        <div className="rounded-2xl border border-dashed border-zinc-200 bg-zinc-50 p-5 text-zinc-500">
+        <Link
+          href="/channels"
+          className="block rounded-2xl border border-zinc-200 bg-white p-5 hover:border-zinc-300 hover:shadow-sm"
+        >
+          <h2 className="text-lg font-medium">Channels</h2>
+          <p className="mt-1 text-sm text-zinc-600">
+            Sales channels — retail, wholesale, delivery, online.
+          </p>
+        </Link>
+        <div className="rounded-2xl border border-dashed border-zinc-200 bg-zinc-50 p-5 text-zinc-500 sm:col-span-2">
           <h2 className="text-lg font-medium">Coming next</h2>
           <ul className="mt-1 list-disc pl-5 text-sm">
-            <li>Channels, suppliers</li>
+            <li>Suppliers</li>
             <li>Purchases (draft → receive)</li>
             <li>Carton open, sales</li>
             <li>Cash sessions, adjustments, expenses</li>
