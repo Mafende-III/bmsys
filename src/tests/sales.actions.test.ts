@@ -15,10 +15,11 @@ let productBId: string; // 24/carton, sellable both ways
 const TEST_OWNER_PHONE = "+250000999007";
 const TEST_SELLER_PHONE = "+250000999008";
 
-beforeAll(async () => {
-  await prisma.$transaction([
+const fullWipe = () =>
+  prisma.$transaction([
     prisma.idempotencyKey.deleteMany({}),
     prisma.auditLog.deleteMany({}),
+    prisma.cashSession.deleteMany({}),
     prisma.userChannel.deleteMany({}),
     prisma.saleLine.deleteMany({}),
     prisma.sale.deleteMany({}),
@@ -34,26 +35,11 @@ beforeAll(async () => {
     prisma.channel.deleteMany({}),
     prisma.user.deleteMany({}),
   ]);
-});
+
+beforeAll(fullWipe);
 
 beforeEach(async () => {
-  await prisma.$transaction([
-    prisma.idempotencyKey.deleteMany({}),
-    prisma.auditLog.deleteMany({}),
-    prisma.userChannel.deleteMany({}),
-    prisma.saleLine.deleteMany({}),
-    prisma.sale.deleteMany({}),
-    prisma.purchaseLine.deleteMany({}),
-    prisma.purchase.deleteMany({}),
-    prisma.adjustment.deleteMany({}),
-    prisma.stockMove.deleteMany({}),
-    prisma.carton.deleteMany({}),
-    prisma.channelPriceOverride.deleteMany({}),
-    prisma.product.deleteMany({}),
-    prisma.supplier.deleteMany({}),
-    prisma.channel.deleteMany({}),
-    prisma.user.deleteMany({}),
-  ]);
+  await fullWipe();
 
   const owner = await prisma.user.create({
     data: {
@@ -112,8 +98,7 @@ beforeEach(async () => {
   productAId = a.id;
   productBId = b.id;
 
-  // Seed stock: 2 cartons (24 units) of A, 3 cartons (72 units) of B,
-  // recorded via a single stock_move per product.
+  // Seed stock: 2 cartons (24 units) of A, 3 cartons (72 units) of B.
   await prisma.stockMove.createMany({
     data: [
       {
@@ -129,6 +114,11 @@ beforeEach(async () => {
         userId: ownerId,
       },
     ],
+  });
+
+  // Sprint 7: CASH sales require an open cash session.
+  await prisma.cashSession.create({
+    data: { openingFloat: 0, openedById: ownerId },
   });
 });
 

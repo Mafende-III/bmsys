@@ -24,6 +24,7 @@ const fullWipe = () =>
   prisma.$transaction([
     prisma.idempotencyKey.deleteMany({}),
     prisma.auditLog.deleteMany({}),
+    prisma.cashSession.deleteMany({}),
     prisma.userChannel.deleteMany({}),
     prisma.saleLine.deleteMany({}),
     prisma.sale.deleteMany({}),

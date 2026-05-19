@@ -63,6 +63,19 @@ export async function createSaleOp(
         if (!channel) throw new Error("Channel not found");
         if (!channel.active) throw new Error("Channel is inactive");
 
+        // CASH sales require an open cash session (per CLAUDE.md rule
+        // 2.2 — transactional cash session updates). MOMO/BANK don't.
+        if (input.paymentMethod === "CASH") {
+          const openSession = await tx.cashSession.findFirst({
+            where: { closedAt: null },
+          });
+          if (!openSession) {
+            throw new Error(
+              "Till is closed. Open a cash session before recording cash sales.",
+            );
+          }
+        }
+
         let total = 0;
         const linePlans: Array<{
           productId: string;

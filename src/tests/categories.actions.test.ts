@@ -16,6 +16,7 @@ beforeAll(async () => {
   await prisma.$transaction([
     prisma.idempotencyKey.deleteMany({}),
     prisma.auditLog.deleteMany({}),
+    prisma.cashSession.deleteMany({}),
     prisma.saleLine.deleteMany({}),
     prisma.sale.deleteMany({}),
     prisma.purchaseLine.deleteMany({}),

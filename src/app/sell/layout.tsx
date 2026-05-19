@@ -1,5 +1,7 @@
+import Link from "next/link";
 import { signOut } from "@/lib/auth";
 import { requireSeller } from "@/lib/auth-guards";
+import { getOpenSession } from "@/lib/cash-sessions/queries";
 import { listAllowedChannels } from "@/lib/permissions";
 import { getActiveChannelId } from "@/lib/sales/actions";
 import { CartProvider } from "./_components/CartProvider";
@@ -62,6 +64,7 @@ export default async function SellLayout({
       : (allowedChannels[0]?.id ?? "");
 
   const activeChannel = allowedChannels.find((c) => c.id === activeChannelId);
+  const openSession = await getOpenSession();
 
   return (
     <CartProvider currentChannelId={activeChannelId}>
@@ -87,6 +90,25 @@ export default async function SellLayout({
         </header>
 
         <CartHeader channelName={activeChannel?.name ?? "—"} />
+
+        {!openSession && (
+          <div className="mb-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
+            ⚠ Till is closed. Cash sales will be refused until someone opens
+            it.
+            {user.role === "OWNER" && (
+              <>
+                {" "}
+                <Link
+                  href="/cash-sessions"
+                  className="font-medium underline"
+                >
+                  Open the till
+                </Link>
+                .
+              </>
+            )}
+          </div>
+        )}
 
         {children}
       </main>

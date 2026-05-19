@@ -85,6 +85,15 @@ export default async function DashboardPage() {
           </p>
         </Link>
         <Link
+          href="/cash-sessions"
+          className="block rounded-2xl border border-zinc-200 bg-white p-5 hover:border-zinc-300 hover:shadow-sm"
+        >
+          <h2 className="text-lg font-medium">Cash sessions</h2>
+          <p className="mt-1 text-sm text-zinc-600">
+            Open the till with float, close with count, computed variance.
+          </p>
+        </Link>
+        <Link
           href="/sell"
           className="block rounded-2xl border border-zinc-200 bg-white p-5 hover:border-zinc-300 hover:shadow-sm"
         >
