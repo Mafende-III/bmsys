@@ -7,6 +7,7 @@ import {
   openCashSessionSchema,
 } from "./schema";
 import { sumCashSalesForSession } from "./queries";
+import { sumCashExpensesForSession } from "@/lib/expenses/queries";
 
 export type ActionResult<T> =
   | { ok: true; data: T }
@@ -112,7 +113,13 @@ export async function closeSessionOp(
             session.openedAt,
             closedAt,
           );
-          const expectedCash = session.openingFloat + sums.total;
+          const expenseSums = await sumCashExpensesForSession(
+            tx,
+            session.openedAt,
+            closedAt,
+          );
+          const expectedCash =
+            session.openingFloat + sums.total - expenseSums.total;
           const variance = input.closingCount - expectedCash;
 
           const updated = await tx.cashSession.update({
@@ -139,6 +146,8 @@ export async function closeSessionOp(
                 variance,
                 cashSalesCount: sums.count,
                 cashSalesTotal: sums.total,
+                cashExpensesCount: expenseSums.count,
+                cashExpensesTotal: expenseSums.total,
               } as Prisma.InputJsonValue,
               userId,
             },

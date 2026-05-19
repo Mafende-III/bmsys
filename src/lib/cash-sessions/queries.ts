@@ -1,5 +1,6 @@
 import type { Prisma, PrismaClient } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { sumCashExpensesForSession } from "@/lib/expenses/queries";
 
 export type SessionWithSummary = {
   id: string;
@@ -14,6 +15,8 @@ export type SessionWithSummary = {
   note: string | null;
   cashSalesTotal: number;     // live for open sessions, frozen for closed
   cashSalesCount: number;
+  cashExpensesTotal: number;  // live for open sessions
+  cashExpensesCount: number;
 };
 
 type AnyClient = PrismaClient | Prisma.TransactionClient;
@@ -53,7 +56,10 @@ export async function getOpenSession(): Promise<SessionWithSummary | null> {
     },
   });
   if (!s) return null;
-  const sums = await sumCashSalesForSession(prisma, s.openedAt, null);
+  const [sums, expenseSums] = await Promise.all([
+    sumCashSalesForSession(prisma, s.openedAt, null),
+    sumCashExpensesForSession(prisma, s.openedAt, null),
+  ]);
   return {
     id: s.id,
     openedAt: s.openedAt,
@@ -67,6 +73,8 @@ export async function getOpenSession(): Promise<SessionWithSummary | null> {
     note: s.note,
     cashSalesTotal: sums.total,
     cashSalesCount: sums.count,
+    cashExpensesTotal: expenseSums.total,
+    cashExpensesCount: expenseSums.count,
   };
 }
 
@@ -79,7 +87,10 @@ export async function getSession(id: string): Promise<SessionWithSummary | null>
     },
   });
   if (!s) return null;
-  const sums = await sumCashSalesForSession(prisma, s.openedAt, s.closedAt);
+  const [sums, expenseSums] = await Promise.all([
+    sumCashSalesForSession(prisma, s.openedAt, s.closedAt),
+    sumCashExpensesForSession(prisma, s.openedAt, s.closedAt),
+  ]);
   return {
     id: s.id,
     openedAt: s.openedAt,
@@ -93,6 +104,8 @@ export async function getSession(id: string): Promise<SessionWithSummary | null>
     note: s.note,
     cashSalesTotal: sums.total,
     cashSalesCount: sums.count,
+    cashExpensesTotal: expenseSums.total,
+    cashExpensesCount: expenseSums.count,
   };
 }
 
