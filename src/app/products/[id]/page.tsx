@@ -40,14 +40,22 @@ export default async function EditProductPage({
           </h1>
           <p className="font-mono text-xs text-zinc-500">{product.sku}</p>
         </div>
-        {product.active && (
+        <div className="flex shrink-0 gap-2">
           <Link
-            href={`/products/${id}/archive`}
-            className="shrink-0 rounded-lg border border-red-300 bg-white px-3 py-1.5 text-sm text-red-700 hover:bg-red-50"
+            href={`/products/${id}/prices`}
+            className="rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm hover:bg-zinc-50"
           >
-            Archive
+            Channel prices
           </Link>
-        )}
+          {product.active && (
+            <Link
+              href={`/products/${id}/archive`}
+              className="rounded-lg border border-red-300 bg-white px-3 py-1.5 text-sm text-red-700 hover:bg-red-50"
+            >
+              Archive
+            </Link>
+          )}
+        </div>
       </header>
 
       <ProductForm
