@@ -1,69 +1,58 @@
-import { signOut } from "@/lib/auth";
+import Link from "next/link";
 import { requireSeller } from "@/lib/auth-guards";
 import { listAllowedChannels } from "@/lib/permissions";
+import { getActiveChannelId } from "@/lib/sales/actions";
+import {
+  categoryIcon,
+  categorySlug,
+  listSellableCategories,
+} from "@/lib/sales/queries";
 
-export default async function SellPage() {
+export default async function SellHome() {
   const user = await requireSeller();
-  const channels = await listAllowedChannels(user.id);
+  const allowedChannels = await listAllowedChannels(user.id);
+  if (allowedChannels.length === 0) {
+    // layout already shows a guidance card
+    return null;
+  }
+  const cookieChannelId = await getActiveChannelId();
+  const allowedIds = new Set(allowedChannels.map((c) => c.id));
+  const activeChannelId =
+    cookieChannelId && allowedIds.has(cookieChannelId)
+      ? cookieChannelId
+      : (allowedChannels[0]?.id ?? "");
+  if (!activeChannelId) return null;
+
+  const categories = await listSellableCategories(activeChannelId);
+
+  if (categories.length === 0) {
+    return (
+      <div className="rounded-2xl border border-dashed border-zinc-200 bg-zinc-50 p-6 text-center text-sm text-zinc-600">
+        <p className="text-base font-medium text-zinc-800">No products yet</p>
+        <p className="mt-1">
+          Ask the owner to add products in /products.
+        </p>
+      </div>
+    );
+  }
 
   return (
-    <main className="mx-auto max-w-2xl p-4 sm:p-6">
-      <header className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold">Sell</h1>
-          <p className="text-sm text-zinc-600">
-            Signed in as <span className="font-medium">{user.name}</span>{" "}
-            <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs uppercase text-zinc-700">
-              {user.role}
-            </span>
-          </p>
-        </div>
-        <form
-          action={async () => {
-            "use server";
-            await signOut({ redirectTo: "/login" });
-          }}
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+      {categories.map((c) => (
+        <Link
+          key={c.name}
+          href={`/sell/category/${categorySlug(c.name)}`}
+          className="flex flex-col items-center gap-2 rounded-2xl border border-zinc-200 bg-white p-4 text-center shadow-sm hover:border-zinc-300 hover:shadow"
         >
-          <button
-            type="submit"
-            className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-100"
-          >
-            Sign out
-          </button>
-        </form>
-      </header>
-
-      <section className="mt-6 rounded-2xl border border-dashed border-zinc-200 bg-zinc-50 p-5 text-sm text-zinc-700">
-        <h2 className="text-lg font-medium text-zinc-800">
-          POS coming in the next sprint
-        </h2>
-        <p className="mt-2">
-          The point-of-sale flow (category tiles → product → cart →
-          checkout) ships next. For now this page just confirms your
-          allowed channels are wired correctly.
-        </p>
-
-        <p className="mt-4 text-sm font-medium text-zinc-800">
-          You can sell on:
-        </p>
-        {channels.length === 0 ? (
-          <p className="mt-1 text-amber-700">
-            ⚠ No channels assigned. Ask the owner to add you to at least
-            one channel before sales begin.
-          </p>
-        ) : (
-          <ul className="mt-1 list-disc pl-5">
-            {channels.map((c) => (
-              <li key={c.id}>
-                {c.name}{" "}
-                <span className="font-mono text-xs text-zinc-500">
-                  ({c.slug})
-                </span>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-    </main>
+          <span className="text-4xl" aria-hidden>
+            {categoryIcon(c.name)}
+          </span>
+          <span className="text-sm font-medium">{c.name}</span>
+          <span className="text-xs text-zinc-500">
+            {c.productCount} {c.productCount === 1 ? "product" : "products"}
+          </span>
+        </Link>
+      ))}
+    </div>
   );
 }
