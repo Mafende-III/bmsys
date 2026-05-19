@@ -66,6 +66,15 @@ export default async function DashboardPage() {
             Vendors you buy stock from.
           </p>
         </Link>
+        <Link
+          href="/purchases"
+          className="block rounded-2xl border border-zinc-200 bg-white p-5 hover:border-zinc-300 hover:shadow-sm"
+        >
+          <h2 className="text-lg font-medium">Purchases</h2>
+          <p className="mt-1 text-sm text-zinc-600">
+            Draft → receive stock from suppliers. Adds to the ledger.
+          </p>
+        </Link>
         <div className="rounded-2xl border border-dashed border-zinc-200 bg-zinc-50 p-5 text-zinc-500 sm:col-span-2">
           <h2 className="text-lg font-medium">Coming next</h2>
           <ul className="mt-1 list-disc pl-5 text-sm">

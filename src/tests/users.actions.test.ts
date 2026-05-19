@@ -18,36 +18,32 @@ let retailId: string;
 let wholesaleId: string;
 const TEST_USER_PHONE = "+250000999004";
 
-beforeAll(async () => {
-  await prisma.$transaction([
+// Full FK-safe wipe. We wipe ALL users to make the "last active OWNER"
+// guard testable — only the test owner we re-create below exists.
+const fullWipe = () =>
+  prisma.$transaction([
     prisma.idempotencyKey.deleteMany({}),
     prisma.auditLog.deleteMany({}),
     prisma.userChannel.deleteMany({}),
     prisma.saleLine.deleteMany({}),
     prisma.sale.deleteMany({}),
-    prisma.customer.deleteMany({}),
+    prisma.purchaseLine.deleteMany({}),
+    prisma.purchase.deleteMany({}),
+    prisma.adjustment.deleteMany({}),
+    prisma.stockMove.deleteMany({}),
+    prisma.carton.deleteMany({}),
     prisma.channelPriceOverride.deleteMany({}),
-    prisma.channel.deleteMany({}),
-    prisma.user.deleteMany({ where: { phone: { startsWith: "+25000099" } } }),
-  ]);
-});
-
-beforeEach(async () => {
-  // Wipe all users so the last-active-OWNER guard sees only the
-  // OWNER we create below. Test DB only — bmsys_dev (the seeded DB)
-  // is never touched because the vitest setup file routes DATABASE_URL
-  // -> TEST_DATABASE_URL before any test imports the Prisma singleton.
-  await prisma.$transaction([
-    prisma.idempotencyKey.deleteMany({}),
-    prisma.auditLog.deleteMany({}),
-    prisma.userChannel.deleteMany({}),
-    prisma.saleLine.deleteMany({}),
-    prisma.sale.deleteMany({}),
+    prisma.product.deleteMany({}),
+    prisma.supplier.deleteMany({}),
     prisma.customer.deleteMany({}),
-    prisma.channelPriceOverride.deleteMany({}),
     prisma.channel.deleteMany({}),
     prisma.user.deleteMany({}),
   ]);
+
+beforeAll(fullWipe);
+
+beforeEach(async () => {
+  await fullWipe();
 
   const owner = await prisma.user.create({
     data: {
