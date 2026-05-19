@@ -40,6 +40,15 @@ export default async function DashboardPage() {
           </p>
         </Link>
         <Link
+          href="/categories"
+          className="block rounded-2xl border border-zinc-200 bg-white p-5 hover:border-zinc-300 hover:shadow-sm"
+        >
+          <h2 className="text-lg font-medium">Categories</h2>
+          <p className="mt-1 text-sm text-zinc-600">
+            Grouping + icons used on the /sell grid.
+          </p>
+        </Link>
+        <Link
           href="/channels"
           className="block rounded-2xl border border-zinc-200 bg-white p-5 hover:border-zinc-300 hover:shadow-sm"
         >
@@ -75,13 +84,21 @@ export default async function DashboardPage() {
             Draft → receive stock from suppliers. Adds to the ledger.
           </p>
         </Link>
+        <Link
+          href="/sell"
+          className="block rounded-2xl border border-zinc-200 bg-white p-5 hover:border-zinc-300 hover:shadow-sm"
+        >
+          <h2 className="text-lg font-medium">Sell (POS)</h2>
+          <p className="mt-1 text-sm text-zinc-600">
+            Counter sale — category tiles, cart, checkout.
+          </p>
+        </Link>
         <div className="rounded-2xl border border-dashed border-zinc-200 bg-zinc-50 p-5 text-zinc-500 sm:col-span-2">
           <h2 className="text-lg font-medium">Coming next</h2>
           <ul className="mt-1 list-disc pl-5 text-sm">
-            <li>Suppliers</li>
-            <li>Purchases (draft → receive)</li>
-            <li>Carton open, sales</li>
-            <li>Cash sessions, adjustments, expenses</li>
+            <li>Cash sessions (open with float, close with count)</li>
+            <li>Adjustments (breakage, expiry, theft, sample)</li>
+            <li>Expenses + recurring</li>
             <li>Daily summary report</li>
           </ul>
         </div>

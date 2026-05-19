@@ -27,16 +27,12 @@ export default async function SellCategoryPage({
   if (!activeChannelId) return null;
 
   const { slug } = await params;
-  const category =
-    slug === "uncategorised"
-      ? "Uncategorised"
-      : await findCategoryBySlug(activeChannelId, slug);
+  const category = await findCategoryBySlug(slug);
   if (!category) notFound();
 
-  const all = await listProductsForChannel(activeChannelId);
-  const products = all.filter(
-    (p) => (p.category ?? "Uncategorised") === category,
-  );
+  const products = await listProductsForChannel(activeChannelId, {
+    categoryId: category.id,
+  });
 
   return (
     <div>
@@ -44,7 +40,10 @@ export default async function SellCategoryPage({
         <Link href="/sell" className="text-sm text-zinc-600 hover:underline">
           ← Categories
         </Link>
-        <h2 className="mt-1 text-xl font-semibold">{category}</h2>
+        <h2 className="mt-1 flex items-center gap-2 text-xl font-semibold">
+          <span>{category.iconEmoji}</span>
+          <span>{category.name}</span>
+        </h2>
         <p className="text-xs text-zinc-500">
           {products.length} {products.length === 1 ? "product" : "products"}
         </p>
@@ -64,8 +63,15 @@ export default async function SellCategoryPage({
                   : "border-zinc-200 hover:border-zinc-300 hover:shadow"
               }`}
             >
-              <p className="line-clamp-2 text-sm font-medium">{p.name}</p>
-              <p className="font-mono text-[10px] text-zinc-500">{p.sku}</p>
+              <div className="flex items-start gap-2">
+                <span className="text-2xl leading-none">{p.iconEmoji}</span>
+                <div className="min-w-0 flex-1">
+                  <p className="line-clamp-2 text-sm font-medium">{p.name}</p>
+                  <p className="font-mono text-[10px] text-zinc-500">
+                    {p.sku}
+                  </p>
+                </div>
+              </div>
               <p className="mt-1 text-sm tabular-nums">
                 {formatRWF(p.unitPrice)}{" "}
                 <span className="text-xs font-normal text-zinc-500">/ u</span>

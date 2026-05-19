@@ -3,7 +3,7 @@ import { notFound } from "next/navigation";
 import { requireOwner } from "@/lib/auth-guards";
 import { ProductForm } from "../_components/ProductForm";
 import {
-  getCategories,
+  getCategoriesForPicker,
   getProduct,
   getRecentStockMoves,
 } from "@/lib/products/queries";
@@ -19,7 +19,7 @@ export default async function EditProductPage({
   const [product, moves, categories] = await Promise.all([
     getProduct(id),
     getRecentStockMoves(id, 20),
-    getCategories(),
+    getCategoriesForPicker(),
   ]);
 
   if (!product) notFound();

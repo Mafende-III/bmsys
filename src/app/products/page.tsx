@@ -1,11 +1,14 @@
 import Link from "next/link";
 import { requireOwner } from "@/lib/auth-guards";
 import { formatRWF } from "@/lib/format";
-import { getCategories, getProductsWithStock } from "@/lib/products/queries";
+import {
+  getCategoriesForPicker,
+  getProductsWithStock,
+} from "@/lib/products/queries";
 
 type SearchParams = {
   search?: string;
-  category?: string;
+  categoryId?: string;
   active?: string;
 };
 
@@ -18,7 +21,7 @@ export default async function ProductsPage({
 
   const params = await searchParams;
   const search = params.search?.trim() || undefined;
-  const category = params.category?.trim() || undefined;
+  const categoryId = params.categoryId?.trim() || undefined;
   const activeFilter: boolean | "all" =
     params.active === "all"
       ? "all"
@@ -27,8 +30,8 @@ export default async function ProductsPage({
         : true;
 
   const [products, categories] = await Promise.all([
-    getProductsWithStock({ search, category, active: activeFilter }),
-    getCategories(),
+    getProductsWithStock({ search, categoryId, active: activeFilter }),
+    getCategoriesForPicker(),
   ]);
 
   return (
@@ -68,17 +71,17 @@ export default async function ProductsPage({
             className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
           />
         </label>
-        <label className="block sm:w-44">
+        <label className="block sm:w-52">
           <span className="text-xs font-medium text-zinc-700">Category</span>
           <select
-            name="category"
-            defaultValue={category ?? ""}
+            name="categoryId"
+            defaultValue={categoryId ?? ""}
             className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
           >
             <option value="">All</option>
             {categories.map((c) => (
-              <option key={c} value={c}>
-                {c}
+              <option key={c.id} value={c.id}>
+                {c.iconEmoji} {c.name}
               </option>
             ))}
           </select>
@@ -132,8 +135,15 @@ export default async function ProductsPage({
                     {p.sku}
                   </Link>
                 </td>
-                <td className="px-3 py-2">{p.name}</td>
-                <td className="px-3 py-2 text-zinc-600">{p.category ?? "—"}</td>
+                <td className="px-3 py-2">
+                  <span className="mr-1">
+                    {p.iconEmoji ?? p.categoryIconEmoji ?? "📦"}
+                  </span>
+                  {p.name}
+                </td>
+                <td className="px-3 py-2 text-zinc-600">
+                  {p.categoryName ?? "—"}
+                </td>
                 <td className="px-3 py-2 text-right">
                   {formatRWF(p.unitPrice)}
                 </td>
@@ -161,10 +171,7 @@ export default async function ProductsPage({
             ))}
             {products.length === 0 && (
               <tr>
-                <td
-                  colSpan={8}
-                  className="px-3 py-6 text-center text-zinc-500"
-                >
+                <td colSpan={8} className="px-3 py-6 text-center text-zinc-500">
                   No products match these filters.
                 </td>
               </tr>
@@ -183,7 +190,12 @@ export default async function ProductsPage({
           >
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
-                <p className="truncate font-medium">{p.name}</p>
+                <p className="truncate font-medium">
+                  <span className="mr-1">
+                    {p.iconEmoji ?? p.categoryIconEmoji ?? "📦"}
+                  </span>
+                  {p.name}
+                </p>
                 <p className="font-mono text-xs text-zinc-500">{p.sku}</p>
               </div>
               {p.active ? (
@@ -197,6 +209,8 @@ export default async function ProductsPage({
               )}
             </div>
             <dl className="mt-2 grid grid-cols-2 gap-y-1 text-xs text-zinc-700">
+              <dt>Category</dt>
+              <dd className="text-right">{p.categoryName ?? "—"}</dd>
               <dt>Unit</dt>
               <dd className="text-right">{formatRWF(p.unitPrice)}</dd>
               <dt>Carton</dt>

@@ -17,10 +17,13 @@ let userId: string;
 // trampling the owner row would break interactive login.
 const TEST_USER_PHONE = "+250000999001";
 
-const validInput = {
+let testCategoryId: string;
+
+const validInput = () => ({
   sku: "TEST-PROD-001",
   name: "Test Beverage",
-  category: "Water",
+  categoryId: testCategoryId,
+  iconEmoji: "💧",
   unitsPerCarton: 12,
   costPerCarton: 4500,
   unitPrice: 600,
@@ -29,7 +32,7 @@ const validInput = {
   sellableAsCarton: true,
   lowStockThresholdUnits: 5,
   loyaltyPointsPerUnit: 0,
-};
+});
 
 beforeAll(async () => {
   // Full FK-ordered wipe of everything this file (or earlier files such
@@ -67,7 +70,13 @@ beforeEach(async () => {
     prisma.stockMove.deleteMany({}),
     prisma.carton.deleteMany({}),
     prisma.product.deleteMany({}),
+    prisma.category.deleteMany({ where: { slug: "test-cat" } }),
   ]);
+
+  const cat = await prisma.category.create({
+    data: { name: "Test Cat", slug: "test-cat", iconEmoji: "💧" },
+  });
+  testCategoryId = cat.id;
 });
 
 afterAll(async () => {
@@ -76,7 +85,7 @@ afterAll(async () => {
 
 describe("createProductOp", () => {
   it("creates a product and writes an INSERT audit row", async () => {
-    const result = await createProductOp(userId, "key-create-1", validInput);
+    const result = await createProductOp(userId, "key-create-1", validInput());
     expect(result.ok).toBe(true);
     if (!result.ok) return;
 
@@ -84,7 +93,7 @@ describe("createProductOp", () => {
       where: { id: result.data.id },
     });
     expect(created).not.toBeNull();
-    expect(created?.sku).toBe(validInput.sku);
+    expect(created?.sku).toBe("TEST-PROD-001");
 
     const audits = await prisma.auditLog.findMany({
       where: {
@@ -97,10 +106,10 @@ describe("createProductOp", () => {
   });
 
   it("rejects duplicate SKU with a friendly error", async () => {
-    const r1 = await createProductOp(userId, "key-create-2a", validInput);
+    const r1 = await createProductOp(userId, "key-create-2a", validInput());
     expect(r1.ok).toBe(true);
 
-    const r2 = await createProductOp(userId, "key-create-2b", validInput);
+    const r2 = await createProductOp(userId, "key-create-2b", validInput());
     expect(r2.ok).toBe(false);
     if (!r2.ok) {
       expect(r2.error).toMatch(/SKU already in use/i);
@@ -108,11 +117,11 @@ describe("createProductOp", () => {
   });
 
   it("returns the cached result when the same idempotency key is reused", async () => {
-    const r1 = await createProductOp(userId, "key-create-3", validInput);
+    const r1 = await createProductOp(userId, "key-create-3", validInput());
     expect(r1.ok).toBe(true);
     if (!r1.ok) return;
 
-    const r2 = await createProductOp(userId, "key-create-3", validInput);
+    const r2 = await createProductOp(userId, "key-create-3", validInput());
     expect(r2.ok).toBe(true);
     if (!r2.ok) return;
 
@@ -123,7 +132,7 @@ describe("createProductOp", () => {
 
   it("rejects invalid input via Zod (both sellable flags false)", async () => {
     const result = await createProductOp(userId, "key-create-4", {
-      ...validInput,
+      ...validInput(),
       sellableAsUnit: false,
       sellableAsCarton: false,
     });
@@ -133,7 +142,7 @@ describe("createProductOp", () => {
 
 describe("updateProductOp", () => {
   it("updates a product and writes an UPDATE audit row", async () => {
-    const created = await createProductOp(userId, "key-upd-1a", validInput);
+    const created = await createProductOp(userId, "key-upd-1a", validInput());
     expect(created.ok).toBe(true);
     if (!created.ok) return;
 
@@ -143,7 +152,8 @@ describe("updateProductOp", () => {
       created.data.id,
       {
         name: "Renamed",
-        category: "Water",
+        categoryId: testCategoryId,
+        iconEmoji: "💧",
         unitsPerCarton: 12,
         costPerCarton: 4500,
         unitPrice: 700,
@@ -175,7 +185,7 @@ describe("updateProductOp", () => {
 
 describe("archiveProductOp", () => {
   it("archives a product when stock is zero and no open cartons", async () => {
-    const created = await createProductOp(userId, "key-arch-1a", validInput);
+    const created = await createProductOp(userId, "key-arch-1a", validInput());
     expect(created.ok).toBe(true);
     if (!created.ok) return;
 
@@ -193,7 +203,7 @@ describe("archiveProductOp", () => {
   });
 
   it("refuses to archive when stock_moves sum is non-zero", async () => {
-    const created = await createProductOp(userId, "key-arch-2a", validInput);
+    const created = await createProductOp(userId, "key-arch-2a", validInput());
     expect(created.ok).toBe(true);
     if (!created.ok) return;
 
@@ -223,7 +233,7 @@ describe("archiveProductOp", () => {
   });
 
   it("refuses to archive when an OPENED carton exists", async () => {
-    const created = await createProductOp(userId, "key-arch-3a", validInput);
+    const created = await createProductOp(userId, "key-arch-3a", validInput());
     expect(created.ok).toBe(true);
     if (!created.ok) return;
 
@@ -249,7 +259,7 @@ describe("archiveProductOp", () => {
   });
 
   it("is a no-op when called on an already-archived product", async () => {
-    const created = await createProductOp(userId, "key-arch-4a", validInput);
+    const created = await createProductOp(userId, "key-arch-4a", validInput());
     expect(created.ok).toBe(true);
     if (!created.ok) return;
 

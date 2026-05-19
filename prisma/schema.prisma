@@ -182,7 +182,8 @@ model Product {
   id                       String   @id @default(cuid())
   sku                      String   @unique
   name                     String
-  category                 String?
+  categoryId               String?
+  iconEmoji                String?  // optional per-product override of the category icon
   unitsPerCarton           Int
   costPerCarton            Int      // RWF, integer (no decimals)
   unitPrice                Int      // RWF
@@ -195,6 +196,7 @@ model Product {
   createdAt                DateTime @default(now())
   updatedAt                DateTime @updatedAt
 
+  category              Category?              @relation(fields: [categoryId], references: [id], onDelete: SetNull)
   channelPriceOverrides ChannelPriceOverride[]
   stockMoves            StockMove[]
   cartons               Carton[]
@@ -202,6 +204,20 @@ model Product {
   saleLines             SaleLine[]
   adjustments           Adjustment[]
   subscriptions         Subscription[]
+}
+
+/// First-class product category. Holds the shared icon shown in the POS
+/// grid. A product may override via `Product.iconEmoji`.
+model Category {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  slug      String   @unique
+  iconEmoji String   @default("📦")
+  sortOrder Int      @default(0)
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+
+  products Product[]
 }
 
 model ChannelPriceOverride {

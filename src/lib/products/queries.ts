@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 
 export type ProductFilters = {
   search?: string;
-  category?: string;
+  categoryId?: string;
   active?: boolean | "all";
 };
 
@@ -11,13 +11,13 @@ export type ProductWithStock = Product & {
   totalUnits: number;
   openedUnits: number;
   sealedCartons: number;
+  categoryName: string | null;
+  categoryIconEmoji: string | null;
 };
 
 /**
  * List products with derived stock metrics (3 batched queries, not N+1).
- *
- * Stock derivation honors CLAUDE.md rule #1: every metric comes from
- * `stock_moves` aggregated, never a stored balance column.
+ * Joins Category so the list page can show the category name + icon.
  */
 export async function getProductsWithStock(
   filters: ProductFilters = {},
@@ -28,8 +28,8 @@ export async function getProductsWithStock(
     where.active = filters.active ?? true;
   }
 
-  if (filters.category) {
-    where.category = filters.category;
+  if (filters.categoryId) {
+    where.categoryId = filters.categoryId;
   }
 
   if (filters.search) {
@@ -42,6 +42,9 @@ export async function getProductsWithStock(
   const products = await prisma.product.findMany({
     where,
     orderBy: [{ active: "desc" }, { name: "asc" }],
+    include: {
+      category: { select: { name: true, iconEmoji: true } },
+    },
   });
 
   if (products.length === 0) return [];
@@ -72,7 +75,15 @@ export async function getProductsWithStock(
     const sealedUnits = totalUnits - openedUnits;
     const sealedCartons =
       sealedUnits > 0 ? Math.floor(sealedUnits / p.unitsPerCarton) : 0;
-    return { ...p, totalUnits, openedUnits, sealedCartons };
+    const { category, ...rest } = p;
+    return {
+      ...rest,
+      totalUnits,
+      openedUnits,
+      sealedCartons,
+      categoryName: category?.name ?? null,
+      categoryIconEmoji: category?.iconEmoji ?? null,
+    };
   });
 }
 
@@ -89,14 +100,14 @@ export async function getRecentStockMoves(productId: string, limit = 20) {
   });
 }
 
-export async function getCategories(): Promise<string[]> {
-  const rows = await prisma.product.findMany({
-    where: { category: { not: null }, active: true },
-    select: { category: true },
-    distinct: ["category"],
+/**
+ * Returns the active Category list, ordered by sortOrder then name —
+ * used to populate the category dropdown on the product form.
+ */
+export async function getCategoriesForPicker() {
+  return prisma.category.findMany({
+    where: { active: true },
+    orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+    select: { id: true, name: true, iconEmoji: true },
   });
-  return rows
-    .map((r) => r.category)
-    .filter((c): c is string => c != null)
-    .sort();
 }

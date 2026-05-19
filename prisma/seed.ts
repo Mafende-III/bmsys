@@ -62,6 +62,28 @@ async function main() {
   }
   console.log(`  Expense categories: ${categories.length} seeded`);
 
+  // ----- Product categories -----
+  // Seeds a starter set of beverage-shop categories with sensible
+  // emoji icons. Owners can edit or add more in /categories.
+  const productCategories = [
+    { name: "Water",   slug: "water",   iconEmoji: "💧", sortOrder: 1 },
+    { name: "Beer",    slug: "beer",    iconEmoji: "🍺", sortOrder: 2 },
+    { name: "Soda",    slug: "soda",    iconEmoji: "🥤", sortOrder: 3 },
+    { name: "Juice",   slug: "juice",   iconEmoji: "🧃", sortOrder: 4 },
+    { name: "Spirits", slug: "spirits", iconEmoji: "🥃", sortOrder: 5 },
+    { name: "Wine",    slug: "wine",    iconEmoji: "🍷", sortOrder: 6 },
+    { name: "Snacks",  slug: "snacks",  iconEmoji: "🍿", sortOrder: 7 },
+    { name: "Other",   slug: "other",   iconEmoji: "📦", sortOrder: 99 },
+  ];
+  for (const cat of productCategories) {
+    await prisma.category.upsert({
+      where: { slug: cat.slug },
+      update: { iconEmoji: cat.iconEmoji, sortOrder: cat.sortOrder },
+      create: cat,
+    });
+  }
+  console.log(`  Product categories: ${productCategories.length} seeded`);
+
   console.log("Seed complete.");
 }
 

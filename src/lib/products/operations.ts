@@ -46,6 +46,13 @@ export async function createProductOp(
   try {
     const result = await withIdempotency(idempotencyKey, "products.create", () =>
       prisma.$transaction(async (tx) => {
+        if (input.categoryId) {
+          const cat = await tx.category.findUnique({
+            where: { id: input.categoryId },
+            select: { id: true },
+          });
+          if (!cat) throw new Error("Selected category does not exist");
+        }
         const created = await tx.product.create({ data: input });
         await tx.auditLog.create({
           data: {
@@ -85,6 +92,13 @@ export async function updateProductOp(
       `products.update.${id}`,
       () =>
         prisma.$transaction(async (tx) => {
+          if (input.categoryId) {
+            const cat = await tx.category.findUnique({
+              where: { id: input.categoryId },
+              select: { id: true },
+            });
+            if (!cat) throw new Error("Selected category does not exist");
+          }
           const before = await tx.product.findUniqueOrThrow({ where: { id } });
           const updated = await tx.product.update({ where: { id }, data: input });
           await tx.auditLog.create({

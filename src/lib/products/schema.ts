@@ -8,12 +8,20 @@ const positiveInt = (label: string) =>
     .int(`${label} must be a whole number`)
     .min(0, `${label} cannot be negative`);
 
+const optionalString = z.preprocess(
+  (v) => (typeof v === "string" && v.trim() === "" ? null : v),
+  z.string().min(1).nullable().optional(),
+);
+
+const optionalEmoji = z.preprocess(
+  (v) => (typeof v === "string" && v.trim() === "" ? null : v),
+  z.string().trim().max(10).nullable().optional(),
+);
+
 const baseFields = {
   name: z.string().trim().min(1, "Name is required").max(200),
-  category: z.preprocess(
-    (v) => (typeof v === "string" && v.trim() === "" ? undefined : v),
-    z.string().trim().max(100).optional(),
-  ),
+  categoryId: optionalString,
+  iconEmoji: optionalEmoji,
   unitsPerCarton: positiveInt("Units per carton").min(
     1,
     "Units per carton must be at least 1",

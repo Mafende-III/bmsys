@@ -5,31 +5,33 @@ export type SellableProduct = {
   id: string;
   sku: string;
   name: string;
-  category: string | null;
+  categoryId: string | null;
+  categoryName: string | null;
+  categorySlug: string | null;
+  iconEmoji: string;           // resolved: product.iconEmoji ?? category.iconEmoji ?? 📦
   unitsPerCarton: number;
   sellableAsUnit: boolean;
   sellableAsCarton: boolean;
-  unitPrice: number;        // effective for the given channel
-  cartonPrice: number;      // effective for the given channel
-  totalUnits: number;       // ledger sum
-  openedUnits: number;      // sum of OPENED carton units_remaining
-  sealedCartons: number;    // floor((total - opened) / unitsPerCarton)
+  unitPrice: number;            // effective for the given channel
+  cartonPrice: number;          // effective for the given channel
+  totalUnits: number;
+  openedUnits: number;
+  sealedCartons: number;
 };
 
+const FALLBACK_ICON = "📦";
+
 /**
- * Products eligible for selling on the given channel:
- * - active
- * - has at least some stock OR can still be opened (we still show stock=0 so
- *   the operator sees the icon and gets a clear "out of stock" message)
- * Returns each product with its effective prices for `channelId`.
+ * Products eligible for selling on the given channel. Joins Category
+ * for icon resolution (product.iconEmoji overrides category.iconEmoji).
  */
 export async function listProductsForChannel(
   channelId: string,
-  filter?: { category?: string },
+  filter?: { categoryId?: string | null },
 ): Promise<SellableProduct[]> {
   const where: Prisma.ProductWhereInput = { active: true };
-  if (filter?.category) {
-    where.category = filter.category;
+  if (filter && "categoryId" in filter) {
+    where.categoryId = filter.categoryId; // null => uncategorised products
   }
 
   const products = await prisma.product.findMany({
@@ -37,6 +39,7 @@ export async function listProductsForChannel(
     orderBy: { name: "asc" },
     include: {
       channelPriceOverrides: { where: { channelId } },
+      category: { select: { name: true, slug: true, iconEmoji: true } },
     },
   });
 
@@ -72,7 +75,11 @@ export async function listProductsForChannel(
       id: p.id,
       sku: p.sku,
       name: p.name,
-      category: p.category,
+      categoryId: p.categoryId,
+      categoryName: p.category?.name ?? null,
+      categorySlug: p.category?.slug ?? null,
+      iconEmoji:
+        p.iconEmoji ?? p.category?.iconEmoji ?? FALLBACK_ICON,
       unitsPerCarton: p.unitsPerCarton,
       sellableAsUnit: p.sellableAsUnit,
       sellableAsCarton: p.sellableAsCarton,
@@ -85,55 +92,68 @@ export async function listProductsForChannel(
   });
 }
 
-/**
- * Distinct categories among active products that have any stock.
- * Used to render the category grid on /sell.
- */
-export async function listSellableCategories(
-  channelId: string,
-): Promise<Array<{ name: string; productCount: number }>> {
-  const products = await listProductsForChannel(channelId);
-  const byCategory = new Map<string, number>();
-  for (const p of products) {
-    const cat = p.category ?? "Uncategorised";
-    byCategory.set(cat, (byCategory.get(cat) ?? 0) + 1);
-  }
-  return Array.from(byCategory.entries())
-    .map(([name, productCount]) => ({ name, productCount }))
-    .sort((a, b) => a.name.localeCompare(b.name));
-}
-
-export function categorySlug(category: string): string {
-  return category
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-|-$/g, "");
-}
-
-export async function findCategoryBySlug(
-  channelId: string,
-  slug: string,
-): Promise<string | null> {
-  const cats = await listSellableCategories(channelId);
-  return cats.find((c) => categorySlug(c.name) === slug)?.name ?? null;
-}
-
-const CATEGORY_ICONS: Record<string, string> = {
-  water: "💧",
-  beer: "🍺",
-  soda: "🥤",
-  fanta: "🥤",
-  juice: "🧃",
-  wine: "🍷",
-  spirits: "🥃",
-  whisky: "🥃",
-  snacks: "🍿",
-  food: "🍪",
-  bread: "🍞",
-  uncategorised: "📦",
+export type SellableCategory = {
+  id: string | null;            // null = synthetic Uncategorised bucket
+  name: string;
+  slug: string;
+  iconEmoji: string;
+  productCount: number;
 };
 
-export function categoryIcon(category: string): string {
-  return CATEGORY_ICONS[category.toLowerCase().trim()] ?? "📦";
+/**
+ * Categories shown on the /sell home grid: active Category rows that
+ * have at least one active product, plus a synthetic "Uncategorised"
+ * bucket if any active products lack a category.
+ */
+export async function listSellableCategories(
+  _channelId: string,
+): Promise<SellableCategory[]> {
+  const [cats, uncategorisedCount] = await Promise.all([
+    prisma.category.findMany({
+      where: {
+        active: true,
+        products: { some: { active: true } },
+      },
+      orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
+      include: {
+        _count: { select: { products: { where: { active: true } } } },
+      },
+    }),
+    prisma.product.count({ where: { active: true, categoryId: null } }),
+  ]);
+
+  const result: SellableCategory[] = cats.map((c) => ({
+    id: c.id,
+    name: c.name,
+    slug: c.slug,
+    iconEmoji: c.iconEmoji,
+    productCount: c._count.products,
+  }));
+
+  if (uncategorisedCount > 0) {
+    result.push({
+      id: null,
+      name: "Uncategorised",
+      slug: "uncategorised",
+      iconEmoji: FALLBACK_ICON,
+      productCount: uncategorisedCount,
+    });
+  }
+
+  return result;
+}
+
+/**
+ * Resolve a category slug to the matching category (or null for the
+ * synthetic uncategorised bucket).
+ */
+export async function findCategoryBySlug(slug: string) {
+  if (slug === "uncategorised") {
+    return { id: null, name: "Uncategorised", slug, iconEmoji: FALLBACK_ICON };
+  }
+  const cat = await prisma.category.findUnique({
+    where: { slug },
+    select: { id: true, name: true, slug: true, iconEmoji: true },
+  });
+  return cat;
 }

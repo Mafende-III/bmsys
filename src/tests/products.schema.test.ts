@@ -7,7 +7,8 @@ import {
 const validInput = {
   sku: "WATER-500",
   name: "Test Water 500ML",
-  category: "Water",
+  categoryId: "cat_test_id",
+  iconEmoji: "💧",
   unitsPerCarton: 12,
   costPerCarton: 4500,
   unitPrice: 600,
@@ -75,24 +76,30 @@ describe("productCreateSchema", () => {
     expect(r.success).toBe(false);
   });
 
-  it("trims name and category", () => {
+  it("trims name", () => {
     const r = productCreateSchema.safeParse({
       ...validInput,
       name: "  Padded  ",
-      category: "  Water  ",
     });
     expect(r.success).toBe(true);
     if (r.success) {
       expect(r.data.name).toBe("Padded");
-      expect(r.data.category).toBe("Water");
     }
   });
 
-  it("treats empty/whitespace category as undefined", () => {
-    const r = productCreateSchema.safeParse({ ...validInput, category: "   " });
+  it("treats blank categoryId as null", () => {
+    const r = productCreateSchema.safeParse({ ...validInput, categoryId: "" });
     expect(r.success).toBe(true);
     if (r.success) {
-      expect(r.data.category).toBeUndefined();
+      expect(r.data.categoryId).toBeNull();
+    }
+  });
+
+  it("treats blank iconEmoji as null", () => {
+    const r = productCreateSchema.safeParse({ ...validInput, iconEmoji: "" });
+    expect(r.success).toBe(true);
+    if (r.success) {
+      expect(r.data.iconEmoji).toBeNull();
     }
   });
 

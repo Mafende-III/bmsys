@@ -33,12 +33,15 @@ export default async function SellProductPage({
     <div className="space-y-4">
       <div>
         <Link
-          href={`/sell/category/${(product.category ?? "uncategorised").toLowerCase().replace(/\s+/g, "-")}`}
+          href={`/sell/category/${product.categorySlug ?? "uncategorised"}`}
           className="text-sm text-zinc-600 hover:underline"
         >
           ← Products
         </Link>
-        <h2 className="mt-1 text-xl font-semibold">{product.name}</h2>
+        <h2 className="mt-1 flex items-center gap-2 text-xl font-semibold">
+          <span>{product.iconEmoji}</span>
+          <span>{product.name}</span>
+        </h2>
         <p className="font-mono text-xs text-zinc-500">{product.sku}</p>
         <p className="mt-1 text-xs text-zinc-600">
           {product.openedUnits} loose unit(s) open · {product.sealedCartons} sealed carton(s) ·{" "}
