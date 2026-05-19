@@ -16,6 +16,7 @@ datasource db {
 
 enum UserRole {
   OWNER
+  SELLER
 }
 
 enum CartonState {
@@ -131,6 +132,7 @@ model User {
   phone     String   @unique
   pinHash   String
   role      UserRole @default(OWNER)
+  active    Boolean  @default(true)
   createdAt DateTime @default(now())
 
   stockMoves        StockMove[]
@@ -144,18 +146,36 @@ model User {
   expenses          Expense[]
   loyaltyMovements  LoyaltyMovement[]
   auditLogs         AuditLog[]
+  channels          UserChannel[]
 }
 
 model Channel {
-  id        String   @id @default(cuid())
-  name      String
-  slug      String   @unique
-  active    Boolean  @default(true)
-  createdAt DateTime @default(now())
+  id                String   @id @default(cuid())
+  name              String
+  slug              String   @unique
+  active            Boolean  @default(true)
+  requiresCustomer  Boolean  @default(false)
+  createdAt         DateTime @default(now())
 
   priceOverrides ChannelPriceOverride[]
   customers      Customer[]
   sales          Sale[]
+  users          UserChannel[]
+}
+
+/// Join table — which channels a user is allowed to sell on. OWNERs
+/// bypass this check and are allowed on every channel. SELLERs need at
+/// least one row to sell anything.
+model UserChannel {
+  userId    String
+  channelId String
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  channel Channel @relation(fields: [channelId], references: [id], onDelete: Cascade)
+
+  @@id([userId, channelId])
+  @@index([channelId])
 }
 
 model Product {

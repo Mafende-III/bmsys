@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { notFound, redirect } from "next/navigation";
-import { auth } from "@/lib/auth";
+import { notFound } from "next/navigation";
+import { requireOwner } from "@/lib/auth-guards";
 import { ProductForm } from "../_components/ProductForm";
 import {
   getCategories,
@@ -13,8 +13,7 @@ export default async function EditProductPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const session = await auth();
-  if (!session) redirect("/login");
+  await requireOwner();
 
   const { id } = await params;
   const [product, moves, categories] = await Promise.all([

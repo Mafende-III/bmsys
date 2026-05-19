@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { auth } from "@/lib/auth";
+import { requireOwner } from "@/lib/auth-guards";
 import { getStockUnits } from "@/lib/balances";
 import { prisma } from "@/lib/prisma";
 import { archiveProduct } from "@/lib/products/actions";
@@ -11,8 +11,7 @@ export default async function ArchiveProductPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const session = await auth();
-  if (!session) redirect("/login");
+  await requireOwner();
 
   const { id } = await params;
   const product = await getProduct(id);

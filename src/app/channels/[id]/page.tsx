@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { notFound, redirect } from "next/navigation";
-import { auth } from "@/lib/auth";
+import { notFound } from "next/navigation";
+import { requireOwner } from "@/lib/auth-guards";
 import { ChannelForm } from "../_components/ChannelForm";
 import { getChannel, getChannelUsage } from "@/lib/channels/queries";
 import { reactivateChannel } from "@/lib/channels/actions";
@@ -10,8 +10,7 @@ export default async function EditChannelPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const session = await auth();
-  if (!session) redirect("/login");
+  await requireOwner();
 
   const { id } = await params;
   const [channel, usage] = await Promise.all([

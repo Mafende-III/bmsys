@@ -1,10 +1,9 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import { auth, signOut } from "@/lib/auth";
+import { signOut } from "@/lib/auth";
+import { requireOwner } from "@/lib/auth-guards";
 
 export default async function DashboardPage() {
-  const session = await auth();
-  if (!session) redirect("/login");
+  const session = await requireOwner();
 
   return (
     <main className="mx-auto max-w-3xl p-4 sm:p-6">
@@ -12,7 +11,7 @@ export default async function DashboardPage() {
         <div>
           <h1 className="text-2xl font-semibold">Dashboard</h1>
           <p className="text-sm text-zinc-600">
-            Signed in as {session.user?.name ?? session.user?.email}
+            Signed in as {session.name ?? session.phone}
           </p>
         </div>
         <form
@@ -47,6 +46,15 @@ export default async function DashboardPage() {
           <h2 className="text-lg font-medium">Channels</h2>
           <p className="mt-1 text-sm text-zinc-600">
             Sales channels — retail, wholesale, delivery, online.
+          </p>
+        </Link>
+        <Link
+          href="/users"
+          className="block rounded-2xl border border-zinc-200 bg-white p-5 hover:border-zinc-300 hover:shadow-sm"
+        >
+          <h2 className="text-lg font-medium">Users</h2>
+          <p className="mt-1 text-sm text-zinc-600">
+            Owners + sellers, with per-channel permissions.
           </p>
         </Link>
         <div className="rounded-2xl border border-dashed border-zinc-200 bg-zinc-50 p-5 text-zinc-500 sm:col-span-2">

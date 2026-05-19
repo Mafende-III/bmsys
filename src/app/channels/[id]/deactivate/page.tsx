@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
-import { auth } from "@/lib/auth";
+import { requireOwner } from "@/lib/auth-guards";
 import { deactivateChannel } from "@/lib/channels/actions";
 import { getChannel, getChannelUsage } from "@/lib/channels/queries";
 
@@ -9,8 +9,7 @@ export default async function DeactivateChannelPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const session = await auth();
-  if (!session) redirect("/login");
+  await requireOwner();
 
   const { id } = await params;
   const channel = await getChannel(id);

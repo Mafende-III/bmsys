@@ -1,6 +1,5 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import { auth } from "@/lib/auth";
+import { requireOwner } from "@/lib/auth-guards";
 import { formatRWF } from "@/lib/format";
 import { getCategories, getProductsWithStock } from "@/lib/products/queries";
 
@@ -15,8 +14,7 @@ export default async function ProductsPage({
 }: {
   searchParams: Promise<SearchParams>;
 }) {
-  const session = await auth();
-  if (!session) redirect("/login");
+  await requireOwner();
 
   const params = await searchParams;
   const search = params.search?.trim() || undefined;

@@ -1,6 +1,6 @@
 import Link from "next/link";
-import { notFound, redirect } from "next/navigation";
-import { auth } from "@/lib/auth";
+import { notFound } from "next/navigation";
+import { requireOwner } from "@/lib/auth-guards";
 import { getProductChannelPrices } from "@/lib/channel-prices/queries";
 import { PricingMatrix } from "./_components/PricingMatrix";
 
@@ -9,8 +9,7 @@ export default async function ProductPricesPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  const session = await auth();
-  if (!session) redirect("/login");
+  await requireOwner();
 
   const { id } = await params;
   const data = await getProductChannelPrices(id);

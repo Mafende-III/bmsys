@@ -29,6 +29,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           where: { phone: parsed.data.phone },
         });
         if (!user) return null;
+        if (!user.active) return null;
 
         const ok = await argon2.verify(user.pinHash, parsed.data.pin);
         if (!ok) return null;
@@ -47,6 +48,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (user) {
         token.id = (user as any).id;
         token.role = (user as any).role;
+        token.phone = (user as any).phone;
       }
       return token;
     },
@@ -54,6 +56,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       if (session.user) {
         (session.user as any).id = token.id;
         (session.user as any).role = token.role;
+        (session.user as any).phone = token.phone;
       }
       return session;
     },

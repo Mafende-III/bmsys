@@ -1,12 +1,10 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import { auth } from "@/lib/auth";
+import { requireOwner } from "@/lib/auth-guards";
 import { ProductForm } from "../_components/ProductForm";
 import { getCategories } from "@/lib/products/queries";
 
 export default async function NewProductPage() {
-  const session = await auth();
-  if (!session) redirect("/login");
+  await requireOwner();
 
   const categories = await getCategories();
 

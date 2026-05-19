@@ -1,11 +1,9 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import { auth } from "@/lib/auth";
+import { requireOwner } from "@/lib/auth-guards";
 import { ChannelForm } from "../_components/ChannelForm";
 
 export default async function NewChannelPage() {
-  const session = await auth();
-  if (!session) redirect("/login");
+  await requireOwner();
 
   return (
     <main className="mx-auto max-w-xl p-4 sm:p-6">

@@ -1,6 +1,5 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import { auth } from "@/lib/auth";
+import { requireOwner } from "@/lib/auth-guards";
 import { listChannelsWithUsage } from "@/lib/channels/queries";
 
 type SearchParams = {
@@ -13,8 +12,7 @@ export default async function ChannelsPage({
 }: {
   searchParams: Promise<SearchParams>;
 }) {
-  const session = await auth();
-  if (!session) redirect("/login");
+  await requireOwner();
 
   const params = await searchParams;
   const search = params.search?.trim() || undefined;
