@@ -1,4 +1,18 @@
 import Link from "next/link";
+import {
+  AlertTriangle,
+  ArrowRight,
+  BarChart3,
+  Banknote,
+  type LucideIcon,
+  Package,
+  ShoppingBag,
+  Store,
+  Tag,
+  Truck,
+  Users,
+  Wallet,
+} from "lucide-react";
 import { signOut } from "@/lib/auth";
 import { requireOwner } from "@/lib/auth-guards";
 import { getOpenSession } from "@/lib/cash-sessions/queries";
@@ -46,18 +60,14 @@ export default async function DashboardPage() {
         className="mt-6 block rounded-3xl border-2 border-zinc-900 bg-zinc-900 p-6 text-white shadow-lg transition hover:shadow-xl"
       >
         <div className="flex items-center gap-4">
-          <span className="text-5xl" aria-hidden>
-            🏪
-          </span>
+          <Store className="h-12 w-12 shrink-0" strokeWidth={1.5} />
           <div className="flex-1">
             <h2 className="text-2xl font-semibold">Sell</h2>
             <p className="mt-1 text-sm text-zinc-300">
               Open the till and ring up sales
             </p>
           </div>
-          <span className="text-2xl" aria-hidden>
-            →
-          </span>
+          <ArrowRight className="h-6 w-6 shrink-0" strokeWidth={2} />
         </div>
       </Link>
 
@@ -69,7 +79,7 @@ export default async function DashboardPage() {
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <DashCard
             href="/cash-sessions"
-            icon="💵"
+            Icon={Banknote}
             title={openTill ? "Cash (till is open)" : "Cash (till is closed)"}
             subtitle={
               openTill
@@ -80,19 +90,19 @@ export default async function DashboardPage() {
           />
           <DashCard
             href="/purchases"
-            icon="📦"
+            Icon={Package}
             title="Receive stock"
             subtitle="Log a purchase from a supplier"
           />
           <DashCard
             href="/expenses"
-            icon="💸"
+            Icon={Wallet}
             title="Expenses"
             subtitle="Rent, salaries, transport, utilities"
           />
           <DashCard
             href="/adjustments"
-            icon="⚠️"
+            Icon={AlertTriangle}
             title="Losses"
             subtitle="Broken, expired, stolen, samples"
           />
@@ -107,19 +117,19 @@ export default async function DashboardPage() {
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <DashCard
             href="/products"
-            icon="🥤"
+            Icon={ShoppingBag}
             title="Products"
             subtitle="Drinks, snacks, prices"
           />
           <DashCard
             href="/categories"
-            icon="🏷️"
+            Icon={Tag}
             title="Categories"
             subtitle="Group products with an icon"
           />
           <DashCard
             href="/suppliers"
-            icon="🚚"
+            Icon={Truck}
             title="Suppliers"
             subtitle="Who you buy from"
           />
@@ -134,19 +144,19 @@ export default async function DashboardPage() {
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <DashCard
             href="/reports"
-            icon="📊"
+            Icon={BarChart3}
             title="Daily summary"
             subtitle="Sales, expenses, top sellers"
           />
           <DashCard
             href="/users"
-            icon="👥"
+            Icon={Users}
             title="People"
             subtitle="Owners and sellers"
           />
           <DashCard
             href="/channels"
-            icon="🛍️"
+            Icon={Tag}
             title="Channels"
             subtitle="Retail, wholesale, delivery…"
           />
@@ -158,13 +168,13 @@ export default async function DashboardPage() {
 
 function DashCard({
   href,
-  icon,
+  Icon,
   title,
   subtitle,
   tone,
 }: {
   href: string;
-  icon: string;
+  Icon: LucideIcon;
   title: string;
   subtitle: string;
   tone?: "neutral" | "active";
@@ -173,21 +183,19 @@ function DashCard({
     tone === "active"
       ? "border-green-200 bg-green-50 hover:border-green-300"
       : "border-zinc-200 bg-white hover:border-zinc-300";
+  const iconTint =
+    tone === "active" ? "text-green-700" : "text-zinc-700";
   return (
     <Link
       href={href}
       className={`flex items-center gap-4 rounded-2xl border p-4 transition hover:shadow-sm ${tint}`}
     >
-      <span className="text-3xl" aria-hidden>
-        {icon}
-      </span>
+      <Icon className={`h-7 w-7 shrink-0 ${iconTint}`} strokeWidth={1.5} />
       <div className="flex-1 min-w-0">
         <h4 className="text-base font-medium">{title}</h4>
         <p className="mt-0.5 text-xs text-zinc-600">{subtitle}</p>
       </div>
-      <span className="text-zinc-400" aria-hidden>
-        →
-      </span>
+      <ArrowRight className="h-4 w-4 shrink-0 text-zinc-400" strokeWidth={2} />
     </Link>
   );
 }

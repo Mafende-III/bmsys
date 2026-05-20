@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { ArrowRight, ShoppingCart } from "lucide-react";
 import { formatRWF } from "@/lib/format";
 import { useCart } from "./CartProvider";
 
@@ -18,9 +19,7 @@ export function CartHeader({ channelName }: { channelName: string }) {
     >
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
-          <span className="text-2xl" aria-hidden>
-            🛒
-          </span>
+          <ShoppingCart className="h-6 w-6 shrink-0" strokeWidth={2} />
           <div className="min-w-0">
             <p className="text-xs uppercase tracking-wide text-zinc-300">
               Selling on {channelName}
@@ -30,13 +29,16 @@ export function CartHeader({ channelName }: { channelName: string }) {
             </p>
           </div>
         </div>
-        <div className="text-right">
-          <p className="font-mono text-lg font-semibold tabular-nums">
-            {formatRWF(total)}
-          </p>
-          <p className="text-[10px] uppercase tracking-wide text-zinc-300">
-            Tap to pay →
-          </p>
+        <div className="flex items-center gap-2 text-right">
+          <div>
+            <p className="font-mono text-lg font-semibold tabular-nums">
+              {formatRWF(total)}
+            </p>
+            <p className="text-[10px] uppercase tracking-wide text-zinc-300">
+              Tap to pay
+            </p>
+          </div>
+          <ArrowRight className="h-5 w-5 shrink-0" strokeWidth={2} />
         </div>
       </div>
     </Link>

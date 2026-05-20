@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Package } from "lucide-react";
 import { requireSeller } from "@/lib/auth-guards";
 import { listAllowedChannels } from "@/lib/permissions";
 import { getActiveChannelId } from "@/lib/sales/actions";
@@ -22,7 +23,7 @@ export default async function SellHome() {
   if (categories.length === 0) {
     return (
       <div className="rounded-3xl border border-dashed border-zinc-300 bg-zinc-50 p-8 text-center">
-        <p className="text-2xl" aria-hidden>📦</p>
+        <Package className="mx-auto h-10 w-10 text-zinc-400" strokeWidth={1.5} />
         <p className="mt-3 text-base font-medium text-zinc-800">
           Nothing to sell yet
         </p>

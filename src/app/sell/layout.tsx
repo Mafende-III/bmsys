@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { AlertTriangle, LogOut } from "lucide-react";
 import { signOut } from "@/lib/auth";
 import { requireSeller } from "@/lib/auth-guards";
 import { getOpenSession } from "@/lib/cash-sessions/queries";
@@ -7,7 +8,10 @@ import { getActiveChannelId } from "@/lib/sales/actions";
 import { CartProvider } from "./_components/CartProvider";
 import { CartHeader } from "./_components/CartHeader";
 import { ChannelPicker } from "./_components/ChannelPicker";
-import { QuickActionsMenu } from "./_components/QuickActionsMenu";
+import {
+  QuickActionsMenu,
+  type QuickAction,
+} from "./_components/QuickActionsMenu";
 
 export default async function SellLayout({
   children,
@@ -57,48 +61,51 @@ export default async function SellLayout({
   const activeChannel = allowedChannels.find((c) => c.id === activeChannelId);
   const openSession = await getOpenSession();
 
-  // Owner-only quick actions visible inside POS mode.
-  const ownerActions = [
+  // Owner-only quick actions visible inside POS mode. Icons are
+  // passed as string keys so the layout (server component) can hand
+  // them to QuickActionsMenu (client component) — component refs
+  // can't cross the boundary.
+  const ownerActions: QuickAction[] = [
     openSession
       ? {
           href: "/cash-sessions",
           label: "Close till",
-          icon: "💵",
+          icon: "banknote",
           hint: `Open since ${new Date(openSession.openedAt).toLocaleTimeString()}`,
         }
       : {
           href: "/cash-sessions",
           label: "Open till",
-          icon: "💵",
+          icon: "banknote",
           hint: "Required before cash sales",
         },
     {
       href: "/expenses/new",
       label: "Log an expense",
-      icon: "💸",
+      icon: "wallet",
       hint: "Rent, fuel, transport…",
     },
     {
       href: "/purchases/new",
       label: "Receive stock",
-      icon: "📦",
+      icon: "package",
       hint: "Log a purchase from a supplier",
     },
     {
       href: "/adjustments/new",
       label: "Record loss",
-      icon: "⚠️",
+      icon: "warning",
       hint: "Broken, expired, stolen, sample",
     },
     {
       href: "/reports",
       label: "Today's summary",
-      icon: "📊",
+      icon: "chart",
     },
     {
       href: "/dashboard",
       label: "Exit POS",
-      icon: "←",
+      icon: "back",
       hint: "Back to admin",
     },
   ];
@@ -131,9 +138,9 @@ export default async function SellLayout({
                 <button
                   type="submit"
                   aria-label="Sign out"
-                  className="rounded-lg border border-zinc-300 px-3 py-2 text-sm hover:bg-zinc-100"
+                  className="rounded-lg border border-zinc-300 p-2 hover:bg-zinc-100"
                 >
-                  Sign out
+                  <LogOut className="h-5 w-5 text-zinc-700" strokeWidth={2} />
                 </button>
               </form>
             </div>
@@ -141,13 +148,16 @@ export default async function SellLayout({
         </header>
 
         {!openSession && (
-          <div className="mx-4 mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800 sm:mx-auto sm:max-w-2xl">
-            ⚠ The till is closed. Cash sales will be refused.{" "}
-            {user.role === "OWNER" && (
-              <Link href="/cash-sessions" className="font-medium underline">
-                Open it
-              </Link>
-            )}
+          <div className="mx-4 mt-2 flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800 sm:mx-auto sm:max-w-2xl">
+            <AlertTriangle className="h-4 w-4 shrink-0" strokeWidth={2} />
+            <p className="flex-1">
+              The till is closed. Cash sales will be refused.{" "}
+              {user.role === "OWNER" && (
+                <Link href="/cash-sessions" className="font-medium underline">
+                  Open it
+                </Link>
+              )}
+            </p>
           </div>
         )}
 

@@ -3,6 +3,15 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import {
+  ArrowLeft,
+  Banknote,
+  CheckCircle2,
+  Landmark,
+  ShoppingCart,
+  Smartphone,
+  X,
+} from "lucide-react";
 import { formatRWF } from "@/lib/format";
 import { createSale } from "@/lib/sales/actions";
 import { useCart } from "./CartProvider";
@@ -26,18 +35,19 @@ export function CheckoutForm() {
   if (!cart || cart.items.length === 0) {
     return (
       <div className="rounded-2xl border-2 border-dashed border-zinc-300 bg-zinc-50 p-8 text-center">
-        <p className="text-4xl" aria-hidden>
-          🛒
-        </p>
+        <ShoppingCart
+          className="mx-auto h-10 w-10 text-zinc-400"
+          strokeWidth={1.5}
+        />
         <p className="mt-3 text-base font-medium text-zinc-800">Empty cart</p>
         <p className="mt-1 text-sm text-zinc-600">
           Add something before you can pay.
         </p>
         <Link
           href="/sell"
-          className="mt-4 inline-block rounded-2xl bg-zinc-900 px-5 py-3 text-sm font-medium text-white hover:bg-zinc-800"
+          className="mt-4 inline-flex items-center gap-1 rounded-2xl bg-zinc-900 px-5 py-3 text-sm font-medium text-white hover:bg-zinc-800"
         >
-          Back to categories
+          <ArrowLeft className="h-4 w-4" strokeWidth={2} /> Back to categories
         </Link>
       </div>
     );
@@ -81,8 +91,9 @@ export function CheckoutForm() {
         </div>
       )}
       {success && (
-        <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
-          ✓ {success}
+        <div className="flex items-center gap-2 rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
+          <CheckCircle2 className="h-5 w-5 shrink-0" strokeWidth={2} />
+          <span>{success}</span>
         </div>
       )}
 
@@ -110,7 +121,7 @@ export function CheckoutForm() {
                 aria-label="Remove item"
                 className="rounded-lg p-2 text-zinc-400 hover:bg-zinc-100 hover:text-red-700"
               >
-                ✕
+                <X className="h-4 w-4" strokeWidth={2} />
               </button>
             </li>
           ))}
@@ -129,25 +140,26 @@ export function CheckoutForm() {
           How is the customer paying?
         </p>
         <div className="grid grid-cols-3 gap-2">
-          {(["CASH", "MOMO", "BANK"] as const).map((m) => (
-            <button
-              key={m}
-              type="button"
-              onClick={() => setPaymentMethod(m)}
-              className={`flex flex-col items-center gap-1 rounded-2xl border-2 px-3 py-4 transition active:scale-95 ${
-                paymentMethod === m
-                  ? "border-zinc-900 bg-zinc-900 text-white"
-                  : "border-zinc-300 bg-white text-zinc-900 hover:border-zinc-400"
-              }`}
-            >
-              <span className="text-2xl" aria-hidden>
-                {m === "CASH" ? "💵" : m === "MOMO" ? "📱" : "🏦"}
-              </span>
-              <span className="text-sm font-medium">
-                {m === "CASH" ? "Cash" : m === "MOMO" ? "MoMo" : "Bank"}
-              </span>
-            </button>
-          ))}
+          {(["CASH", "MOMO", "BANK"] as const).map((m) => {
+            const Icon = m === "CASH" ? Banknote : m === "MOMO" ? Smartphone : Landmark;
+            return (
+              <button
+                key={m}
+                type="button"
+                onClick={() => setPaymentMethod(m)}
+                className={`flex flex-col items-center gap-2 rounded-2xl border-2 px-3 py-4 transition active:scale-95 ${
+                  paymentMethod === m
+                    ? "border-zinc-900 bg-zinc-900 text-white"
+                    : "border-zinc-300 bg-white text-zinc-900 hover:border-zinc-400"
+                }`}
+              >
+                <Icon className="h-7 w-7" strokeWidth={1.5} />
+                <span className="text-sm font-medium">
+                  {m === "CASH" ? "Cash" : m === "MOMO" ? "MoMo" : "Bank"}
+                </span>
+              </button>
+            );
+          })}
         </div>
       </section>
 
@@ -181,9 +193,9 @@ export function CheckoutForm() {
 
       <Link
         href="/sell"
-        className="block text-center text-sm text-zinc-600 hover:underline"
+        className="flex items-center justify-center gap-1 text-sm text-zinc-600 hover:underline"
       >
-        ← Back to shopping
+        <ArrowLeft className="h-4 w-4" strokeWidth={2} /> Back to shopping
       </Link>
     </div>
   );
