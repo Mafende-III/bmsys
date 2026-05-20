@@ -68,7 +68,10 @@ export function ProfileForm({ initial }: { initial: Initial }) {
         </div>
       )}
 
-      <section className="rounded-2xl border border-zinc-200 bg-white p-4 space-y-3">
+      <section
+        data-tour="profile-identity"
+        className="rounded-2xl border border-zinc-200 bg-white p-4 space-y-3"
+      >
         <label className="block">
           <span className="text-sm font-medium">{t("name")}</span>
           <input
@@ -108,7 +111,10 @@ export function ProfileForm({ initial }: { initial: Initial }) {
         </div>
       </section>
 
-      <section className="rounded-2xl border border-zinc-200 bg-white p-4">
+      <section
+        data-tour="profile-language"
+        className="rounded-2xl border border-zinc-200 bg-white p-4"
+      >
         <h2 className="text-base font-medium">{t("language")}</h2>
         <p className="mt-0.5 text-xs text-zinc-600">{t("languageHint")}</p>
         <div className="mt-3">
@@ -116,7 +122,10 @@ export function ProfileForm({ initial }: { initial: Initial }) {
         </div>
       </section>
 
-      <section className="rounded-2xl border border-zinc-200 bg-white p-4 space-y-3">
+      <section
+        data-tour="profile-pin"
+        className="rounded-2xl border border-zinc-200 bg-white p-4 space-y-3"
+      >
         <div>
           <h2 className="text-base font-medium">{t("changePin")}</h2>
           <p className="mt-0.5 text-xs text-zinc-600">{t("changePinHint")}</p>

@@ -96,6 +96,90 @@ export const TOURS: TourDefinition[] = [
   },
 
   // ------------------------------------------------------------------
+  // Analytics
+  // ------------------------------------------------------------------
+  {
+    id: "analytics-home",
+    match: /^\/analytics\/?$/,
+    steps: [
+      {
+        element: '[data-tour="analytics-kpis"]',
+        title: "Headline numbers",
+        body: "Revenue, cost of stock sold, expenses, and net — for the period you picked. The small arrow shows how this period compares to the last one.",
+        side: "bottom",
+      },
+      {
+        element: '[data-tour="analytics-period"]',
+        title: "Switch the period",
+        body: "This month is the default. Switch to last month, the last 7 days, or the last 30 days. All numbers update.",
+        side: "bottom",
+      },
+      {
+        element: '[data-tour="analytics-daily"]',
+        title: "Sales by day",
+        body: "Green is the best day, amber is the quietest. Hover any bar to see the exact total.",
+        side: "top",
+      },
+      {
+        element: '[data-tour="analytics-stock"]',
+        title: "What needs attention",
+        body: "Products running low against their threshold and anything fully out of stock — so you can reorder before you lose a sale.",
+        side: "top",
+      },
+    ],
+  },
+
+  // ------------------------------------------------------------------
+  // Audit (Activity log)
+  // ------------------------------------------------------------------
+  {
+    id: "audit-home",
+    match: /^\/audit\/?$/,
+    steps: [
+      {
+        element: '[data-tour="audit-filter"]',
+        title: "Filter what you see",
+        body: "All events shown by default. Pick a category to focus — failed sign-ins, big cash variances, or successful logins.",
+        side: "bottom",
+      },
+      {
+        element: '[data-tour="audit-table"]',
+        title: "What happened",
+        body: "Red badges flag failed sign-ins, amber flags big cash differences. Last 30 days of activity worth a glance.",
+        side: "top",
+      },
+    ],
+  },
+
+  // ------------------------------------------------------------------
+  // Profile
+  // ------------------------------------------------------------------
+  {
+    id: "profile-home",
+    match: /^\/profile\/?$/,
+    steps: [
+      {
+        element: '[data-tour="profile-identity"]',
+        title: "Your details",
+        body: "Change your display name here. Phone and role are set by the owner — locked on this screen.",
+        side: "bottom",
+      },
+      {
+        element: '[data-tour="profile-language"]',
+        title: "Language",
+        body: "Pick English or Kinyarwanda. Saved to your account so it follows you across devices.",
+        side: "top",
+      },
+      {
+        element: '[data-tour="profile-pin"]',
+        title: "Change your PIN",
+        body: "Enter your current PIN to set a new one. Leave the fields blank to keep your current PIN.",
+        side: "top",
+      },
+    ],
+  },
+
+  // ------------------------------------------------------------------
   // Settings
   // ------------------------------------------------------------------
   {

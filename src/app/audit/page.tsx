@@ -51,7 +51,7 @@ export default async function AuditPage({
         <p className="text-sm text-zinc-600">{t("subtitle")}</p>
       </header>
 
-      <form method="get" className="mt-2 flex gap-2">
+      <form method="get" className="mt-2 flex gap-2" data-tour="audit-filter">
         <label className="block">
           <span className="text-xs font-medium text-zinc-700">
             {t("filterCategory")}
@@ -77,7 +77,10 @@ export default async function AuditPage({
         </button>
       </form>
 
-      <div className="mt-4 overflow-x-auto rounded-2xl border border-zinc-200 bg-white">
+      <div
+        data-tour="audit-table"
+        className="mt-4 overflow-x-auto rounded-2xl border border-zinc-200 bg-white"
+      >
         <table className="w-full text-sm">
           <thead className="bg-zinc-50 text-left text-xs font-medium uppercase text-zinc-600">
             <tr>

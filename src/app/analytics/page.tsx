@@ -80,7 +80,7 @@ export default async function AnalyticsPage({
           <h1 className="mt-1 text-2xl font-semibold">{t("title")}</h1>
           <p className="text-sm text-zinc-600">{t("subtitle")}</p>
         </div>
-        <form method="get" className="flex items-end gap-2">
+        <form method="get" className="flex items-end gap-2" data-tour="analytics-period">
           <label className="block">
             <span className="text-xs font-medium text-zinc-700">
               {t("periodLabel")}
@@ -107,7 +107,10 @@ export default async function AnalyticsPage({
       </header>
 
       {/* KPI cards */}
-      <section className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <section
+        data-tour="analytics-kpis"
+        className="mt-5 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4"
+      >
         <KpiCard
           icon={ShoppingCart}
           label={t("kpiRevenue")}
@@ -144,7 +147,10 @@ export default async function AnalyticsPage({
       </section>
 
       {/* Sales by day */}
-      <section className="mt-6 rounded-2xl border border-zinc-200 bg-white p-4">
+      <section
+        data-tour="analytics-daily"
+        className="mt-6 rounded-2xl border border-zinc-200 bg-white p-4"
+      >
         <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <h2 className="text-base font-medium">{t("salesByDay")}</h2>
@@ -284,7 +290,10 @@ export default async function AnalyticsPage({
 
       {/* Two-column: stock health + expenses */}
       <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
-        <section className="rounded-2xl border border-zinc-200 bg-white p-4">
+        <section
+          data-tour="analytics-stock"
+          className="rounded-2xl border border-zinc-200 bg-white p-4"
+        >
           <h2 className="text-base font-medium">{t("stockHealth")}</h2>
           <dl className="mt-3 grid grid-cols-2 gap-3 text-sm">
             <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-3">
