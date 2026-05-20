@@ -163,7 +163,7 @@ export function ProductForm({
         </div>
       )}
 
-      <label className="block">
+      <label className="block" data-tour="product-sku">
         <span className="text-sm font-medium">SKU</span>
         {mode.kind === "edit" ? (
           <input
@@ -222,7 +222,7 @@ export function ProductForm({
         )}
       </label>
 
-      <div>
+      <div data-tour="product-icon">
         <span className="text-sm font-medium">Icon override</span>
         <p className="mt-0.5 text-xs text-zinc-500">
           Leave empty to use the category icon.
@@ -352,7 +352,10 @@ export function ProductForm({
         </div>
       )}
 
-      <fieldset className="rounded-lg border border-zinc-200 px-4 py-3">
+      <fieldset
+        data-tour="product-sellable"
+        className="rounded-lg border border-zinc-200 px-4 py-3"
+      >
         <legend className="px-1 text-sm font-medium">Sellable as</legend>
         <div className="mt-1 flex gap-6">
           <label className="flex items-center gap-2 text-sm">

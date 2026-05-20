@@ -133,7 +133,7 @@ export default async function SellLayout({
               >
                 {companyName}
               </span>
-              <div className="min-w-0 flex-1">
+              <div className="min-w-0 flex-1" data-tour="sell-channel">
                 <ChannelPicker
                   channels={allowedChannels.map((c) => ({
                     id: c.id,
@@ -143,7 +143,7 @@ export default async function SellLayout({
                 />
               </div>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2" data-tour="sell-quick-actions">
               {user.role === "OWNER" ? (
                 <QuickActionsMenu ownerActions={ownerActions} />
               ) : null}

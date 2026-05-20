@@ -76,7 +76,7 @@ export function AddToCartForm({
   }
 
   return (
-    <div className="space-y-5">
+    <div data-tour="add-to-cart-form" className="space-y-5">
       {error && (
         <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {error}

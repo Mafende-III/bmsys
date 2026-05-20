@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { getSettings } from "@/lib/settings/queries";
-import { HelpButton } from "./_components/HelpButton";
+import { TourLauncher } from "./_components/TourLauncher";
 import "./globals.css";
 
 // The root layout reads from Settings on every render so a logo or
@@ -35,7 +35,7 @@ export default async function RootLayout({
     <html lang="en" data-theme={theme}>
       <body className="min-h-screen text-zinc-900 antialiased">
         {children}
-        <HelpButton />
+        <TourLauncher />
       </body>
     </html>
   );

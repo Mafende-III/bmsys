@@ -73,6 +73,7 @@ export default async function DashboardPage() {
       {/* Primary: Sell */}
       <Link
         href="/sell"
+        data-tour="dash-sell"
         className="mt-6 block rounded-3xl border-2 border-zinc-900 bg-zinc-900 p-6 text-white shadow-lg transition hover:shadow-xl"
       >
         <div className="flex items-center gap-4">
@@ -88,7 +89,7 @@ export default async function DashboardPage() {
       </Link>
 
       {/* Run the shop */}
-      <section className="mt-8">
+      <section className="mt-8" data-tour="dash-run-shop">
         <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-zinc-500">
           Run the shop
         </h3>
@@ -126,7 +127,7 @@ export default async function DashboardPage() {
       </section>
 
       {/* Stock & catalog */}
-      <section className="mt-8">
+      <section className="mt-8" data-tour="dash-catalog">
         <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-zinc-500">
           Stock & catalog
         </h3>
@@ -153,7 +154,7 @@ export default async function DashboardPage() {
       </section>
 
       {/* Reports & users */}
-      <section className="mt-8">
+      <section className="mt-8" data-tour="dash-reports">
         <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-zinc-500">
           Reports & users
         </h3>

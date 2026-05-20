@@ -51,6 +51,7 @@ export default async function ProductsPage({
         </div>
         <Link
           href="/products/new"
+          data-tour="products-new"
           className="self-start rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 sm:self-auto"
         >
           + New product

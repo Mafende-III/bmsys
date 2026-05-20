@@ -50,7 +50,10 @@ export default async function SellHome() {
       <h2 className="mb-4 text-lg font-medium text-zinc-700">
         Pick a category
       </h2>
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+      <div
+        data-tour="sell-category-grid"
+        className="grid grid-cols-2 gap-3 sm:grid-cols-3"
+      >
         {categories.map((c) => {
           const Icon = c.iconKey ? iconForKey(c.iconKey) : null;
           return (

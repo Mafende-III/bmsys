@@ -61,7 +61,10 @@ export default async function SellCategoryPage({
         </h2>
       </div>
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+      <div
+        data-tour="sell-product-grid"
+        className="grid grid-cols-1 gap-3 sm:grid-cols-2"
+      >
         {all.map((p) => {
           const totalAvailable =
             p.openedUnits + p.sealedCartons * p.unitsPerCarton;

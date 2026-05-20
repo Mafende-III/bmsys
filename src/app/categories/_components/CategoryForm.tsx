@@ -141,7 +141,7 @@ export function CategoryForm({ mode }: { mode: Mode }) {
         </span>
       </label>
 
-      <div>
+      <div data-tour="category-icon">
         <span className="text-sm font-medium">Icon</span>
         <div className="mt-1">
           <IconPicker value={iconKey} onChange={setIconKey} />

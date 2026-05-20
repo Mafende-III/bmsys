@@ -63,7 +63,10 @@ export function SettingsForm({ initial }: { initial: Initial }) {
         </div>
       )}
 
-      <section className="rounded-2xl border border-zinc-200 bg-white p-4">
+      <section
+        data-tour="settings-name"
+        className="rounded-2xl border border-zinc-200 bg-white p-4"
+      >
         <h2 className="text-base font-medium">Shop name</h2>
         <p className="mt-0.5 text-xs text-zinc-600">
           Shown on the sign-in screen and in the browser tab.
@@ -79,7 +82,10 @@ export function SettingsForm({ initial }: { initial: Initial }) {
         />
       </section>
 
-      <section className="rounded-2xl border border-zinc-200 bg-white p-4">
+      <section
+        data-tour="settings-theme"
+        className="rounded-2xl border border-zinc-200 bg-white p-4"
+      >
         <h2 className="text-base font-medium">Theme</h2>
         <p className="mt-0.5 text-xs text-zinc-600">
           Picks the background colour across the app. Content stays
@@ -172,7 +178,10 @@ function LogoSection({ initialLogoUrl }: { initialLogoUrl: string | null }) {
   }
 
   return (
-    <section className="rounded-2xl border border-zinc-200 bg-white p-4">
+    <section
+      data-tour="settings-logo"
+      className="rounded-2xl border border-zinc-200 bg-white p-4"
+    >
       <h2 className="text-base font-medium">Logo</h2>
       <p className="mt-0.5 text-xs text-zinc-600">
         Shown on the sign-in screen, in the top bar, and as the browser tab
