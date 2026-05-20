@@ -58,6 +58,9 @@ services:
       OWNER_NAME: ${OWNER_NAME:-Owner}
       OWNER_PHONE: ${OWNER_PHONE:?OWNER_PHONE is required}
       OWNER_PIN: ${OWNER_PIN:?OWNER_PIN is required}
+      UPLOADS_DIR: /app/uploads
+    volumes:
+      - bmsys_uploads:/app/uploads
     networks:
       - internal
       - proxy
@@ -73,6 +76,7 @@ services:
 
 volumes:
   pg_data:
+  bmsys_uploads:
 
 networks:
   # Private — only bmsys containers (the postgres lives here).

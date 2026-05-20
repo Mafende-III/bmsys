@@ -1,3 +1,55 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/*
+ * Theme tokens. The chrome (body bg, dashboard tiles, sticky bars)
+ * uses these variables instead of hard-coded zinc/white classes, so
+ * a single setting flip on <html data-theme="…"> recolours the app.
+ * Content panels (forms, tables, modals) stay neutral on purpose —
+ * tinting them makes them feel like ads, not tools.
+ */
+
+:root,
+[data-theme="default"] {
+  --app-bg: #fafafa;          /* zinc-50 */
+  --app-bg-soft: #ffffff;
+  --app-accent: #18181b;      /* zinc-900 — primary buttons */
+  --app-accent-soft: #f4f4f5; /* zinc-100 — active till tile */
+  --app-ring: #d4d4d8;        /* zinc-300 */
+}
+
+[data-theme="sky"] {
+  --app-bg: #f0f9ff;          /* sky-50 */
+  --app-bg-soft: #ffffff;
+  --app-accent: #0369a1;      /* sky-700 — buttons stay readable */
+  --app-accent-soft: #e0f2fe; /* sky-100 */
+  --app-ring: #bae6fd;        /* sky-200 */
+}
+
+[data-theme="light-blue"] {
+  --app-bg: #f0fdff;          /* very light cyan */
+  --app-bg-soft: #ffffff;
+  --app-accent: #075985;      /* sky-800 — keep contrast on pale bg */
+  --app-accent-soft: #e0f7fb;
+  --app-ring: #a5e6f0;
+}
+
+html,
+body {
+  background: var(--app-bg);
+}
+
+/*
+ * Theme-aware top header (used by /sell and dashboard). Picks up a
+ * tint on non-default themes so the chrome reads as "branded" while
+ * content panels stay neutral. Apply with className="app-header".
+ */
+.app-header {
+  border-bottom-color: var(--app-ring);
+}
+
+[data-theme="sky"] .app-header,
+[data-theme="light-blue"] .app-header {
+  background: var(--app-accent-soft);
+}

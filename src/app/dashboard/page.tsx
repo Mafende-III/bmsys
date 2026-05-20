@@ -6,6 +6,7 @@ import {
   Banknote,
   type LucideIcon,
   Package,
+  Settings as SettingsIcon,
   ShoppingBag,
   Store,
   Tag,
@@ -16,28 +17,43 @@ import {
 import { signOut } from "@/lib/auth";
 import { requireOwner } from "@/lib/auth-guards";
 import { getOpenSession } from "@/lib/cash-sessions/queries";
+import { getSettings } from "@/lib/settings/queries";
 
 export default async function DashboardPage() {
   const session = await requireOwner();
   const openTill = await getOpenSession();
+  const { companyName, logoUrl } = await getSettings();
 
   return (
     <main className="mx-auto max-w-5xl p-4 sm:p-6">
       <header className="flex items-start justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-semibold sm:text-3xl">
-            Hello, {session.name?.split(" ")[0] ?? "owner"}.
-          </h1>
-          <p className="text-sm text-zinc-600">
-            {openTill ? (
-              <>
-                Till is open · {openTill.cashSalesCount}{" "}
-                {openTill.cashSalesCount === 1 ? "sale" : "sales"} so far
-              </>
-            ) : (
-              "Till is closed."
-            )}
-          </p>
+        <div className="flex min-w-0 items-center gap-3">
+          {logoUrl && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={logoUrl}
+              alt=""
+              className="h-12 w-12 shrink-0 rounded-lg object-contain"
+            />
+          )}
+          <div className="min-w-0">
+            <p className="truncate text-xs font-medium uppercase tracking-wide text-zinc-500">
+              {companyName}
+            </p>
+            <h1 className="text-2xl font-semibold sm:text-3xl">
+              Hello, {session.name?.split(" ")[0] ?? "owner"}.
+            </h1>
+            <p className="text-sm text-zinc-600">
+              {openTill ? (
+                <>
+                  Till is open · {openTill.cashSalesCount}{" "}
+                  {openTill.cashSalesCount === 1 ? "sale" : "sales"} so far
+                </>
+              ) : (
+                "Till is closed."
+              )}
+            </p>
+          </div>
         </div>
         <form
           action={async () => {
@@ -136,12 +152,12 @@ export default async function DashboardPage() {
         </div>
       </section>
 
-      {/* Reports & people */}
+      {/* Reports & users */}
       <section className="mt-8">
         <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-zinc-500">
-          Reports & people
+          Reports & users
         </h3>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <DashCard
             href="/reports"
             Icon={BarChart3}
@@ -159,6 +175,12 @@ export default async function DashboardPage() {
             Icon={Tag}
             title="Channels"
             subtitle="Retail, wholesale, delivery…"
+          />
+          <DashCard
+            href="/settings"
+            Icon={SettingsIcon}
+            title="System config"
+            subtitle="Branding, theme, logo"
           />
         </div>
       </section>

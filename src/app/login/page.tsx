@@ -1,13 +1,27 @@
 import { signIn } from "@/lib/auth";
+import { getSettings } from "@/lib/settings/queries";
 
-export default function LoginPage() {
+export default async function LoginPage() {
+  const { companyName, logoUrl } = await getSettings();
   return (
     <main className="flex min-h-screen items-center justify-center px-4">
       <div className="w-full max-w-sm rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
-        <h1 className="text-xl font-semibold">Sign in</h1>
-        <p className="mt-1 text-sm text-zinc-600">
-          Beverage Business Management
-        </p>
+        <div className="flex items-center gap-3">
+          {logoUrl && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={logoUrl}
+              alt=""
+              className="h-12 w-12 shrink-0 rounded-lg object-contain"
+            />
+          )}
+          <div className="min-w-0">
+            <h1 className="truncate text-xl font-semibold">{companyName}</h1>
+            <p className="mt-0.5 text-sm text-zinc-600">
+              Sign in to manage sales and stock
+            </p>
+          </div>
+        </div>
 
         <form
           action={async (formData: FormData) => {

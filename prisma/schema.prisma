@@ -605,6 +605,20 @@ model AuditLog {
 }
 
 // ========================================================================
+// SETTINGS (single-row org config)
+// ========================================================================
+
+/// Org-wide configuration: branding, theme, etc. Single row keyed by
+/// the literal id "default" — enforce in code, not schema.
+model Settings {
+  id          String   @id @default("default")
+  companyName String   @default("HydroMart Shop")
+  theme       String   @default("default") // "default" | "sky" | "light-blue"
+  logoPath    String?  // path relative to the uploads volume, e.g. "logo.png"
+  updatedAt   DateTime @updatedAt
+}
+
+// ========================================================================
 // IDEMPOTENCY (for write endpoints)
 // ========================================================================
 

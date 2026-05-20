@@ -5,6 +5,7 @@ import { requireSeller } from "@/lib/auth-guards";
 import { getOpenSession } from "@/lib/cash-sessions/queries";
 import { listAllowedChannels } from "@/lib/permissions";
 import { getActiveChannelId } from "@/lib/sales/actions";
+import { getSettings } from "@/lib/settings/queries";
 import { CartProvider } from "./_components/CartProvider";
 import { CartHeader } from "./_components/CartHeader";
 import { ChannelPicker } from "./_components/ChannelPicker";
@@ -20,6 +21,7 @@ export default async function SellLayout({
 }) {
   const user = await requireSeller();
   const allowedChannels = await listAllowedChannels(user.id);
+  const { companyName, logoUrl } = await getSettings();
 
   if (allowedChannels.length === 0) {
     return (
@@ -114,16 +116,32 @@ export default async function SellLayout({
     <CartProvider currentChannelId={activeChannelId}>
       <div className="flex min-h-screen flex-col">
         {/* Compact top bar */}
-        <header className="border-b border-zinc-200 bg-white px-4 py-2 sm:px-6">
+        <header className="app-header border-b border-zinc-200 bg-white px-4 py-2 sm:px-6">
           <div className="mx-auto flex max-w-2xl items-center justify-between gap-3">
-            <div className="min-w-0 flex-1">
-              <ChannelPicker
-                channels={allowedChannels.map((c) => ({
-                  id: c.id,
-                  name: c.name,
-                }))}
-                currentChannelId={activeChannelId}
-              />
+            <div className="flex min-w-0 flex-1 items-center gap-2">
+              {logoUrl && (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={logoUrl}
+                  alt=""
+                  className="h-8 w-8 shrink-0 rounded-md object-contain"
+                />
+              )}
+              <span
+                className="hidden truncate text-sm font-medium text-zinc-800 sm:inline"
+                title={companyName}
+              >
+                {companyName}
+              </span>
+              <div className="min-w-0 flex-1">
+                <ChannelPicker
+                  channels={allowedChannels.map((c) => ({
+                    id: c.id,
+                    name: c.name,
+                  }))}
+                  currentChannelId={activeChannelId}
+                />
+              </div>
             </div>
             <div className="flex items-center gap-2">
               {user.role === "OWNER" ? (

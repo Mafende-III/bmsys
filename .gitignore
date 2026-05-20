@@ -50,3 +50,8 @@ prisma/migrations/dev.db*
 backups/
 *.sql.gz
 *.dump
+
+# user uploads (logos, etc) — runtime dir, lives in a Docker volume
+# in prod. Match only at the repo root so the /uploads/* route handler
+# (src/app/uploads/) is still tracked.
+/uploads/
