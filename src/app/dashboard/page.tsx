@@ -58,19 +58,27 @@ export default async function DashboardPage() {
         </div>
         <div className="flex flex-col items-end gap-2">
           <LanguageToggle current={locale} />
-          <form
-            action={async () => {
-              "use server";
-              await signOut({ redirectTo: "/login" });
-            }}
-          >
-            <button
-              type="submit"
-              className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-100"
+          <div className="flex gap-2">
+            <Link
+              href="/profile"
+              className="rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm hover:bg-zinc-100"
             >
-              {tc("signOut")}
-            </button>
-          </form>
+              {tc("profile")}
+            </Link>
+            <form
+              action={async () => {
+                "use server";
+                await signOut({ redirectTo: "/login" });
+              }}
+            >
+              <button
+                type="submit"
+                className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-100"
+              >
+                {tc("signOut")}
+              </button>
+            </form>
+          </div>
         </div>
       </header>
 

@@ -3,7 +3,11 @@ import argon2 from "argon2";
 import type { ZodError } from "zod";
 import { prisma } from "@/lib/prisma";
 import { withIdempotency } from "@/lib/idempotency";
-import { userCreateSchema, userUpdateSchema } from "./schema";
+import {
+  profileUpdateSchema,
+  userCreateSchema,
+  userUpdateSchema,
+} from "./schema";
 
 export type ActionResult<T> =
   | { ok: true; data: T }
@@ -223,5 +227,75 @@ export async function updateUserOp(
     return { ok: true, data: result };
   } catch (e: unknown) {
     return { ok: false, error: errorMessage(e, "Failed to update user") };
+  }
+}
+
+/**
+ * Self-service profile edit. The caller can only update their own
+ * row. Changing PIN requires proving knowledge of the current PIN.
+ * Phone, role, and active are intentionally not editable here —
+ * those still require an owner via updateUserOp.
+ */
+export async function updateProfileOp(
+  callerUserId: string,
+  idempotencyKey: string,
+  raw: unknown,
+): Promise<ActionResult<{ id: string }>> {
+  const parsed = profileUpdateSchema.safeParse(raw);
+  if (!parsed.success) return { ok: false, error: firstError(parsed.error) };
+  const input = parsed.data;
+
+  try {
+    const result = await withIdempotency(
+      idempotencyKey,
+      `users.profile.${callerUserId}`,
+      () =>
+        prisma.$transaction(async (tx) => {
+          const before = await tx.user.findUnique({
+            where: { id: callerUserId },
+          });
+          if (!before || !before.active) {
+            throw new Error("You are not signed in");
+          }
+
+          let pinHash: string | undefined;
+          if (input.newPin) {
+            const ok = await argon2.verify(
+              before.pinHash,
+              input.currentPin ?? "",
+            );
+            if (!ok) {
+              throw new Error("Current PIN is incorrect");
+            }
+            pinHash = await argon2.hash(input.newPin);
+          }
+
+          const updated = await tx.user.update({
+            where: { id: callerUserId },
+            data: {
+              name: input.name,
+              ...(pinHash ? { pinHash } : {}),
+            },
+          });
+
+          await tx.auditLog.create({
+            data: {
+              tableName: "users",
+              recordId: callerUserId,
+              action: "UPDATE",
+              changes: {
+                before: { name: before.name },
+                after: { name: updated.name, pinChanged: !!pinHash },
+              } as Prisma.InputJsonValue,
+              userId: callerUserId,
+            },
+          });
+
+          return { id: updated.id };
+        }),
+    );
+    return { ok: true, data: result };
+  } catch (e: unknown) {
+    return { ok: false, error: errorMessage(e, "Failed to update profile") };
   }
 }

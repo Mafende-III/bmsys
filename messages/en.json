@@ -14,6 +14,7 @@
     "edit": "Edit",
     "delete": "Delete",
     "add": "Add",
+    "profile": "Profile",
     "all": "All",
     "active": "Active",
     "archived": "Archived",
@@ -327,6 +328,22 @@
       "notePlaceholder": "What happened?",
       "record": "Record loss"
     }
+  },
+  "profile": {
+    "title": "My profile",
+    "subtitle": "Update your name, PIN, and language. Phone and role are set by the owner.",
+    "name": "Your name",
+    "phone": "Phone",
+    "phoneNote": "Locked — ask the owner if it needs to change.",
+    "role": "Role",
+    "language": "Language",
+    "languageHint": "Saved to your account so it follows you across devices.",
+    "changePin": "Change PIN",
+    "changePinHint": "Leave blank to keep your current PIN.",
+    "currentPin": "Current PIN",
+    "newPin": "New PIN",
+    "confirmPin": "Confirm new PIN",
+    "save": "Save profile"
   },
   "users": {
     "title": "Users",

@@ -2,7 +2,12 @@
 
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
-import { createUserOp, updateUserOp, type ActionResult } from "./operations";
+import {
+  createUserOp,
+  updateProfileOp,
+  updateUserOp,
+  type ActionResult,
+} from "./operations";
 
 async function getCurrentUserId(): Promise<string | null> {
   const session = await auth();
@@ -33,6 +38,21 @@ export async function updateUser(
   if (result.ok) {
     revalidatePath("/users");
     revalidatePath(`/users/${id}`);
+  }
+  return result;
+}
+
+export async function updateMyProfile(
+  idempotencyKey: string,
+  raw: unknown,
+): Promise<ActionResult<{ id: string }>> {
+  const userId = await getCurrentUserId();
+  if (!userId) return { ok: false, error: "Not authenticated" };
+
+  const result = await updateProfileOp(userId, idempotencyKey, raw);
+  if (result.ok) {
+    revalidatePath("/profile");
+    revalidatePath("/dashboard");
   }
   return result;
 }

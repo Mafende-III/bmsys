@@ -14,6 +14,7 @@
     "edit": "Hindura",
     "delete": "Siba",
     "add": "Ongeraho",
+    "profile": "Konti",
     "all": "Byose",
     "active": "Bikora",
     "archived": "Bihishe",
@@ -327,6 +328,22 @@
       "notePlaceholder": "Habayemo iki?",
       "record": "Andika igihombo"
     }
+  },
+  "profile": {
+    "title": "Konti yanjye",
+    "subtitle": "Hindura izina, PIN, n'ururimi. Telefoni n'uruhare bitangwa na nyirubwite.",
+    "name": "Izina ryawe",
+    "phone": "Telefoni",
+    "phoneNote": "Ntirihinduka — saba nyirubwite niba rikeneye guhinduka.",
+    "role": "Uruhare",
+    "language": "Ururimi",
+    "languageHint": "Bibikwa kuri konti yawe kugira ngo bikurikire ku tundi tugaragaza.",
+    "changePin": "Hindura PIN",
+    "changePinHint": "Siga ubusa niba ushaka kubika PIN ya none.",
+    "currentPin": "PIN ya none",
+    "newPin": "PIN nshya",
+    "confirmPin": "Emeza PIN nshya",
+    "save": "Bika konti"
   },
   "users": {
     "title": "Abakoresha",

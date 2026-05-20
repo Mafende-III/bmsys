@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { AlertTriangle, LogOut } from "lucide-react";
+import { AlertTriangle, LogOut, UserCircle2 } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { signOut } from "@/lib/auth";
 import { requireSeller } from "@/lib/auth-guards";
@@ -149,6 +149,13 @@ export default async function SellLayout({
               {user.role === "OWNER" ? (
                 <QuickActionsMenu ownerActions={ownerActions} />
               ) : null}
+              <Link
+                href="/profile"
+                aria-label={tc("profile")}
+                className="rounded-lg border border-zinc-300 p-2 hover:bg-zinc-100"
+              >
+                <UserCircle2 className="h-5 w-5 text-zinc-700" strokeWidth={2} />
+              </Link>
               <form
                 action={async () => {
                   "use server";
@@ -157,7 +164,7 @@ export default async function SellLayout({
               >
                 <button
                   type="submit"
-                  aria-label="Sign out"
+                  aria-label={tc("signOut")}
                   className="rounded-lg border border-zinc-300 p-2 hover:bg-zinc-100"
                 >
                   <LogOut className="h-5 w-5 text-zinc-700" strokeWidth={2} />

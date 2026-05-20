@@ -43,5 +43,45 @@ export const userUpdateSchema = z.object({
     ),
 });
 
+/**
+ * Self-service profile edit. Users can rename themselves and rotate
+ * their own PIN, but only with their current PIN as proof. Phone +
+ * role + active are intentionally NOT here — only an owner can
+ * change those from /users/[id].
+ */
+export const profileUpdateSchema = z
+  .object({
+    name: z.string().trim().min(1, "Name is required").max(100),
+    currentPin: z.preprocess(
+      (v) => (typeof v === "string" && v.trim() === "" ? undefined : v),
+      z.string().optional(),
+    ),
+    newPin: z.preprocess(
+      (v) => (typeof v === "string" && v.trim() === "" ? undefined : v),
+      z.string().regex(pinPattern, "New PIN must be 4-6 digits").optional(),
+    ),
+    confirmPin: z.preprocess(
+      (v) => (typeof v === "string" && v.trim() === "" ? undefined : v),
+      z.string().optional(),
+    ),
+  })
+  .superRefine((d, ctx) => {
+    if (d.newPin && !d.currentPin) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Enter your current PIN to change it",
+        path: ["currentPin"],
+      });
+    }
+    if (d.newPin && d.newPin !== d.confirmPin) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "New PINs don't match",
+        path: ["confirmPin"],
+      });
+    }
+  });
+
 export type UserCreateInput = z.infer<typeof userCreateSchema>;
 export type UserUpdateInput = z.infer<typeof userUpdateSchema>;
+export type ProfileUpdateInput = z.infer<typeof profileUpdateSchema>;
