@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import { requireOwner } from "@/lib/auth-guards";
 import { formatRWF } from "@/lib/format";
 import { listSuppliersWithCounts } from "@/lib/suppliers/queries";
@@ -16,6 +17,8 @@ export default async function SuppliersPage({
   const search = params.search?.trim() || undefined;
 
   const suppliers = await listSuppliersWithCounts({ search });
+  const t = await getTranslations("suppliers");
+  const tc = await getTranslations("common");
 
   return (
     <main className="mx-auto max-w-4xl p-4 sm:p-6">
@@ -25,19 +28,16 @@ export default async function SuppliersPage({
             href="/dashboard"
             className="text-sm text-zinc-600 hover:underline"
           >
-            ← Dashboard
+            ← {tc("dashboard")}
           </Link>
-          <h1 className="mt-1 text-2xl font-semibold">Suppliers</h1>
-          <p className="text-sm text-zinc-600">
-            {suppliers.length}{" "}
-            {suppliers.length === 1 ? "supplier" : "suppliers"}
-          </p>
+          <h1 className="mt-1 text-2xl font-semibold">{t("title")}</h1>
+          <p className="text-sm text-zinc-600">{t("subtitle")}</p>
         </div>
         <Link
           href="/suppliers/new"
           className="self-start rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 sm:self-auto"
         >
-          + New supplier
+          {t("new")}
         </Link>
       </header>
 

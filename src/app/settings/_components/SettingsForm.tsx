@@ -3,6 +3,7 @@
 import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Check, ImagePlus, Trash2 } from "lucide-react";
+import { useTranslations } from "next-intl";
 import {
   removeLogo,
   updateSettings,
@@ -22,6 +23,8 @@ type Initial = {
 
 export function SettingsForm({ initial }: { initial: Initial }) {
   const router = useRouter();
+  const t = useTranslations("settings");
+  const tc = useTranslations("common");
   const [companyName, setCompanyName] = useState(initial.companyName);
   const [theme, setTheme] = useState<ThemeKey>(initial.theme);
   const [error, setError] = useState<string | null>(null);
@@ -59,7 +62,7 @@ export function SettingsForm({ initial }: { initial: Initial }) {
       )}
       {savedAt && (
         <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
-          Saved. Refresh other tabs to see the new look.
+          {t("refreshTabs")}
         </div>
       )}
 
@@ -67,10 +70,8 @@ export function SettingsForm({ initial }: { initial: Initial }) {
         data-tour="settings-name"
         className="rounded-2xl border border-zinc-200 bg-white p-4"
       >
-        <h2 className="text-base font-medium">Shop name</h2>
-        <p className="mt-0.5 text-xs text-zinc-600">
-          Shown on the sign-in screen and in the browser tab.
-        </p>
+        <h2 className="text-base font-medium">{t("shopName")}</h2>
+        <p className="mt-0.5 text-xs text-zinc-600">{t("shopNameHint")}</p>
         <input
           type="text"
           value={companyName}
@@ -86,14 +87,11 @@ export function SettingsForm({ initial }: { initial: Initial }) {
         data-tour="settings-theme"
         className="rounded-2xl border border-zinc-200 bg-white p-4"
       >
-        <h2 className="text-base font-medium">Theme</h2>
-        <p className="mt-0.5 text-xs text-zinc-600">
-          Tints the background across the whole app. Content panels stay
-          white so forms and tables remain easy to read.
-        </p>
+        <h2 className="text-base font-medium">{t("theme")}</h2>
+        <p className="mt-0.5 text-xs text-zinc-600">{t("themeHint")}</p>
         <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-5">
           {THEME_KEYS.map((key) => {
-            const t = THEMES[key];
+            const themeMeta = THEMES[key];
             const selected = theme === key;
             return (
               <button
@@ -101,8 +99,8 @@ export function SettingsForm({ initial }: { initial: Initial }) {
                 type="button"
                 onClick={() => setTheme(key)}
                 aria-pressed={selected}
-                aria-label={t.label}
-                title={t.label}
+                aria-label={themeMeta.label}
+                title={themeMeta.label}
                 className={`group flex flex-col items-center gap-1.5 rounded-xl border p-2 text-center transition ${
                   selected
                     ? "border-zinc-900 ring-2 ring-zinc-900"
@@ -112,7 +110,7 @@ export function SettingsForm({ initial }: { initial: Initial }) {
                 <span
                   aria-hidden
                   className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-zinc-200 shadow-inner"
-                  style={{ background: t.preview }}
+                  style={{ background: themeMeta.preview }}
                 >
                   {selected && (
                     <Check
@@ -122,7 +120,7 @@ export function SettingsForm({ initial }: { initial: Initial }) {
                   )}
                 </span>
                 <span className="text-xs font-medium text-zinc-700">
-                  {t.label}
+                  {themeMeta.label}
                 </span>
               </button>
             );
@@ -136,7 +134,7 @@ export function SettingsForm({ initial }: { initial: Initial }) {
           disabled={isPending}
           className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-60"
         >
-          {isPending ? "Saving…" : "Save changes"}
+          {isPending ? `${tc("save")}…` : tc("save")}
         </button>
       </div>
 
@@ -147,6 +145,7 @@ export function SettingsForm({ initial }: { initial: Initial }) {
 
 function LogoSection({ initialLogoUrl }: { initialLogoUrl: string | null }) {
   const router = useRouter();
+  const t = useTranslations("settings");
   const inputRef = useRef<HTMLInputElement>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(initialLogoUrl);
   const [isPending, startTransition] = useTransition();
@@ -188,11 +187,8 @@ function LogoSection({ initialLogoUrl }: { initialLogoUrl: string | null }) {
       data-tour="settings-logo"
       className="rounded-2xl border border-zinc-200 bg-white p-4"
     >
-      <h2 className="text-base font-medium">Logo</h2>
-      <p className="mt-0.5 text-xs text-zinc-600">
-        Shown on the sign-in screen, in the top bar, and as the browser tab
-        icon. PNG or SVG with a transparent background works best. Max 2 MB.
-      </p>
+      <h2 className="text-base font-medium">{t("logo")}</h2>
+      <p className="mt-0.5 text-xs text-zinc-600">{t("logoHint")}</p>
 
       {error && (
         <div className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
@@ -216,7 +212,7 @@ function LogoSection({ initialLogoUrl }: { initialLogoUrl: string | null }) {
         <div className="flex flex-1 flex-wrap gap-2">
           <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm hover:bg-zinc-50">
             <ImagePlus className="h-4 w-4" strokeWidth={1.5} />
-            <span>{previewUrl ? "Replace logo" : "Upload logo"}</span>
+            <span>{previewUrl ? t("replaceLogo") : t("uploadLogo")}</span>
             <input
               ref={inputRef}
               type="file"
@@ -237,7 +233,7 @@ function LogoSection({ initialLogoUrl }: { initialLogoUrl: string | null }) {
               className="inline-flex items-center gap-2 rounded-lg border border-red-200 bg-white px-3 py-1.5 text-sm text-red-700 hover:bg-red-50 disabled:opacity-60"
             >
               <Trash2 className="h-4 w-4" strokeWidth={1.5} />
-              Remove
+              {t("remove")}
             </button>
           )}
         </div>

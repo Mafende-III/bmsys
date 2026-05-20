@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { formatRWF } from "@/lib/format";
 import { useCart } from "./CartProvider";
 
@@ -22,6 +23,7 @@ export function AddToCartForm({
   };
 }) {
   const router = useRouter();
+  const t = useTranslations("sell");
   const { addItem } = useCart();
 
   const defaultUnit: "UNIT" | "CARTON" = product.sellableAsUnit
@@ -85,7 +87,9 @@ export function AddToCartForm({
 
       {/* Selling unit — two big tap cards */}
       <div>
-        <p className="mb-2 text-sm font-medium text-zinc-700">Selling as</p>
+        <p className="mb-2 text-sm font-medium text-zinc-700">
+          {t("sellingAs")}
+        </p>
         <div className="grid grid-cols-2 gap-3">
           <button
             type="button"
@@ -100,7 +104,7 @@ export function AddToCartForm({
                 : "border-zinc-300 bg-white text-zinc-900 hover:border-zinc-400"
             }`}
           >
-            <p className="text-base font-semibold">Single</p>
+            <p className="text-base font-semibold">{t("asUnits")}</p>
             <p
               className={`mt-1 font-mono text-sm tabular-nums ${saleUnit === "UNIT" ? "text-zinc-200" : "text-zinc-700"}`}
             >
@@ -120,7 +124,7 @@ export function AddToCartForm({
                 : "border-zinc-300 bg-white text-zinc-900 hover:border-zinc-400"
             }`}
           >
-            <p className="text-base font-semibold">Whole carton</p>
+            <p className="text-base font-semibold">{t("asCartons")}</p>
             <p
               className={`mt-1 font-mono text-sm tabular-nums ${saleUnit === "CARTON" ? "text-zinc-200" : "text-zinc-700"}`}
             >
@@ -132,7 +136,7 @@ export function AddToCartForm({
 
       {/* Quantity stepper — large */}
       <div>
-        <p className="mb-2 text-sm font-medium text-zinc-700">How many?</p>
+        <p className="mb-2 text-sm font-medium text-zinc-700">{t("howMany")}</p>
         <div className="flex items-center gap-3">
           <button
             type="button"
@@ -191,7 +195,7 @@ export function AddToCartForm({
         onClick={handleAdd}
         className="w-full rounded-2xl bg-zinc-900 px-5 py-5 text-lg font-semibold text-white shadow-md transition hover:bg-zinc-800 active:scale-[0.98]"
       >
-        Add to cart
+        {t("addToCart")}
       </button>
     </div>
   );

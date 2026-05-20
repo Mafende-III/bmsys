@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import { requireOwner } from "@/lib/auth-guards";
 import { listAdjustments } from "@/lib/adjustments/queries";
 import {
@@ -27,6 +28,8 @@ export default async function AdjustmentsPage({
   const params = await searchParams;
   const reason = (params.reason as AdjustmentReason | "all" | undefined) ?? "all";
   const adjustments = await listAdjustments({ reason });
+  const t = await getTranslations("adjustments");
+  const tc = await getTranslations("common");
 
   return (
     <main className="mx-auto max-w-4xl p-4 sm:p-6">
@@ -36,19 +39,16 @@ export default async function AdjustmentsPage({
             href="/dashboard"
             className="text-sm text-zinc-600 hover:underline"
           >
-            ← Dashboard
+            ← {tc("dashboard")}
           </Link>
-          <h1 className="mt-1 text-2xl font-semibold">Losses</h1>
-          <p className="text-sm text-zinc-600">
-            Stock that didn&apos;t sell — broken, expired, taken, or given
-            away. Every entry needs a note.
-          </p>
+          <h1 className="mt-1 text-2xl font-semibold">{t("title")}</h1>
+          <p className="text-sm text-zinc-600">{t("subtitle")}</p>
         </div>
         <Link
           href="/adjustments/new"
           className="self-start rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 sm:self-auto"
         >
-          + Record loss
+          {t("new")}
         </Link>
       </header>
 

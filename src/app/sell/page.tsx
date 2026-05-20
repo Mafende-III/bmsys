@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Package } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 import { requireSeller } from "@/lib/auth-guards";
 import { iconForKey } from "@/lib/icons";
 import { listAllowedChannels } from "@/lib/permissions";
@@ -10,6 +11,8 @@ export default async function SellHome() {
   const user = await requireSeller();
   const allowedChannels = await listAllowedChannels(user.id);
   if (allowedChannels.length === 0) return null;
+  const t = await getTranslations("sell");
+  const tp = await getTranslations("products");
 
   const cookieChannelId = await getActiveChannelId();
   const allowedIds = new Set(allowedChannels.map((c) => c.id));
@@ -26,19 +29,15 @@ export default async function SellHome() {
       <div className="rounded-3xl border border-dashed border-zinc-300 bg-zinc-50 p-8 text-center">
         <Package className="mx-auto h-10 w-10 text-zinc-400" strokeWidth={1.5} />
         <p className="mt-3 text-base font-medium text-zinc-800">
-          Nothing to sell yet
+          {tp("title")}
         </p>
-        <p className="mt-1 text-sm text-zinc-600">
-          {user.role === "OWNER"
-            ? "Add products to put items on the shelf."
-            : "Ask the owner to add products."}
-        </p>
+        <p className="mt-1 text-sm text-zinc-600">{tp("emptyFiltered")}</p>
         {user.role === "OWNER" && (
           <Link
             href="/products/new"
             className="mt-4 inline-block rounded-2xl bg-zinc-900 px-5 py-3 text-sm font-medium text-white hover:bg-zinc-800"
           >
-            Add a product
+            {tp("new")}
           </Link>
         )}
       </div>
@@ -48,7 +47,7 @@ export default async function SellHome() {
   return (
     <div>
       <h2 className="mb-4 text-lg font-medium text-zinc-700">
-        Pick a category
+        {t("pickCategory")}
       </h2>
       <div
         data-tour="sell-category-grid"
@@ -76,7 +75,7 @@ export default async function SellHome() {
                 {c.name}
               </span>
               <span className="text-[10px] uppercase tracking-wide text-zinc-500">
-                {c.productCount} {c.productCount === 1 ? "item" : "items"}
+                {t("cartItems", { count: c.productCount })}
               </span>
             </Link>
           );

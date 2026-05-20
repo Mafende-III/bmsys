@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import { requireOwner } from "@/lib/auth-guards";
 import { formatRWF } from "@/lib/format";
 import { computeDailySummary } from "@/lib/reports/daily";
@@ -41,6 +42,9 @@ export default async function ReportsPage({
     day: "numeric",
   });
 
+  const t = await getTranslations("reports");
+  const tc = await getTranslations("common");
+
   return (
     <main className="mx-auto max-w-5xl p-4 sm:p-6">
       <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
@@ -49,9 +53,9 @@ export default async function ReportsPage({
             href="/dashboard"
             className="text-sm text-zinc-600 hover:underline"
           >
-            ← Dashboard
+            ← {tc("dashboard")}
           </Link>
-          <h1 className="mt-1 text-2xl font-semibold">Daily summary</h1>
+          <h1 className="mt-1 text-2xl font-semibold">{t("title")}</h1>
           <p className="text-sm text-zinc-600">{dateLabel}</p>
         </div>
         <form method="get" className="flex items-end gap-2">

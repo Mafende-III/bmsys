@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { AlertTriangle, LogOut } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 import { signOut } from "@/lib/auth";
 import { requireSeller } from "@/lib/auth-guards";
 import { getOpenSession } from "@/lib/cash-sessions/queries";
@@ -22,14 +23,16 @@ export default async function SellLayout({
   const user = await requireSeller();
   const allowedChannels = await listAllowedChannels(user.id);
   const { companyName, logoUrl } = await getSettings();
+  const t = await getTranslations("sell");
+  const tc = await getTranslations("common");
 
   if (allowedChannels.length === 0) {
     return (
       <main className="mx-auto flex min-h-screen max-w-md flex-col p-4 sm:p-6">
         <header className="flex items-start justify-between">
           <div>
-            <h1 className="text-2xl font-semibold">Sell</h1>
-            <p className="text-sm text-zinc-600">Hi {user.name}.</p>
+            <h1 className="text-2xl font-semibold">{companyName}</h1>
+            <p className="text-sm text-zinc-600">{user.name}</p>
           </div>
           <form
             action={async () => {
@@ -41,14 +44,13 @@ export default async function SellLayout({
               type="submit"
               className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-100"
             >
-              Sign out
+              {tc("signOut")}
             </button>
           </form>
         </header>
 
         <div className="mt-6 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
-          You aren&apos;t set up to sell on any channel yet. Ask the owner to
-          give you access to at least one channel.
+          {t("noPermission")}
         </div>
       </main>
     );
@@ -169,10 +171,10 @@ export default async function SellLayout({
           <div className="mx-4 mt-2 flex items-center gap-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800 sm:mx-auto sm:max-w-2xl">
             <AlertTriangle className="h-4 w-4 shrink-0" strokeWidth={2} />
             <p className="flex-1">
-              The till is closed. Cash sales will be refused.{" "}
+              {t("tillClosedWarning")}{" "}
               {user.role === "OWNER" && (
                 <Link href="/cash-sessions" className="font-medium underline">
-                  Open it
+                  {t("openIt")}
                 </Link>
               )}
             </p>

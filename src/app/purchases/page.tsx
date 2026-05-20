@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import { requireOwner } from "@/lib/auth-guards";
 import { formatRWF } from "@/lib/format";
 import { listPurchases, type PurchaseStatus } from "@/lib/purchases/queries";
@@ -27,6 +28,8 @@ export default async function PurchasesPage({
   const params = await searchParams;
   const status = validStatus(params.status);
   const purchases = await listPurchases({ status });
+  const t = await getTranslations("purchases");
+  const tc = await getTranslations("common");
 
   return (
     <main className="mx-auto max-w-4xl p-4 sm:p-6">
@@ -36,19 +39,16 @@ export default async function PurchasesPage({
             href="/dashboard"
             className="text-sm text-zinc-600 hover:underline"
           >
-            ← Dashboard
+            ← {tc("dashboard")}
           </Link>
-          <h1 className="mt-1 text-2xl font-semibold">Purchases</h1>
-          <p className="text-sm text-zinc-600">
-            {purchases.length}{" "}
-            {purchases.length === 1 ? "purchase" : "purchases"}
-          </p>
+          <h1 className="mt-1 text-2xl font-semibold">{t("title")}</h1>
+          <p className="text-sm text-zinc-600">{t("subtitle")}</p>
         </div>
         <Link
           href="/purchases/new"
           className="self-start rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 sm:self-auto"
         >
-          + New purchase
+          {t("new")}
         </Link>
       </header>
 

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import { requireOwner } from "@/lib/auth-guards";
 import { describeVariance } from "@/lib/copy";
 import { formatRWF } from "@/lib/format";
@@ -12,6 +13,8 @@ export default async function CashSessionsPage() {
     getOpenSession(),
     listSessions(50),
   ]);
+  const t = await getTranslations("cash");
+  const tc = await getTranslations("common");
 
   return (
     <main className="mx-auto max-w-3xl p-4 sm:p-6">
@@ -20,12 +23,10 @@ export default async function CashSessionsPage() {
           href="/dashboard"
           className="text-sm text-zinc-600 hover:underline"
         >
-          ← Dashboard
+          ← {tc("dashboard")}
         </Link>
-        <h1 className="mt-1 text-2xl font-semibold">Cash sessions</h1>
-        <p className="text-sm text-zinc-600">
-          Open the till with the float, close with the count.
-        </p>
+        <h1 className="mt-1 text-2xl font-semibold">{t("title")}</h1>
+        <p className="text-sm text-zinc-600">{t("subtitle")}</p>
       </header>
 
       {open ? (

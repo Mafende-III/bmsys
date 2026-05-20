@@ -1,10 +1,13 @@
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import { requireOwner } from "@/lib/auth-guards";
 import { listCategoriesWithCounts } from "@/lib/categories/queries";
 
 export default async function CategoriesPage() {
   await requireOwner();
   const categories = await listCategoriesWithCounts();
+  const t = await getTranslations("categories");
+  const tc = await getTranslations("common");
 
   return (
     <main className="mx-auto max-w-4xl p-4 sm:p-6">
@@ -14,20 +17,17 @@ export default async function CategoriesPage() {
             href="/dashboard"
             className="text-sm text-zinc-600 hover:underline"
           >
-            ← Dashboard
+            ← {tc("dashboard")}
           </Link>
-          <h1 className="mt-1 text-2xl font-semibold">Categories</h1>
-          <p className="text-sm text-zinc-600">
-            {categories.length}{" "}
-            {categories.length === 1 ? "category" : "categories"}
-          </p>
+          <h1 className="mt-1 text-2xl font-semibold">{t("title")}</h1>
+          <p className="text-sm text-zinc-600">{t("subtitle")}</p>
         </div>
         <Link
           href="/categories/new"
           data-tour="categories-new"
           className="self-start rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 sm:self-auto"
         >
-          + New category
+          {t("new")}
         </Link>
       </header>
 

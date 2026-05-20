@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import { requireOwner } from "@/lib/auth-guards";
 import { formatRWF } from "@/lib/format";
 import {
@@ -34,6 +35,8 @@ export default async function ExpensesPage({
   ]);
 
   const totalShown = expenses.reduce((s, e) => s + e.amount, 0);
+  const t = await getTranslations("expenses");
+  const tc = await getTranslations("common");
 
   return (
     <main className="mx-auto max-w-5xl p-4 sm:p-6">
@@ -43,13 +46,11 @@ export default async function ExpensesPage({
             href="/dashboard"
             className="text-sm text-zinc-600 hover:underline"
           >
-            ← Dashboard
+            ← {tc("dashboard")}
           </Link>
-          <h1 className="mt-1 text-2xl font-semibold">Expenses</h1>
+          <h1 className="mt-1 text-2xl font-semibold">{t("title")}</h1>
           <p className="text-sm text-zinc-600">
-            {expenses.length}{" "}
-            {expenses.length === 1 ? "expense" : "expenses"} ·{" "}
-            {formatRWF(totalShown)}
+            {expenses.length} · {formatRWF(totalShown)}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -57,13 +58,13 @@ export default async function ExpensesPage({
             href="/expenses/recurring"
             className="rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-medium hover:bg-zinc-50"
           >
-            Recurring →
+            {t("recurring.title")} →
           </Link>
           <Link
             href="/expenses/new"
             className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800"
           >
-            + New expense
+            {t("new")}
           </Link>
         </div>
       </header>

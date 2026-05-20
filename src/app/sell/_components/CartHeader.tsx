@@ -2,10 +2,12 @@
 
 import Link from "next/link";
 import { ArrowRight, ShoppingCart } from "lucide-react";
+import { useTranslations } from "next-intl";
 import { formatRWF } from "@/lib/format";
 import { useCart } from "./CartProvider";
 
 export function CartHeader({ channelName }: { channelName: string }) {
+  const t = useTranslations("sell");
   const { cart, total, ready } = useCart();
   const itemCount = cart?.items.reduce((s, i) => s + i.qty, 0) ?? 0;
   const hasItems = ready && itemCount > 0;
@@ -23,10 +25,10 @@ export function CartHeader({ channelName }: { channelName: string }) {
           <ShoppingCart className="h-6 w-6 shrink-0" strokeWidth={2} />
           <div className="min-w-0">
             <p className="text-xs uppercase tracking-wide text-zinc-300">
-              Selling on {channelName}
+              {t("sellingOn", { channel: channelName })}
             </p>
             <p className="truncate text-sm font-medium">
-              {itemCount} {itemCount === 1 ? "item" : "items"}
+              {t("cartItems", { count: itemCount })}
             </p>
           </div>
         </div>
@@ -36,7 +38,7 @@ export function CartHeader({ channelName }: { channelName: string }) {
               {formatRWF(total)}
             </p>
             <p className="text-[10px] uppercase tracking-wide text-zinc-300">
-              Tap to pay
+              {t("tapToPay")}
             </p>
           </div>
           <ArrowRight className="h-5 w-5 shrink-0" strokeWidth={2} />

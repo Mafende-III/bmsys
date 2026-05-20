@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { requireSeller } from "@/lib/auth-guards";
 import { formatRWF } from "@/lib/format";
 import { iconForKey } from "@/lib/icons";
@@ -27,6 +28,7 @@ export default async function SellCategoryPage({
       : (allowedChannels[0]?.id ?? "");
   if (!activeChannelId) return null;
 
+  const t = await getTranslations("sell");
   const { slug } = await params;
   const category = await findCategoryBySlug(slug);
   if (!category) notFound();
@@ -42,7 +44,7 @@ export default async function SellCategoryPage({
           href="/sell"
           className="inline-flex items-center gap-1 text-sm text-zinc-600 hover:underline"
         >
-          ← All categories
+          ← {t("backToCategories")}
         </Link>
         <h2 className="mt-2 flex items-center gap-3 text-2xl font-semibold">
           {category.iconKey ? (
