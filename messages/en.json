@@ -75,7 +75,9 @@
     "systemConfig": "System config",
     "systemConfigSubtitle": "Branding, theme, logo",
     "audit": "Activity log",
-    "auditSubtitle": "Sign-ins and unusual events"
+    "auditSubtitle": "Sign-ins and unusual events",
+    "analytics": "Analytics",
+    "analyticsSubtitle": "Profit, top sellers, stock health"
   },
   "sell": {
     "channel": "Channel",
@@ -368,6 +370,42 @@
       "createNoChannelWarn": "No channels exist yet. Create at least one first.",
       "create": "Add user"
     }
+  },
+  "analytics": {
+    "title": "Analytics",
+    "subtitle": "How the shop is performing. Pick a period and read the numbers at a glance.",
+    "dashboardTitle": "Analytics",
+    "dashboardSubtitle": "Net profit, top sellers, stock health",
+    "periodLabel": "Period",
+    "periodMonth": "This month",
+    "periodLastMonth": "Last month",
+    "period7d": "Last 7 days",
+    "period30d": "Last 30 days",
+    "kpiRevenue": "Revenue",
+    "kpiExpenses": "Expenses",
+    "kpiCogs": "Cost of stock sold",
+    "kpiNet": "Net (after expenses)",
+    "kpiSalesCount": "Sales",
+    "vsPrev": "{delta} vs last period",
+    "salesByDay": "Sales by day",
+    "salesByDayHint": "Tap the highest and lowest bars to spot patterns.",
+    "highestDay": "Best day",
+    "lowestDay": "Quietest day",
+    "topProducts": "Top sellers",
+    "topProductsHint": "Most units moved in this period.",
+    "topProductUnits": "{count} units",
+    "channels": "Channels",
+    "channelsHint": "Where the sales happened.",
+    "expenses": "Expenses by category",
+    "expensesHint": "Biggest cost buckets this period.",
+    "stockHealth": "Stock health",
+    "stockValue": "Stock on hand",
+    "lowStockCount": "{count, plural, =0 {No products running low} =1 {# product running low} other {# products running low}}",
+    "outOfStockCount": "{count, plural, =0 {Everything in stock} =1 {# product out of stock} other {# products out of stock}}",
+    "stockValueNote": "Valued at current cost.",
+    "viewAll": "View all",
+    "noData": "Nothing here yet for this period.",
+    "currentCostNote": "Cost of stock sold is approximate (uses current cost). Historical batch costing comes later."
   },
   "audit": {
     "title": "Activity log",

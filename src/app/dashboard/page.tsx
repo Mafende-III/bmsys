@@ -9,6 +9,7 @@ import {
   Settings as SettingsIcon,
   ShieldCheck,
   ShoppingBag,
+  TrendingUp,
   Store,
   Tag,
   Truck,
@@ -167,7 +168,14 @@ export default async function DashboardPage() {
         <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-zinc-500">
           {t("reportsUsers")}
         </h3>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+          <DashCard
+            href="/analytics"
+            Icon={TrendingUp}
+            title={t("analytics")}
+            subtitle={t("analyticsSubtitle")}
+            tone="active"
+          />
           <DashCard
             href="/reports"
             Icon={BarChart3}

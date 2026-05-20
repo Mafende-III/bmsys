@@ -75,7 +75,9 @@
     "systemConfig": "Igenamiterere",
     "systemConfigSubtitle": "Ikirango, ibara, logo",
     "audit": "Inyandiko z'ibikorwa",
-    "auditSubtitle": "Kwinjira n'ibyabaye bidasanzwe"
+    "auditSubtitle": "Kwinjira n'ibyabaye bidasanzwe",
+    "analytics": "Imibare",
+    "analyticsSubtitle": "Inyungu, ibyacurutswe cyane, ububiko"
   },
   "sell": {
     "channel": "Inzira",
@@ -368,6 +370,42 @@
       "createNoChannelWarn": "Nta nzira iraho. Andika byibura imwe mbere.",
       "create": "Ongeraho umukoresha"
     }
+  },
+  "analytics": {
+    "title": "Imibare",
+    "subtitle": "Uburyo butike igenda. Hitamo igihe maze urebe imibare vuba.",
+    "dashboardTitle": "Imibare",
+    "dashboardSubtitle": "Inyungu, ibyacurutswe cyane, ububiko",
+    "periodLabel": "Igihe",
+    "periodMonth": "Uku kwezi",
+    "periodLastMonth": "Ukwezi gushize",
+    "period7d": "Iminsi 7 ishize",
+    "period30d": "Iminsi 30 ishize",
+    "kpiRevenue": "Ibyacurujwe",
+    "kpiExpenses": "Amafaranga yasohotse",
+    "kpiCogs": "Igiciro cy'ibyacurujwe",
+    "kpiNet": "Inyungu (nyuma y'amafaranga)",
+    "kpiSalesCount": "Ibyacurujwe (umubare)",
+    "vsPrev": "{delta} ugereranyije n'igihe gishize",
+    "salesByDay": "Ibyacurujwe ku munsi",
+    "salesByDayHint": "Hitamo umunsi mwiza n'umunsi muke kugira ngo umenye uko bigenda.",
+    "highestDay": "Umunsi mwiza",
+    "lowestDay": "Umunsi muke",
+    "topProducts": "Ibyacurutswe cyane",
+    "topProductsHint": "Ibyagiye cyane muri iki gihe.",
+    "topProductUnits": "{count} imwe",
+    "channels": "Inzira",
+    "channelsHint": "Aho ibyacurujwe byabaye.",
+    "expenses": "Amafaranga ku itsinda",
+    "expensesHint": "Aho amafaranga menshi yagiye muri iki gihe.",
+    "stockHealth": "Ubuzima bw'ububiko",
+    "stockValue": "Agaciro k'ububiko",
+    "lowStockCount": "{count, plural, =0 {Nta gicuruzwa kiri hasi} =1 {# igicuruzwa kiri hasi} other {# ibicuruzwa biri hasi}}",
+    "outOfStockCount": "{count, plural, =0 {Byose biri mu bubiko} =1 {# igicuruzwa cyashize} other {# ibicuruzwa byashize}}",
+    "stockValueNote": "Bibarwa ku giciro cy'ubu.",
+    "viewAll": "Reba byose",
+    "noData": "Nta kintu kiri muri iki gihe.",
+    "currentCostNote": "Igiciro cy'ibyacurujwe ni igenekereje (gikoresha igiciro cy'ubu). Igikora ku ma batches kizaza."
   },
   "audit": {
     "title": "Inyandiko z'ibikorwa",
