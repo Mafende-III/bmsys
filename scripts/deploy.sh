@@ -1,27 +1,20 @@
 #!/usr/bin/env bash
 #
 # scripts/deploy.sh
-# Run on the VPS to deploy a new version after `git pull`.
+# Run on the VPS to deploy a new version. Pull, rebuild app image, restart.
+# Postgres is preserved (volume not touched). Migrations run automatically
+# in docker-entrypoint.sh on app container start.
 set -euo pipefail
 
-cd /var/www/bms
+cd /docker/bmsys
 
 echo "=== Pulling latest ==="
 git pull origin main
 
-echo "=== Installing dependencies ==="
-pnpm install --frozen-lockfile
+echo "=== Rebuilding app + restarting ==="
+docker compose -f docker-compose.prod.yml up -d --build app
 
-echo "=== Running migrations ==="
-pnpm prisma migrate deploy
-
-echo "=== Generating Prisma client ==="
-pnpm prisma generate
-
-echo "=== Building ==="
-pnpm build
-
-echo "=== Restarting PM2 ==="
-pm2 reload ecosystem.config.js --update-env
+echo "=== Status ==="
+docker compose -f docker-compose.prod.yml ps
 
 echo "Done."

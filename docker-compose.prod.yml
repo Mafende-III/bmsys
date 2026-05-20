@@ -1,0 +1,83 @@
+# bmsys Production Compose (Traefik-integrated)
+#
+# Deploy target: Hostinger VPS at /docker/bmsys/
+# Shared Traefik lives at /docker/traefik/ and owns ports 80/443.
+# Routing rules for bmsys live at /docker/traefik/dynamic/bmsys.yml
+#
+# Deploy:
+#   cd /docker/bmsys
+#   docker compose -f docker-compose.prod.yml up -d --build
+#
+# See docs/HOSTINGER_DEPLOYMENT.md for the full runbook.
+
+services:
+  # ============================================================
+  # PostgreSQL — internal network only, no public port.
+  # Schema is applied by the app container's docker-entrypoint.sh
+  # via `prisma migrate deploy` on every start (idempotent).
+  # ============================================================
+  postgres:
+    image: postgres:16-alpine
+    container_name: bmsys-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${DB_NAME:-bmsys}
+      POSTGRES_USER: ${DB_USER:-bmsys}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8"
+    volumes:
+      - pg_data:/var/lib/postgresql/data
+    networks:
+      - internal
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-bmsys} -d ${DB_NAME:-bmsys}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+
+  # ============================================================
+  # Next.js app — public via Traefik on the `proxy` network.
+  # Runs `prisma migrate deploy` on start, then `node server.js`.
+  # ============================================================
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: bmsys-app
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      HOSTNAME: 0.0.0.0
+      DATABASE_URL: postgres://${DB_USER:-bmsys}:${DB_PASSWORD}@postgres:5432/${DB_NAME:-bmsys}?schema=public
+      AUTH_SECRET: ${AUTH_SECRET:?AUTH_SECRET is required}
+      AUTH_URL: ${PUBLIC_URL:-https://bmsys.streamlinexperts.rw}
+      AUTH_TRUST_HOST: "true"
+      NEXT_PUBLIC_APP_URL: ${PUBLIC_URL:-https://bmsys.streamlinexperts.rw}
+      OWNER_NAME: ${OWNER_NAME:-Owner}
+      OWNER_PHONE: ${OWNER_PHONE:?OWNER_PHONE is required}
+      OWNER_PIN: ${OWNER_PIN:?OWNER_PIN is required}
+    networks:
+      - internal
+      - proxy
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:3000/login"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+
+volumes:
+  pg_data:
+
+networks:
+  # Private — only bmsys containers (the postgres lives here).
+  internal:
+    driver: bridge
+  # Shared with Traefik. Created once globally by the Traefik stack.
+  proxy:
+    external: true

@@ -1,0 +1,30 @@
+# bmsys Traefik routing — copy this file to
+#   /docker/traefik/dynamic/bmsys.yml
+# on the VPS. Traefik picks it up automatically (file provider, watch: true).
+#
+# Prereqs:
+# - Cloudflare Origin Cert at /docker/traefik/certs/bmsys.crt & bmsys.key
+# - TLS declaration at /docker/traefik/dynamic/bmsys-tls.yml (see below)
+# - `proxy` network exists (created by the Traefik stack)
+# - bmsys app is on the `proxy` network (see docker-compose.prod.yml)
+
+http:
+  routers:
+    bmsys-app:
+      rule: "Host(`bmsys.streamlinexperts.rw`)"
+      entryPoints: [websecure]
+      service: bmsys-app
+      tls: {}
+
+  services:
+    bmsys-app:
+      loadBalancer:
+        servers:
+          - url: "http://bmsys-app:3000"
+
+# --- Companion TLS file (save as /docker/traefik/dynamic/bmsys-tls.yml) ---
+#
+# tls:
+#   certificates:
+#     - certFile: /certs/bmsys.crt
+#       keyFile: /certs/bmsys.key

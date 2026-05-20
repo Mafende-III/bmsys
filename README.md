@@ -55,85 +55,55 @@ Change these in `.env` (`OWNER_PHONE`, `OWNER_PIN`) before seeding, and CHANGE T
 
 ## VPS deployment (`bmsys.streamlinexperts.rw`)
 
-### One-time VPS setup (~15 minutes)
+bmsys ships as a 2-container Docker stack (`postgres` + Next.js `app`) behind the **shared Traefik proxy** on the Hostinger VPS — the same convention as `D-RNEC` and `IEWRS`. Cloudflare provides edge SSL; Traefik terminates TLS with a Cloudflare Origin Cert.
 
-SSH to the VPS as root.
+**Full runbook:** `docs/HOSTINGER_DEPLOYMENT.md`. Short version:
 
 ```bash
-# 1. Clone the repo (cloned dir is /var/www/bms even though the repo is bmsys —
-#    deploy paths, DB name, and PM2 app are intentionally named "bms" internally)
-git clone https://github.com/Mafende-III/bmsys.git /var/www/bms
-cd /var/www/bms
+# On the VPS, with Traefik already running at /docker/traefik/
+git clone https://github.com/Mafende-III/bmsys.git /docker/bmsys
+cd /docker/bmsys
 
-# 2. Install Postgres, Node, pnpm, PM2, Caddy, rclone, firewall
-sudo bash scripts/setup-vps.sh
-# This creates the bms database and prints DATABASE_URL. SAVE IT.
-
-# 3. Configure environment
-cp .env.example .env
-# Edit .env: paste DATABASE_URL, set AUTH_SECRET, OWNER_PHONE, OWNER_PIN
+# Create .env (DB_PASSWORD, AUTH_SECRET, OWNER_*) — see docs/HOSTINGER_DEPLOYMENT.md
 nano .env
 
-# 4. Install dependencies, run migrations, seed, build
-pnpm install --frozen-lockfile
-pnpm prisma migrate deploy
-pnpm prisma:seed
-pnpm build
+# Build + start
+docker compose -f docker-compose.prod.yml up -d --build
 
-# 5. Start the app via PM2
-pm2 start ecosystem.config.js
-pm2 save
-pm2 startup   # follow the printed instruction
+# Seed the owner user (one time)
+docker compose exec app node ./node_modules/prisma/build/index.js db seed
 
-# 6. Configure Caddy for HTTPS
-sudo cp Caddyfile /etc/caddy/Caddyfile
-sudo systemctl reload caddy
-# DNS: point bmsys.streamlinexperts.rw A record to this VPS's IP.
-# Caddy will auto-issue Let's Encrypt cert on first request.
-
-# 7. Set up Google Drive backups (interactive, one time)
-sudo bash scripts/setup-rclone.sh
-
-# 8. Install nightly backup cron
-sudo BACKUP_NOTIFY_EMAIL=you@example.com bash scripts/install-cron.sh
+# Wire Traefik routing
+cp infrastructure/traefik-dynamic.yml /docker/traefik/dynamic/bmsys.yml
 ```
 
-After step 8, browse to `https://bmsys.streamlinexperts.rw` and sign in.
+Migrations run automatically on every container start (`scripts/docker-entrypoint.sh` → `prisma migrate deploy`).
 
 ### Ongoing deployments
 
-Push to `main` on GitHub. The workflow runs the golden test, then SSHes into the VPS and runs `scripts/deploy.sh` which pulls, migrates, builds, and restarts PM2.
+Push to `main`. GitHub Actions runs the golden test, then SSHes to the VPS and runs `scripts/deploy.sh`, which pulls, rebuilds the app image, and restarts. Postgres volume is preserved.
 
-Required GitHub Actions secrets:
-- `VPS_HOST` — e.g. `bmsys.streamlinexperts.rw` or the IP
-- `VPS_USER` — e.g. `root` or a deploy user with sudo for PM2
-- `VPS_SSH_KEY` — private key with access
-- `VPS_SSH_PORT` — optional, default 22
+Required GitHub Actions secrets: `VPS_HOST`, `VPS_USER`, `VPS_SSH_KEY`, `VPS_SSH_PORT` (optional).
 
 ---
 
 ## Backups
 
-Three layers, one cron line at 02:30 every night:
+```bash
+# Manual snapshot
+docker compose -f /docker/bmsys/docker-compose.prod.yml exec -T postgres \
+  pg_dump -U bmsys bmsys | gzip > /var/backups/bmsys/bmsys-$(date +%F).sql.gz
+```
 
-1. **Local** (`/var/backups/bms/`): nightly `pg_dump`, gzipped, last 7 days kept.
-2. **Google Drive** (`gdrive:bms-backups/`): pushed via rclone with rotation:
-   - `daily/` keeps last 30
-   - `weekly/` keeps last 12 (Sundays only)
-   - `monthly/` keeps last 12 (1st of month only)
-3. **Email status** every morning. Subject says `OK`, `WARN`, or `FAILED` so you know in seconds.
-
-Set `BACKUP_NOTIFY_EMAIL` in `/etc/environment` or root's crontab. Requires `mailutils` configured to send via SMTP, or swap in your provider's API in `scripts/backup-status-email.sh`.
+A nightly cron + off-server push (rclone to Google Drive) replicating the previous bare-metal pattern is a follow-up task — the docker-compose stack persists Postgres in the named `pg_data` volume, so day-1 data isn't at risk, but off-server copies are not yet wired.
 
 ### Restoring
 
 ```bash
-# Pick a file from /var/backups/bms/ or download from Google Drive
-gunzip -c /var/backups/bms/bms-2026-05-04.sql.gz \
-  | psql "$DATABASE_URL"
+gunzip -c /var/backups/bmsys/bmsys-YYYY-MM-DD.sql.gz | \
+  docker compose -f /docker/bmsys/docker-compose.prod.yml exec -T postgres \
+    psql -U bmsys -d bmsys
 ```
-
-For point-in-time recovery, you would need WAL archiving. Out of scope for Phase 1.
 
 ---
 

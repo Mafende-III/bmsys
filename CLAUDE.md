@@ -11,14 +11,14 @@ A web-based management system for a beverage retail business in Kigali, Rwanda. 
 ## Stack (locked)
 
 - **Next.js 15 App Router** + TypeScript strict mode (`noUncheckedIndexedAccess` enabled)
-- **PostgreSQL 16** self-hosted on the same VPS (`localhost:5432`)
-- **Prisma 6** ORM, migrations in git
+- **PostgreSQL 16** in a Docker container alongside the app (production: `bmsys-postgres` on the internal compose network; local dev: `bmsys-pg` on host port 5434)
+- **Prisma 6** ORM, migrations in git, applied at container start by `scripts/docker-entrypoint.sh`
 - **Auth.js v5** with PIN-based credentials, argon2 hashing
 - **Tailwind CSS** + minimal custom components (no shadcn yet, can add later)
 - **Server Actions** for all mutations, never API routes for internal use
 - **pg-boss** for background jobs (subscriptions, recurring expenses, reconciliation)
 - **Vitest** for tests, **Playwright** for end-to-end
-- **PM2** + **Caddy** in production
+- **Docker Compose** + shared **Traefik** in production (Hostinger VPS), Cloudflare Origin Cert for TLS — same convention as `D-RNEC` and `IEWRS`. Deploy runbook: `docs/HOSTINGER_DEPLOYMENT.md`.
 - Currency: **integer RWF, no decimals anywhere**. Use `formatRWF()` from `src/lib/format.ts` for display.
 
 Do not introduce new frameworks, ORMs, or styling libraries without asking.
