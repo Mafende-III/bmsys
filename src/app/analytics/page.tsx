@@ -18,6 +18,7 @@ import {
   getTopProducts,
 } from "@/lib/analytics/queries";
 import {
+  DEFAULT_PERIOD,
   isPeriodKey,
   PERIOD_KEYS,
   resolvePeriod,
@@ -28,7 +29,27 @@ import { DonutChart } from "./_components/DonutChart";
 import { SalesByDayChart } from "./_components/SalesByDayChart";
 import { TopSellersChart } from "./_components/TopSellersChart";
 
-type SearchParams = { period?: string };
+type SearchParams = { period?: string; from?: string; to?: string };
+
+function parseDateParam(s: string | undefined): Date | null {
+  if (!s) return null;
+  // "yyyy-MM-dd" — anchor to local midnight to match user intent.
+  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
+  if (!m) return null;
+  const y = Number(m[1]);
+  const mo = Number(m[2]);
+  const d = Number(m[3]);
+  const date = new Date(y, mo - 1, d);
+  if (Number.isNaN(date.getTime())) return null;
+  return date;
+}
+
+function toYmd(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, "0");
+  const day = String(d.getDate()).padStart(2, "0");
+  return `${y}-${m}-${day}`;
+}
 
 export default async function AnalyticsPage({
   searchParams,
@@ -37,8 +58,15 @@ export default async function AnalyticsPage({
 }) {
   await requireOwner();
   const sp = await searchParams;
-  const periodKey: PeriodKey = isPeriodKey(sp.period) ? sp.period : "month";
-  const period = resolvePeriod(periodKey);
+  const periodKey: PeriodKey = isPeriodKey(sp.period)
+    ? sp.period
+    : DEFAULT_PERIOD;
+  const customFrom = parseDateParam(sp.from);
+  const customTo = parseDateParam(sp.to);
+  const period = resolvePeriod(periodKey, new Date(), {
+    customFrom,
+    customTo,
+  });
 
   const [kpis, daily, top, channels, expensesByCat, stock] = await Promise.all([
     getOverviewKPIs(period),
@@ -53,11 +81,18 @@ export default async function AnalyticsPage({
   const tc = await getTranslations("common");
 
   const periodLabel: Record<PeriodKey, string> = {
+    week: t("periodWeek"),
     month: t("periodMonth"),
     last_month: t("periodLastMonth"),
     "7d": t("period7d"),
     "30d": t("period30d"),
+    custom: t("periodCustom"),
   };
+
+  // Pre-fill date inputs with the resolved range so the user can
+  // tweak from a familiar starting point.
+  const fromValue = toYmd(period.from);
+  const toValue = toYmd(period.to);
 
   const maxDay = daily.reduce(
     (m, d) => (d.total > m.total ? d : m),
@@ -82,7 +117,11 @@ export default async function AnalyticsPage({
           <h1 className="mt-1 text-2xl font-semibold">{t("title")}</h1>
           <p className="text-sm text-zinc-600">{t("subtitle")}</p>
         </div>
-        <form method="get" className="flex items-end gap-2" data-tour="analytics-period">
+        <form
+          method="get"
+          className="flex flex-wrap items-end gap-2"
+          data-tour="analytics-period"
+        >
           <label className="block">
             <span className="text-xs font-medium text-zinc-700">
               {t("periodLabel")}
@@ -99,12 +138,37 @@ export default async function AnalyticsPage({
               ))}
             </select>
           </label>
+          <label className="block">
+            <span className="text-xs font-medium text-zinc-700">
+              {t("fromDate")}
+            </span>
+            <input
+              type="date"
+              name="from"
+              defaultValue={fromValue}
+              className="mt-1 block rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+            />
+          </label>
+          <label className="block">
+            <span className="text-xs font-medium text-zinc-700">
+              {t("toDate")}
+            </span>
+            <input
+              type="date"
+              name="to"
+              defaultValue={toValue}
+              className="mt-1 block rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+            />
+          </label>
           <button
             type="submit"
             className="rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-medium hover:bg-zinc-50"
           >
             {tc("filter")}
           </button>
+          <p className="basis-full text-[10px] text-zinc-500">
+            {t("customDatesHint")}
+          </p>
         </form>
       </header>
 

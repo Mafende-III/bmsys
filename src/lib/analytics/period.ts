@@ -5,9 +5,24 @@
  * delta comparisons.
  */
 
-export type PeriodKey = "month" | "last_month" | "7d" | "30d";
+export type PeriodKey =
+  | "week"
+  | "month"
+  | "last_month"
+  | "7d"
+  | "30d"
+  | "custom";
 
-export const PERIOD_KEYS: PeriodKey[] = ["month", "last_month", "7d", "30d"];
+export const PERIOD_KEYS: PeriodKey[] = [
+  "week",
+  "month",
+  "last_month",
+  "7d",
+  "30d",
+  "custom",
+];
+
+export const DEFAULT_PERIOD: PeriodKey = "week";
 
 export type Period = {
   key: PeriodKey;
@@ -46,7 +61,63 @@ function endOfMonth(d: Date): Date {
   return new Date(d.getFullYear(), d.getMonth() + 1, 0, 23, 59, 59, 999);
 }
 
-export function resolvePeriod(key: PeriodKey, now: Date = new Date()): Period {
+/**
+ * Mon-Sun week, matching standard practice in Rwanda. The JS
+ * `getDay()` returns 0=Sun..6=Sat so we shift to get Monday=0.
+ */
+function startOfWeek(d: Date): Date {
+  const c = startOfDay(d);
+  const monIdx = (c.getDay() + 6) % 7; // Mon=0..Sun=6
+  c.setDate(c.getDate() - monIdx);
+  return c;
+}
+
+function endOfWeek(d: Date): Date {
+  const s = startOfWeek(d);
+  return endOfDay(addDays(s, 6));
+}
+
+/**
+ * Days inclusive between two dates (i.e. same-day = 1).
+ */
+function dayCountInclusive(from: Date, to: Date): number {
+  const ms = endOfDay(to).getTime() - startOfDay(from).getTime();
+  return Math.round(ms / (24 * 60 * 60 * 1000)) + 1;
+}
+
+export type ResolveOpts = {
+  /** Used only when key === "custom". */
+  customFrom?: Date | null;
+  customTo?: Date | null;
+};
+
+export function resolvePeriod(
+  key: PeriodKey,
+  now: Date = new Date(),
+  opts: ResolveOpts = {},
+): Period {
+  if (key === "week") {
+    const from = startOfWeek(now);
+    const to = endOfWeek(now);
+    const prevTo = endOfDay(addDays(from, -1));
+    const prevFrom = startOfDay(addDays(from, -7));
+    return { key, from, to, prevFrom, prevTo, days: 7 };
+  }
+  if (key === "custom") {
+    // Fall back to "this week" if the dates are missing or inverted —
+    // a friendlier default than throwing.
+    const cFrom = opts.customFrom ?? null;
+    const cTo = opts.customTo ?? null;
+    if (!cFrom || !cTo || cFrom > cTo) {
+      return resolvePeriod("week", now);
+    }
+    const from = startOfDay(cFrom);
+    const to = endOfDay(cTo);
+    const days = dayCountInclusive(from, to);
+    const prevTo = endOfDay(addDays(from, -1));
+    const prevFrom = startOfDay(addDays(prevTo, -(days - 1)));
+    return { key, from, to, prevFrom, prevTo, days };
+  }
   if (key === "month") {
     const from = startOfMonth(now);
     const to = endOfMonth(now);
