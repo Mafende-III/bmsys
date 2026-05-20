@@ -60,6 +60,13 @@ COPY --from=builder --chown=nextjs:nodejs /app/pnpm-lock.yaml ./pnpm-lock.yaml
 COPY --chown=nextjs:nodejs scripts/docker-entrypoint.sh ./docker-entrypoint.sh
 RUN chmod +x docker-entrypoint.sh
 
+# Pre-create the uploads dir owned by nextjs. When Docker initialises
+# the bmsys_uploads named volume from this image, it copies the dir
+# contents AND ownership — so the volume mount point ends up writable
+# by the nextjs user. The entrypoint also does mkdir -p defensively
+# in case the volume already exists from a previous deploy.
+RUN mkdir -p /app/uploads && chown -R nextjs:nodejs /app/uploads
+
 USER nextjs
 EXPOSE 3000
 
