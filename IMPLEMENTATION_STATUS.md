@@ -1,7 +1,9 @@
 # BMSys — Implementation Status
 
-**Last updated:** 2026-05-19
+**Last updated:** 2026-05-20
 **Phase 1:** ✅ Complete · 136 tests across 16 files, all green
+**Production:** ✅ **LIVE** at https://bmsys.streamlinexperts.rw
+**UX/UI polish:** 🚧 In progress
 **Phase 2+:** Not yet started
 
 ---
@@ -28,7 +30,7 @@ The shop can fully operate on bmsys: catalog → receive stock → sell → mana
 | **Recurring expenses**: WEEKLY/MONTHLY with manual "run now" | ✅ | `/expenses/recurring` |
 | **Daily summary**: sales/expenses/top products/stock/cash by date | ✅ | `/reports` |
 | **Golden integrity test** | ✅ | `src/tests/golden.test.ts` |
-| **Docker + Traefik deploy** | ✅ Code ready, VPS deploy in progress | `docker-compose.prod.yml`, `Dockerfile`, `infrastructure/traefik-dynamic.yml`, `docs/HOSTINGER_DEPLOYMENT.md` |
+| **Docker + Traefik deploy** | ✅ **LIVE on VPS** | https://bmsys.streamlinexperts.rw — Cloudflare → Traefik (wildcard `*.streamlinexperts.rw` cert) → `bmsys-app:3000` → internal `bmsys-postgres:5432` |
 
 ## Architectural invariants honoured
 
@@ -113,6 +115,35 @@ Not yet started:
 - Thermal printer (ESC/POS Bluetooth)
 - Mobile Money API integration
 - Customer portal + online ordering (`customer_users`, Phase 4 auth namespace)
+
+## UX / UI polish — Phase 1.5 (in progress)
+
+Phase 1 shipped feature-complete but admin-tool-feel. The next pass
+makes it usable by an owner / seller with no tech background, on
+mostly phones, with clear language and primary actions.
+
+Tracking in this section. Goals:
+
+1. **Plain-language copy.** Replace dev terms with shopkeeper terms.
+   - "SKU" → "Code" or just hide on small screens
+   - "Sellable as unit / carton" → "Sell singles? · Sell whole cartons?"
+   - "Deactivate channel" → "Hide channel from sale screen"
+   - "ADJUSTMENT_BREAKAGE" → "Broken" (the enum stays in the DB; only labels change)
+   - "Variance: -200 RWF (short)" → "Cash 200 RWF short" with clear OVER/SHORT/BALANCED tags
+   - "Idempotency", "channel", "ledger" → never shown to user
+2. **Simpler navigation.** Dashboard grouped into:
+   - **Stock & Catalog** (Products, Categories, Suppliers)
+   - **Operate the shop** (Sell, Cash sessions, Purchases, Adjustments, Expenses)
+   - **Reports & People** (Daily summary, Users, Channels)
+3. **Polish the dev/testing feel.** Bigger tap targets (44px min on mobile),
+   primary CTA per screen, less monospace, friendlier empty states with
+   a clear next action, consistent badge styling, color used semantically.
+4. **Responsive sweep.** 360px phone (priority), 768px tablet, 1024px+ laptop.
+   Tables → cards on phone (most pages already do; verify all). Forms
+   stack vertically, single-column on phone.
+
+Plan: per-surface critique + copy/tone redesign (Dashboard, /sell flow,
+Products list/form, Cash sessions, Reports) — sign-off — then ship.
 
 ## Open follow-ups
 
