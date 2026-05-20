@@ -14,15 +14,21 @@ import {
   Users,
   Wallet,
 } from "lucide-react";
+import { getLocale, getTranslations } from "next-intl/server";
 import { signOut } from "@/lib/auth";
 import { requireOwner } from "@/lib/auth-guards";
 import { getOpenSession } from "@/lib/cash-sessions/queries";
 import { getSettings } from "@/lib/settings/queries";
+import type { Locale } from "@/i18n/config";
+import { LanguageToggle } from "../_components/LanguageToggle";
 
 export default async function DashboardPage() {
   const session = await requireOwner();
   const openTill = await getOpenSession();
   const { companyName, logoUrl } = await getSettings();
+  const t = await getTranslations("dashboard");
+  const tc = await getTranslations("common");
+  const locale = (await getLocale()) as Locale;
 
   return (
     <main className="mx-auto max-w-5xl p-4 sm:p-6">
@@ -41,33 +47,31 @@ export default async function DashboardPage() {
               {companyName}
             </p>
             <h1 className="text-2xl font-semibold sm:text-3xl">
-              Hello, {session.name?.split(" ")[0] ?? "owner"}.
+              {t("hello", { name: session.name?.split(" ")[0] ?? "owner" })}
             </h1>
             <p className="text-sm text-zinc-600">
-              {openTill ? (
-                <>
-                  Till is open · {openTill.cashSalesCount}{" "}
-                  {openTill.cashSalesCount === 1 ? "sale" : "sales"} so far
-                </>
-              ) : (
-                "Till is closed."
-              )}
+              {openTill
+                ? t("tillOpen", { count: openTill.cashSalesCount })
+                : t("tillClosed")}
             </p>
           </div>
         </div>
-        <form
-          action={async () => {
-            "use server";
-            await signOut({ redirectTo: "/login" });
-          }}
-        >
-          <button
-            type="submit"
-            className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-100"
+        <div className="flex flex-col items-end gap-2">
+          <LanguageToggle current={locale} />
+          <form
+            action={async () => {
+              "use server";
+              await signOut({ redirectTo: "/login" });
+            }}
           >
-            Sign out
-          </button>
-        </form>
+            <button
+              type="submit"
+              className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-100"
+            >
+              {tc("signOut")}
+            </button>
+          </form>
+        </div>
       </header>
 
       {/* Primary: Sell */}
@@ -79,10 +83,8 @@ export default async function DashboardPage() {
         <div className="flex items-center gap-4">
           <Store className="h-12 w-12 shrink-0" strokeWidth={1.5} />
           <div className="flex-1">
-            <h2 className="text-2xl font-semibold">Sell</h2>
-            <p className="mt-1 text-sm text-zinc-300">
-              Open the till and ring up sales
-            </p>
+            <h2 className="text-2xl font-semibold">{t("sell")}</h2>
+            <p className="mt-1 text-sm text-zinc-300">{t("sellSubtitle")}</p>
           </div>
           <ArrowRight className="h-6 w-6 shrink-0" strokeWidth={2} />
         </div>
@@ -91,37 +93,35 @@ export default async function DashboardPage() {
       {/* Run the shop */}
       <section className="mt-8" data-tour="dash-run-shop">
         <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-zinc-500">
-          Run the shop
+          {t("runShop")}
         </h3>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <DashCard
             href="/cash-sessions"
             Icon={Banknote}
-            title={openTill ? "Cash (till is open)" : "Cash (till is closed)"}
+            title={openTill ? t("cashOpen") : t("cashClosed")}
             subtitle={
-              openTill
-                ? "View today's sales · Close till"
-                : "Open the till to start"
+              openTill ? t("cashSubtitleOpen") : t("cashSubtitleClosed")
             }
             tone={openTill ? "active" : "neutral"}
           />
           <DashCard
             href="/purchases"
             Icon={Package}
-            title="Receive stock"
-            subtitle="Log a purchase from a supplier"
+            title={t("receiveStock")}
+            subtitle={t("receiveStockSubtitle")}
           />
           <DashCard
             href="/expenses"
             Icon={Wallet}
-            title="Expenses"
-            subtitle="Rent, salaries, transport, utilities"
+            title={t("expenses")}
+            subtitle={t("expensesSubtitle")}
           />
           <DashCard
             href="/adjustments"
             Icon={AlertTriangle}
-            title="Losses"
-            subtitle="Broken, expired, stolen, samples"
+            title={t("losses")}
+            subtitle={t("lossesSubtitle")}
           />
         </div>
       </section>
@@ -129,26 +129,26 @@ export default async function DashboardPage() {
       {/* Stock & catalog */}
       <section className="mt-8" data-tour="dash-catalog">
         <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-zinc-500">
-          Stock & catalog
+          {t("stockCatalog")}
         </h3>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <DashCard
             href="/products"
             Icon={ShoppingBag}
-            title="Products"
-            subtitle="Drinks, snacks, prices"
+            title={t("products")}
+            subtitle={t("productsSubtitle")}
           />
           <DashCard
             href="/categories"
             Icon={Tag}
-            title="Categories"
-            subtitle="Group products with an icon"
+            title={t("categories")}
+            subtitle={t("categoriesSubtitle")}
           />
           <DashCard
             href="/suppliers"
             Icon={Truck}
-            title="Suppliers"
-            subtitle="Who you buy from"
+            title={t("suppliers")}
+            subtitle={t("suppliersSubtitle")}
           />
         </div>
       </section>
@@ -156,32 +156,32 @@ export default async function DashboardPage() {
       {/* Reports & users */}
       <section className="mt-8" data-tour="dash-reports">
         <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-zinc-500">
-          Reports & users
+          {t("reportsUsers")}
         </h3>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <DashCard
             href="/reports"
             Icon={BarChart3}
-            title="Daily summary"
-            subtitle="Sales, expenses, top sellers"
+            title={t("dailySummary")}
+            subtitle={t("dailySummarySubtitle")}
           />
           <DashCard
             href="/users"
             Icon={Users}
-            title="Users"
-            subtitle="Owners and sellers"
+            title={t("users")}
+            subtitle={t("usersSubtitle")}
           />
           <DashCard
             href="/channels"
             Icon={Tag}
-            title="Channels"
-            subtitle="Retail, wholesale, delivery…"
+            title={t("channels")}
+            subtitle={t("channelsSubtitle")}
           />
           <DashCard
             href="/settings"
             Icon={SettingsIcon}
-            title="System config"
-            subtitle="Branding, theme, logo"
+            title={t("systemConfig")}
+            subtitle={t("systemConfigSubtitle")}
           />
         </div>
       </section>

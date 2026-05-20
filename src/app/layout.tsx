@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import { NextIntlClientProvider } from "next-intl";
+import { getLocale, getMessages } from "next-intl/server";
 import { getSettings } from "@/lib/settings/queries";
 import { TourLauncher } from "./_components/TourLauncher";
 import "./globals.css";
@@ -31,11 +33,15 @@ export default async function RootLayout({
   children: React.ReactNode;
 }) {
   const { theme } = await getSettings();
+  const locale = await getLocale();
+  const messages = await getMessages();
   return (
-    <html lang="en" data-theme={theme}>
+    <html lang={locale} data-theme={theme}>
       <body className="min-h-screen text-zinc-900 antialiased">
-        {children}
-        <TourLauncher />
+        <NextIntlClientProvider locale={locale} messages={messages}>
+          {children}
+          <TourLauncher />
+        </NextIntlClientProvider>
       </body>
     </html>
   );

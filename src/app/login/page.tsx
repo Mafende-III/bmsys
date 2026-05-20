@@ -1,26 +1,35 @@
+import { getLocale, getTranslations } from "next-intl/server";
 import { signIn } from "@/lib/auth";
 import { getSettings } from "@/lib/settings/queries";
+import type { Locale } from "@/i18n/config";
+import { LanguageToggle } from "../_components/LanguageToggle";
 
 export default async function LoginPage() {
   const { companyName, logoUrl } = await getSettings();
+  const t = await getTranslations();
+  const locale = (await getLocale()) as Locale;
+
   return (
     <main className="flex min-h-screen items-center justify-center px-4">
       <div className="w-full max-w-sm rounded-2xl border border-zinc-200 bg-white p-6 shadow-sm">
-        <div className="flex items-center gap-3">
-          {logoUrl && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={logoUrl}
-              alt=""
-              className="h-12 w-12 shrink-0 rounded-lg object-contain"
-            />
-          )}
-          <div className="min-w-0">
-            <h1 className="truncate text-xl font-semibold">{companyName}</h1>
-            <p className="mt-0.5 text-sm text-zinc-600">
-              Sign in to manage sales and stock
-            </p>
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex items-center gap-3">
+            {logoUrl && (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={logoUrl}
+                alt=""
+                className="h-12 w-12 shrink-0 rounded-lg object-contain"
+              />
+            )}
+            <div className="min-w-0">
+              <h1 className="truncate text-xl font-semibold">{companyName}</h1>
+              <p className="mt-0.5 text-sm text-zinc-600">
+                {t("login.subtitle")}
+              </p>
+            </div>
           </div>
+          <LanguageToggle current={locale} />
         </div>
 
         <form
@@ -35,19 +44,19 @@ export default async function LoginPage() {
           className="mt-6 space-y-4"
         >
           <label className="block">
-            <span className="text-sm font-medium">Phone</span>
+            <span className="text-sm font-medium">{t("login.phone")}</span>
             <input
               type="tel"
               name="phone"
               required
               autoComplete="tel"
-              placeholder="+250 7XX XXX XXX"
+              placeholder={t("login.phonePlaceholder")}
               className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-zinc-900 focus:ring-1 focus:ring-zinc-900"
             />
           </label>
 
           <label className="block">
-            <span className="text-sm font-medium">PIN</span>
+            <span className="text-sm font-medium">{t("login.pin")}</span>
             <input
               type="password"
               name="pin"
@@ -62,7 +71,7 @@ export default async function LoginPage() {
             type="submit"
             className="w-full rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800"
           >
-            Sign in
+            {t("common.signIn")}
           </button>
         </form>
       </div>
