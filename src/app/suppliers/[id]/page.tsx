@@ -40,7 +40,7 @@ export default async function EditSupplierPage({
       <section className="mt-8">
         <h2 className="text-lg font-medium">Recent purchases</h2>
         <p className="mt-1 text-xs text-zinc-600">Last 20.</p>
-        <div className="mt-2 overflow-hidden rounded-2xl border border-zinc-200 bg-white">
+        <div className="mt-2 overflow-x-auto rounded-2xl border border-zinc-200 bg-white">
           <table className="w-full text-sm">
             <thead className="bg-zinc-50 text-left text-xs font-medium uppercase text-zinc-600">
               <tr>

@@ -196,6 +196,7 @@ function Table({
       {rows.length === 0 ? (
         <p className="px-3 py-6 text-center text-sm text-zinc-500">{empty}</p>
       ) : (
+        <div className="overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-zinc-50 text-left text-xs font-medium uppercase text-zinc-600">
             <tr>
@@ -224,6 +225,7 @@ function Table({
             ))}
           </tbody>
         </table>
+        </div>
       )}
     </section>
   );

@@ -44,7 +44,7 @@ export default async function RecurringPage() {
         <RunRecurringButton />
       </div>
 
-      <div className="mt-4 overflow-hidden rounded-2xl border border-zinc-200 bg-white">
+      <div className="mt-4 overflow-x-auto rounded-2xl border border-zinc-200 bg-white">
         <table className="w-full text-sm">
           <thead className="bg-zinc-50 text-left text-xs font-medium uppercase text-zinc-600">
             <tr>
