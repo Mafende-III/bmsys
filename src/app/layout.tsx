@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { getSettings } from "@/lib/settings/queries";
+import { HelpButton } from "./_components/HelpButton";
 import "./globals.css";
 
 export async function generateMetadata(): Promise<Metadata> {
@@ -24,7 +25,10 @@ export default async function RootLayout({
   const { theme } = await getSettings();
   return (
     <html lang="en" data-theme={theme}>
-      <body className="min-h-screen text-zinc-900 antialiased">{children}</body>
+      <body className="min-h-screen text-zinc-900 antialiased">
+        {children}
+        <HelpButton />
+      </body>
     </html>
   );
 }
