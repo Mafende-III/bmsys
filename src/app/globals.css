@@ -20,19 +20,75 @@
 }
 
 [data-theme="sky"] {
-  --app-bg: #f0f9ff;          /* sky-50 */
+  --app-bg: #f0f9ff;
   --app-bg-soft: #ffffff;
-  --app-accent: #0369a1;      /* sky-700 — buttons stay readable */
-  --app-accent-soft: #e0f2fe; /* sky-100 */
-  --app-ring: #bae6fd;        /* sky-200 */
+  --app-accent: #0369a1;
+  --app-accent-soft: #e0f2fe;
+  --app-ring: #bae6fd;
 }
 
-[data-theme="light-blue"] {
-  --app-bg: #f0fdff;          /* very light cyan */
+[data-theme="blue"] {
+  --app-bg: #eff6ff;
   --app-bg-soft: #ffffff;
-  --app-accent: #075985;      /* sky-800 — keep contrast on pale bg */
-  --app-accent-soft: #e0f7fb;
-  --app-ring: #a5e6f0;
+  --app-accent: #1d4ed8;
+  --app-accent-soft: #dbeafe;
+  --app-ring: #bfdbfe;
+}
+
+[data-theme="indigo"] {
+  --app-bg: #eef2ff;
+  --app-bg-soft: #ffffff;
+  --app-accent: #4338ca;
+  --app-accent-soft: #e0e7ff;
+  --app-ring: #c7d2fe;
+}
+
+[data-theme="violet"] {
+  --app-bg: #f5f3ff;
+  --app-bg-soft: #ffffff;
+  --app-accent: #6d28d9;
+  --app-accent-soft: #ede9fe;
+  --app-ring: #ddd6fe;
+}
+
+[data-theme="rose"] {
+  --app-bg: #fff1f2;
+  --app-bg-soft: #ffffff;
+  --app-accent: #be123c;
+  --app-accent-soft: #ffe4e6;
+  --app-ring: #fecdd3;
+}
+
+[data-theme="amber"] {
+  --app-bg: #fffbeb;
+  --app-bg-soft: #ffffff;
+  --app-accent: #b45309;
+  --app-accent-soft: #fef3c7;
+  --app-ring: #fde68a;
+}
+
+[data-theme="emerald"] {
+  --app-bg: #ecfdf5;
+  --app-bg-soft: #ffffff;
+  --app-accent: #047857;
+  --app-accent-soft: #d1fae5;
+  --app-ring: #a7f3d0;
+}
+
+[data-theme="teal"] {
+  --app-bg: #f0fdfa;
+  --app-bg-soft: #ffffff;
+  --app-accent: #0f766e;
+  --app-accent-soft: #ccfbf1;
+  --app-ring: #99f6e4;
+}
+
+[data-theme="slate"] {
+  --app-bg: #f8fafc;
+  --app-bg-soft: #ffffff;
+  --app-accent: #334155;
+  --app-accent-soft: #f1f5f9;
+  --app-ring: #cbd5e1;
 }
 
 html,
@@ -49,7 +105,6 @@ body {
   border-bottom-color: var(--app-ring);
 }
 
-[data-theme="sky"] .app-header,
-[data-theme="light-blue"] .app-header {
+[data-theme]:not([data-theme="default"]) .app-header {
   background: var(--app-accent-soft);
 }

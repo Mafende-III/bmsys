@@ -88,10 +88,10 @@ export function SettingsForm({ initial }: { initial: Initial }) {
       >
         <h2 className="text-base font-medium">Theme</h2>
         <p className="mt-0.5 text-xs text-zinc-600">
-          Picks the background colour across the app. Content stays
-          high-contrast either way.
+          Tints the background across the whole app. Content panels stay
+          white so forms and tables remain easy to read.
         </p>
-        <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-3">
+        <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-5">
           {THEME_KEYS.map((key) => {
             const t = THEMES[key];
             const selected = theme === key;
@@ -101,7 +101,9 @@ export function SettingsForm({ initial }: { initial: Initial }) {
                 type="button"
                 onClick={() => setTheme(key)}
                 aria-pressed={selected}
-                className={`flex items-center gap-3 rounded-xl border p-3 text-left transition ${
+                aria-label={t.label}
+                title={t.label}
+                className={`group flex flex-col items-center gap-1.5 rounded-xl border p-2 text-center transition ${
                   selected
                     ? "border-zinc-900 ring-2 ring-zinc-900"
                     : "border-zinc-200 hover:border-zinc-400"
@@ -109,15 +111,19 @@ export function SettingsForm({ initial }: { initial: Initial }) {
               >
                 <span
                   aria-hidden
-                  className="block h-10 w-10 shrink-0 rounded-lg border border-zinc-200"
+                  className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-zinc-200 shadow-inner"
                   style={{ background: t.preview }}
-                />
-                <span className="flex-1 text-sm font-medium text-zinc-800">
+                >
+                  {selected && (
+                    <Check
+                      className="h-5 w-5 text-zinc-900"
+                      strokeWidth={3}
+                    />
+                  )}
+                </span>
+                <span className="text-xs font-medium text-zinc-700">
                   {t.label}
                 </span>
-                {selected && (
-                  <Check className="h-4 w-4 text-zinc-900" strokeWidth={2.5} />
-                )}
               </button>
             );
           })}
