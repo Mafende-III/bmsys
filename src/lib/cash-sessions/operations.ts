@@ -2,6 +2,7 @@ import type { Prisma } from "@prisma/client";
 import type { ZodError } from "zod";
 import { prisma } from "@/lib/prisma";
 import { withIdempotency } from "@/lib/idempotency";
+import { CASH_VARIANCE_ALERT_THRESHOLD } from "@/lib/audit/categories";
 import {
   closeCashSessionSchema,
   openCashSessionSchema,
@@ -152,6 +153,26 @@ export async function closeSessionOp(
               userId,
             },
           });
+
+          // Surface unusual day-ends to the owner via the security
+          // log so they don't have to scan every close manually.
+          if (Math.abs(variance) >= CASH_VARIANCE_ALERT_THRESHOLD) {
+            await tx.auditLog.create({
+              data: {
+                tableName: "cash_sessions",
+                recordId: id,
+                action: "UPDATE",
+                category: "CASH_LARGE_VARIANCE",
+                changes: {
+                  variance,
+                  expectedCash,
+                  countedCash: input.closingCount,
+                  threshold: CASH_VARIANCE_ALERT_THRESHOLD,
+                } as Prisma.InputJsonValue,
+                userId,
+              },
+            });
+          }
 
           return {
             id: updated.id,

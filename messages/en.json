@@ -9,7 +9,7 @@
     "dashboard": "Dashboard",
     "loading": "Loading…",
     "saved": "Saved.",
-    "filter": "Shungura",
+    "filter": "Filter",
     "search": "Search",
     "edit": "Edit",
     "delete": "Delete",
@@ -73,7 +73,9 @@
     "channels": "Channels",
     "channelsSubtitle": "Retail, wholesale, delivery…",
     "systemConfig": "System config",
-    "systemConfigSubtitle": "Branding, theme, logo"
+    "systemConfigSubtitle": "Branding, theme, logo",
+    "audit": "Activity log",
+    "auditSubtitle": "Sign-ins and unusual events"
   },
   "sell": {
     "channel": "Channel",
@@ -366,6 +368,23 @@
       "createNoChannelWarn": "No channels exist yet. Create at least one first.",
       "create": "Add user"
     }
+  },
+  "audit": {
+    "title": "Activity log",
+    "subtitle": "Sign-ins, big cash variances, and other things worth a glance. Last 30 days.",
+    "dashboardTitle": "Activity log",
+    "dashboardSubtitle": "Sign-ins and unusual events",
+    "filterCategory": "Category",
+    "filterAll": "All events",
+    "categoryLoginSuccess": "Sign-in",
+    "categoryLoginFailed": "Failed sign-in",
+    "categoryCashLargeVariance": "Big cash variance",
+    "headerWhen": "When",
+    "headerEvent": "Event",
+    "headerWho": "Who",
+    "headerDetails": "Details",
+    "empty": "Nothing logged in the last 30 days.",
+    "anonymousAttempt": "(no account)"
   },
   "reports": {
     "title": "Daily summary",

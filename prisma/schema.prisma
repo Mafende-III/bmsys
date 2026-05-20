@@ -595,6 +595,10 @@ model AuditLog {
   tableName  String
   recordId   String
   action     AuditAction
+  /// High-signal events get a category so the owner can filter them
+  /// from the firehose of all mutations (LOGIN_SUCCESS, LOGIN_FAILED,
+  /// CASH_LARGE_VARIANCE, etc). Plain CRUD writes leave it NULL.
+  category   String?
   changes    Json
   userId     String?
   createdAt  DateTime    @default(now())
@@ -603,6 +607,7 @@ model AuditLog {
 
   @@index([tableName, recordId])
   @@index([userId, createdAt])
+  @@index([category, createdAt])
 }
 
 // ========================================================================

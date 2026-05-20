@@ -2,12 +2,44 @@ import NextAuth from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import argon2 from "argon2";
 import { z } from "zod";
+import type { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 
 const credentialsSchema = z.object({
   phone: z.string().min(7),
   pin: z.string().min(4),
 });
+
+/**
+ * Best-effort security-log writer for sign-in attempts. Fire-and-
+ * forget — auth flow must not fail because the DB is briefly slow.
+ * Records the attempted phone (never the PIN), the outcome, and the
+ * user id when known.
+ */
+async function logSignIn(args: {
+  category: "LOGIN_SUCCESS" | "LOGIN_FAILED";
+  phone: string;
+  userId: string | null;
+  reason?: string;
+}): Promise<void> {
+  try {
+    await prisma.auditLog.create({
+      data: {
+        tableName: "users",
+        recordId: args.userId ?? args.phone,
+        action: "UPDATE",
+        category: args.category,
+        changes: {
+          phone: args.phone,
+          ...(args.reason ? { reason: args.reason } : {}),
+        } as Prisma.InputJsonValue,
+        userId: args.userId,
+      },
+    });
+  } catch {
+    // ignore — never block sign-in on audit writes
+  }
+}
 
 const SESSION_DAYS_DEFAULT = 30;
 const SESSION_DAYS_REMEMBER = 90;
@@ -32,16 +64,50 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       },
       authorize: async (raw) => {
         const parsed = credentialsSchema.safeParse(raw);
-        if (!parsed.success) return null;
+        if (!parsed.success) {
+          const attemptedPhone =
+            typeof raw?.phone === "string" ? raw.phone : "(blank)";
+          await logSignIn({
+            category: "LOGIN_FAILED",
+            phone: attemptedPhone,
+            userId: null,
+            reason: "bad credentials shape",
+          });
+          return null;
+        }
 
         const user = await prisma.user.findUnique({
           where: { phone: parsed.data.phone },
         });
-        if (!user) return null;
-        if (!user.active) return null;
+        if (!user) {
+          await logSignIn({
+            category: "LOGIN_FAILED",
+            phone: parsed.data.phone,
+            userId: null,
+            reason: "no such user",
+          });
+          return null;
+        }
+        if (!user.active) {
+          await logSignIn({
+            category: "LOGIN_FAILED",
+            phone: parsed.data.phone,
+            userId: user.id,
+            reason: "user deactivated",
+          });
+          return null;
+        }
 
         const ok = await argon2.verify(user.pinHash, parsed.data.pin);
-        if (!ok) return null;
+        if (!ok) {
+          await logSignIn({
+            category: "LOGIN_FAILED",
+            phone: parsed.data.phone,
+            userId: user.id,
+            reason: "wrong PIN",
+          });
+          return null;
+        }
 
         const rawRemember =
           typeof raw?.remember === "string" ? raw.remember : "";
@@ -49,6 +115,13 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           rawRemember === "on" ||
           rawRemember === "true" ||
           rawRemember === "1";
+
+        await logSignIn({
+          category: "LOGIN_SUCCESS",
+          phone: user.phone,
+          userId: user.id,
+          reason: remember ? "remember me" : undefined,
+        });
 
         return {
           id: user.id,

@@ -73,7 +73,9 @@
     "channels": "Inzira zo gucuruza",
     "channelsSubtitle": "Mu butike, uburanga, gutanga…",
     "systemConfig": "Igenamiterere",
-    "systemConfigSubtitle": "Ikirango, ibara, logo"
+    "systemConfigSubtitle": "Ikirango, ibara, logo",
+    "audit": "Inyandiko z'ibikorwa",
+    "auditSubtitle": "Kwinjira n'ibyabaye bidasanzwe"
   },
   "sell": {
     "channel": "Inzira",
@@ -366,6 +368,23 @@
       "createNoChannelWarn": "Nta nzira iraho. Andika byibura imwe mbere.",
       "create": "Ongeraho umukoresha"
     }
+  },
+  "audit": {
+    "title": "Inyandiko z'ibikorwa",
+    "subtitle": "Kwinjira, itandukaniro rinini ry'amafaranga, n'ibindi byashobora kuba bigaragaye. Iminsi 30 ishize.",
+    "dashboardTitle": "Inyandiko z'ibikorwa",
+    "dashboardSubtitle": "Kwinjira n'ibyabaye bidasanzwe",
+    "filterCategory": "Icyiciro",
+    "filterAll": "Byose",
+    "categoryLoginSuccess": "Kwinjira",
+    "categoryLoginFailed": "Kwinjira kwanze",
+    "categoryCashLargeVariance": "Itandukaniro rinini",
+    "headerWhen": "Igihe",
+    "headerEvent": "Ibyabaye",
+    "headerWho": "Ndi nde",
+    "headerDetails": "Ibisobanuro",
+    "empty": "Nta byanditswe mu minsi 30 ishize.",
+    "anonymousAttempt": "(nta konti)"
   },
   "reports": {
     "title": "Inyandiko y'umunsi",

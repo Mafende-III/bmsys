@@ -7,6 +7,7 @@ import {
   type LucideIcon,
   Package,
   Settings as SettingsIcon,
+  ShieldCheck,
   ShoppingBag,
   Store,
   Tag,
@@ -166,7 +167,7 @@ export default async function DashboardPage() {
         <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-zinc-500">
           {t("reportsUsers")}
         </h3>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-5">
           <DashCard
             href="/reports"
             Icon={BarChart3}
@@ -184,6 +185,12 @@ export default async function DashboardPage() {
             Icon={Tag}
             title={t("channels")}
             subtitle={t("channelsSubtitle")}
+          />
+          <DashCard
+            href="/audit"
+            Icon={ShieldCheck}
+            title={t("audit")}
+            subtitle={t("auditSubtitle")}
           />
           <DashCard
             href="/settings"
