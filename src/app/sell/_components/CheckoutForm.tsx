@@ -10,9 +10,9 @@ import { useCart } from "./CartProvider";
 export function CheckoutForm() {
   const router = useRouter();
   const { cart, total, removeItem, clear, ready } = useCart();
-  const [paymentMethod, setPaymentMethod] = useState<
-    "CASH" | "MOMO" | "BANK"
-  >("CASH");
+  const [paymentMethod, setPaymentMethod] = useState<"CASH" | "MOMO" | "BANK">(
+    "CASH",
+  );
   const [paymentRef, setPaymentRef] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -25,12 +25,20 @@ export function CheckoutForm() {
 
   if (!cart || cart.items.length === 0) {
     return (
-      <div className="rounded-2xl border border-zinc-200 bg-white p-6 text-center text-sm text-zinc-600">
-        Cart is empty.{" "}
-        <Link href="/sell" className="text-zinc-900 underline">
-          Add something
+      <div className="rounded-2xl border-2 border-dashed border-zinc-300 bg-zinc-50 p-8 text-center">
+        <p className="text-4xl" aria-hidden>
+          🛒
+        </p>
+        <p className="mt-3 text-base font-medium text-zinc-800">Empty cart</p>
+        <p className="mt-1 text-sm text-zinc-600">
+          Add something before you can pay.
+        </p>
+        <Link
+          href="/sell"
+          className="mt-4 inline-block rounded-2xl bg-zinc-900 px-5 py-3 text-sm font-medium text-white hover:bg-zinc-800"
+        >
+          Back to categories
         </Link>
-        .
       </div>
     );
   }
@@ -58,30 +66,28 @@ export function CheckoutForm() {
         return;
       }
 
-      setSuccess(
-        `Sale recorded: ${formatRWF(result.data.total)} (${result.data.saleId})`,
-      );
+      setSuccess(`Sale done — ${formatRWF(result.data.total)} recorded.`);
       clear();
       setIdempotencyKey(crypto.randomUUID());
-      // Auto-return to /sell after a moment
       setTimeout(() => router.push("/sell"), 1200);
     });
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       {error && (
-        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {error}
         </div>
       )}
       {success && (
-        <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
-          {success}
+        <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
+          ✓ {success}
         </div>
       )}
 
-      <section className="rounded-2xl border border-zinc-200 bg-white">
+      {/* Cart items */}
+      <section className="overflow-hidden rounded-2xl border-2 border-zinc-200 bg-white">
         <ul className="divide-y divide-zinc-200">
           {cart.items.map((item, idx) => (
             <li
@@ -91,8 +97,8 @@ export function CheckoutForm() {
               <div className="min-w-0 flex-1">
                 <p className="truncate font-medium">{item.productName}</p>
                 <p className="text-xs text-zinc-500">
-                  {item.qty} × {item.saleUnit === "UNIT" ? "unit" : "carton"} ·{" "}
-                  {formatRWF(item.unitPrice)}
+                  {item.qty} × {item.saleUnit === "UNIT" ? "single" : "carton"}{" "}
+                  · {formatRWF(item.unitPrice)}
                 </p>
               </div>
               <span className="font-mono tabular-nums">
@@ -101,36 +107,45 @@ export function CheckoutForm() {
               <button
                 type="button"
                 onClick={() => removeItem(idx)}
-                className="text-xs text-red-600 hover:underline"
+                aria-label="Remove item"
+                className="rounded-lg p-2 text-zinc-400 hover:bg-zinc-100 hover:text-red-700"
               >
-                Remove
+                ✕
               </button>
             </li>
           ))}
         </ul>
-        <div className="flex items-center justify-between border-t border-zinc-200 px-3 py-2 text-sm font-medium">
+        <div className="flex items-center justify-between border-t-2 border-zinc-200 bg-zinc-50 px-3 py-3 text-base font-semibold">
           <span>Total</span>
-          <span className="font-mono text-base tabular-nums">
+          <span className="font-mono text-lg tabular-nums">
             {formatRWF(total)}
           </span>
         </div>
       </section>
 
-      <section className="space-y-2">
-        <p className="text-sm font-medium">Payment method</p>
+      {/* Payment method */}
+      <section>
+        <p className="mb-2 text-sm font-medium text-zinc-700">
+          How is the customer paying?
+        </p>
         <div className="grid grid-cols-3 gap-2">
           {(["CASH", "MOMO", "BANK"] as const).map((m) => (
             <button
               key={m}
               type="button"
               onClick={() => setPaymentMethod(m)}
-              className={`rounded-2xl border px-3 py-3 text-sm font-medium transition ${
+              className={`flex flex-col items-center gap-1 rounded-2xl border-2 px-3 py-4 transition active:scale-95 ${
                 paymentMethod === m
                   ? "border-zinc-900 bg-zinc-900 text-white"
-                  : "border-zinc-300 bg-white hover:bg-zinc-50"
+                  : "border-zinc-300 bg-white text-zinc-900 hover:border-zinc-400"
               }`}
             >
-              {m === "CASH" ? "💵 Cash" : m === "MOMO" ? "📱 MoMo" : "🏦 Bank"}
+              <span className="text-2xl" aria-hidden>
+                {m === "CASH" ? "💵" : m === "MOMO" ? "📱" : "🏦"}
+              </span>
+              <span className="text-sm font-medium">
+                {m === "CASH" ? "Cash" : m === "MOMO" ? "MoMo" : "Bank"}
+              </span>
             </button>
           ))}
         </div>
@@ -138,33 +153,38 @@ export function CheckoutForm() {
 
       {paymentMethod !== "CASH" && (
         <label className="block">
-          <span className="text-sm font-medium">Reference (optional)</span>
+          <span className="text-sm font-medium text-zinc-700">
+            Reference (optional)
+          </span>
           <input
             type="text"
             value={paymentRef}
             onChange={(e) => setPaymentRef(e.target.value)}
-            placeholder="Txn id, MoMo code, etc."
-            className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+            placeholder={
+              paymentMethod === "MOMO"
+                ? "MoMo transaction code"
+                : "Bank reference"
+            }
+            className="mt-1 block w-full rounded-xl border-2 border-zinc-300 px-3 py-3 text-base"
           />
         </label>
       )}
 
-      <div className="flex gap-2 pt-2">
-        <Link
-          href="/sell"
-          className="flex-1 rounded-2xl border border-zinc-300 bg-white px-4 py-3 text-center text-sm font-medium hover:bg-zinc-50"
-        >
-          Back
-        </Link>
-        <button
-          type="button"
-          onClick={handleSubmit}
-          disabled={isPending}
-          className="flex-[2] rounded-2xl bg-zinc-900 px-4 py-3 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-60"
-        >
-          {isPending ? "Recording..." : `Complete sale · ${formatRWF(total)}`}
-        </button>
-      </div>
+      <button
+        type="button"
+        onClick={handleSubmit}
+        disabled={isPending}
+        className="w-full rounded-2xl bg-zinc-900 px-5 py-5 text-lg font-semibold text-white shadow-md transition hover:bg-zinc-800 active:scale-[0.98] disabled:opacity-60"
+      >
+        {isPending ? "Recording…" : `Pay ${formatRWF(total)}`}
+      </button>
+
+      <Link
+        href="/sell"
+        className="block text-center text-sm text-zinc-600 hover:underline"
+      >
+        ← Back to shopping
+      </Link>
     </div>
   );
 }

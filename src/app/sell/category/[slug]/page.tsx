@@ -30,61 +30,70 @@ export default async function SellCategoryPage({
   const category = await findCategoryBySlug(slug);
   if (!category) notFound();
 
-  const products = await listProductsForChannel(activeChannelId, {
+  const all = await listProductsForChannel(activeChannelId, {
     categoryId: category.id,
   });
 
   return (
     <div>
-      <div className="mb-3">
-        <Link href="/sell" className="text-sm text-zinc-600 hover:underline">
-          ← Categories
+      <div className="mb-4">
+        <Link
+          href="/sell"
+          className="inline-flex items-center gap-1 text-sm text-zinc-600 hover:underline"
+        >
+          ← All categories
         </Link>
-        <h2 className="mt-1 flex items-center gap-2 text-xl font-semibold">
-          <span>{category.iconEmoji}</span>
+        <h2 className="mt-2 flex items-center gap-3 text-2xl font-semibold">
+          <span className="text-4xl" aria-hidden>
+            {category.iconEmoji}
+          </span>
           <span>{category.name}</span>
         </h2>
-        <p className="text-xs text-zinc-500">
-          {products.length} {products.length === 1 ? "product" : "products"}
-        </p>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-        {products.map((p) => {
-          const out =
-            p.sealedCartons * p.unitsPerCarton + p.openedUnits === 0;
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        {all.map((p) => {
+          const totalAvailable =
+            p.openedUnits + p.sealedCartons * p.unitsPerCarton;
+          const out = totalAvailable === 0;
           return (
             <Link
               key={p.id}
               href={`/sell/product/${p.id}`}
-              className={`flex flex-col gap-1 rounded-2xl border bg-white p-3 text-left shadow-sm transition ${
+              className={`flex items-center gap-3 rounded-2xl border-2 bg-white p-4 transition active:scale-95 ${
                 out
-                  ? "border-zinc-200 opacity-50"
-                  : "border-zinc-200 hover:border-zinc-300 hover:shadow"
+                  ? "border-zinc-200 opacity-60"
+                  : "border-zinc-200 hover:border-zinc-400 hover:shadow-sm"
               }`}
             >
-              <div className="flex items-start gap-2">
-                <span className="text-2xl leading-none">{p.iconEmoji}</span>
-                <div className="min-w-0 flex-1">
-                  <p className="line-clamp-2 text-sm font-medium">{p.name}</p>
-                  <p className="font-mono text-[10px] text-zinc-500">
-                    {p.sku}
+              <span className="text-4xl" aria-hidden>
+                {p.iconEmoji}
+              </span>
+              <div className="flex-1 min-w-0">
+                <p className="line-clamp-2 text-base font-medium">{p.name}</p>
+                <p className="mt-0.5 text-sm tabular-nums text-zinc-700">
+                  {formatRWF(p.unitPrice)}
+                  <span className="text-xs font-normal text-zinc-500"> / single</span>
+                </p>
+                {out ? (
+                  <p className="mt-1 text-xs font-medium text-red-700">
+                    Out of stock
                   </p>
-                </div>
+                ) : (
+                  <p className="mt-1 text-xs text-zinc-500">
+                    {p.openedUnits} open
+                    {p.sealedCartons > 0 && (
+                      <> · {p.sealedCartons} sealed</>
+                    )}
+                  </p>
+                )}
               </div>
-              <p className="mt-1 text-sm tabular-nums">
-                {formatRWF(p.unitPrice)}{" "}
-                <span className="text-xs font-normal text-zinc-500">/ u</span>
-              </p>
-              <p className="text-xs text-zinc-500">
-                {p.openedUnits} open · {p.sealedCartons} sealed
-              </p>
             </Link>
           );
         })}
-        {products.length === 0 && (
-          <p className="col-span-full rounded-2xl border border-zinc-200 bg-white p-6 text-center text-sm text-zinc-500">
-            No products in this category.
+        {all.length === 0 && (
+          <p className="col-span-full rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 p-6 text-center text-sm text-zinc-600">
+            No items in this category.
           </p>
         )}
       </div>

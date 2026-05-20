@@ -1,7 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireSeller } from "@/lib/auth-guards";
-import { formatRWF } from "@/lib/format";
 import { listAllowedChannels } from "@/lib/permissions";
 import { getActiveChannelId } from "@/lib/sales/actions";
 import { listProductsForChannel } from "@/lib/sales/queries";
@@ -30,23 +29,20 @@ export default async function SellProductPage({
   if (!product) notFound();
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <div>
         <Link
           href={`/sell/category/${product.categorySlug ?? "uncategorised"}`}
           className="text-sm text-zinc-600 hover:underline"
         >
-          ← Products
+          ← Back
         </Link>
-        <h2 className="mt-1 flex items-center gap-2 text-xl font-semibold">
-          <span>{product.iconEmoji}</span>
-          <span>{product.name}</span>
-        </h2>
-        <p className="font-mono text-xs text-zinc-500">{product.sku}</p>
-        <p className="mt-1 text-xs text-zinc-600">
-          {product.openedUnits} loose unit(s) open · {product.sealedCartons} sealed carton(s) ·{" "}
-          {product.unitsPerCarton} per carton
-        </p>
+        <div className="mt-2 flex items-center gap-3">
+          <span className="text-5xl" aria-hidden>{product.iconEmoji}</span>
+          <h2 className="text-2xl font-semibold leading-tight">
+            {product.name}
+          </h2>
+        </div>
       </div>
 
       <AddToCartForm product={product} />

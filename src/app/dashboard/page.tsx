@@ -1,17 +1,28 @@
 import Link from "next/link";
 import { signOut } from "@/lib/auth";
 import { requireOwner } from "@/lib/auth-guards";
+import { getOpenSession } from "@/lib/cash-sessions/queries";
 
 export default async function DashboardPage() {
   const session = await requireOwner();
+  const openTill = await getOpenSession();
 
   return (
-    <main className="mx-auto max-w-3xl p-4 sm:p-6">
-      <header className="flex items-center justify-between">
+    <main className="mx-auto max-w-5xl p-4 sm:p-6">
+      <header className="flex items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-semibold">Dashboard</h1>
+          <h1 className="text-2xl font-semibold sm:text-3xl">
+            Hello, {session.name?.split(" ")[0] ?? "owner"}.
+          </h1>
           <p className="text-sm text-zinc-600">
-            Signed in as {session.name ?? session.phone}
+            {openTill ? (
+              <>
+                Till is open · {openTill.cashSalesCount}{" "}
+                {openTill.cashSalesCount === 1 ? "sale" : "sales"} so far
+              </>
+            ) : (
+              "Till is closed."
+            )}
           </p>
         </div>
         <form
@@ -29,118 +40,154 @@ export default async function DashboardPage() {
         </form>
       </header>
 
-      <section className="mt-6 grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <Link
-          href="/products"
-          className="block rounded-2xl border border-zinc-200 bg-white p-5 hover:border-zinc-300 hover:shadow-sm"
-        >
-          <h2 className="text-lg font-medium">Products</h2>
-          <p className="mt-1 text-sm text-zinc-600">
-            Catalog — SKUs, prices, stock at a glance.
-          </p>
-        </Link>
-        <Link
-          href="/categories"
-          className="block rounded-2xl border border-zinc-200 bg-white p-5 hover:border-zinc-300 hover:shadow-sm"
-        >
-          <h2 className="text-lg font-medium">Categories</h2>
-          <p className="mt-1 text-sm text-zinc-600">
-            Grouping + icons used on the /sell grid.
-          </p>
-        </Link>
-        <Link
-          href="/channels"
-          className="block rounded-2xl border border-zinc-200 bg-white p-5 hover:border-zinc-300 hover:shadow-sm"
-        >
-          <h2 className="text-lg font-medium">Channels</h2>
-          <p className="mt-1 text-sm text-zinc-600">
-            Sales channels — retail, wholesale, delivery, online.
-          </p>
-        </Link>
-        <Link
-          href="/users"
-          className="block rounded-2xl border border-zinc-200 bg-white p-5 hover:border-zinc-300 hover:shadow-sm"
-        >
-          <h2 className="text-lg font-medium">Users</h2>
-          <p className="mt-1 text-sm text-zinc-600">
-            Owners + sellers, with per-channel permissions.
-          </p>
-        </Link>
-        <Link
-          href="/suppliers"
-          className="block rounded-2xl border border-zinc-200 bg-white p-5 hover:border-zinc-300 hover:shadow-sm"
-        >
-          <h2 className="text-lg font-medium">Suppliers</h2>
-          <p className="mt-1 text-sm text-zinc-600">
-            Vendors you buy stock from.
-          </p>
-        </Link>
-        <Link
-          href="/purchases"
-          className="block rounded-2xl border border-zinc-200 bg-white p-5 hover:border-zinc-300 hover:shadow-sm"
-        >
-          <h2 className="text-lg font-medium">Purchases</h2>
-          <p className="mt-1 text-sm text-zinc-600">
-            Draft → receive stock from suppliers. Adds to the ledger.
-          </p>
-        </Link>
-        <Link
-          href="/cash-sessions"
-          className="block rounded-2xl border border-zinc-200 bg-white p-5 hover:border-zinc-300 hover:shadow-sm"
-        >
-          <h2 className="text-lg font-medium">Cash sessions</h2>
-          <p className="mt-1 text-sm text-zinc-600">
-            Open the till with float, close with count, computed variance.
-          </p>
-        </Link>
-        <Link
-          href="/sell"
-          className="block rounded-2xl border border-zinc-200 bg-white p-5 hover:border-zinc-300 hover:shadow-sm"
-        >
-          <h2 className="text-lg font-medium">Sell (POS)</h2>
-          <p className="mt-1 text-sm text-zinc-600">
-            Counter sale — category tiles, cart, checkout.
-          </p>
-        </Link>
-        <Link
-          href="/adjustments"
-          className="block rounded-2xl border border-zinc-200 bg-white p-5 hover:border-zinc-300 hover:shadow-sm"
-        >
-          <h2 className="text-lg font-medium">Adjustments</h2>
-          <p className="mt-1 text-sm text-zinc-600">
-            Record breakage, expiry, theft, personal, or sample losses.
-          </p>
-        </Link>
-        <Link
-          href="/expenses"
-          className="block rounded-2xl border border-zinc-200 bg-white p-5 hover:border-zinc-300 hover:shadow-sm"
-        >
-          <h2 className="text-lg font-medium">Expenses</h2>
-          <p className="mt-1 text-sm text-zinc-600">
-            Rent, salaries, transport, utilities — plus recurring entries.
-          </p>
-        </Link>
-        <Link
-          href="/reports"
-          className="block rounded-2xl border border-zinc-200 bg-white p-5 hover:border-zinc-300 hover:shadow-sm"
-        >
-          <h2 className="text-lg font-medium">Daily summary</h2>
-          <p className="mt-1 text-sm text-zinc-600">
-            Sales by channel, top products, cash variance, expenses, stock
-            movements.
-          </p>
-        </Link>
-        <div className="rounded-2xl border border-dashed border-zinc-200 bg-zinc-50 p-5 text-zinc-500 sm:col-span-2">
-          <h2 className="text-lg font-medium">Phase 1 done. Coming in Phase 2+</h2>
-          <ul className="mt-1 list-disc pl-5 text-sm">
-            <li>Customers + delivery channel + credit balances</li>
-            <li>Subscriptions (weekly/biweekly/monthly auto-orders)</li>
-            <li>Loyalty points + redemptions</li>
-            <li>Digital receipts (SMS / WhatsApp / Email)</li>
-            <li>Customer portal + online ordering</li>
-          </ul>
+      {/* Primary: Sell */}
+      <Link
+        href="/sell"
+        className="mt-6 block rounded-3xl border-2 border-zinc-900 bg-zinc-900 p-6 text-white shadow-lg transition hover:shadow-xl"
+      >
+        <div className="flex items-center gap-4">
+          <span className="text-5xl" aria-hidden>
+            🏪
+          </span>
+          <div className="flex-1">
+            <h2 className="text-2xl font-semibold">Sell</h2>
+            <p className="mt-1 text-sm text-zinc-300">
+              Open the till and ring up sales
+            </p>
+          </div>
+          <span className="text-2xl" aria-hidden>
+            →
+          </span>
+        </div>
+      </Link>
+
+      {/* Run the shop */}
+      <section className="mt-8">
+        <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-zinc-500">
+          Run the shop
+        </h3>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <DashCard
+            href="/cash-sessions"
+            icon="💵"
+            title={openTill ? "Cash (till is open)" : "Cash (till is closed)"}
+            subtitle={
+              openTill
+                ? "View today's sales · Close till"
+                : "Open the till to start"
+            }
+            tone={openTill ? "active" : "neutral"}
+          />
+          <DashCard
+            href="/purchases"
+            icon="📦"
+            title="Receive stock"
+            subtitle="Log a purchase from a supplier"
+          />
+          <DashCard
+            href="/expenses"
+            icon="💸"
+            title="Expenses"
+            subtitle="Rent, salaries, transport, utilities"
+          />
+          <DashCard
+            href="/adjustments"
+            icon="⚠️"
+            title="Losses"
+            subtitle="Broken, expired, stolen, samples"
+          />
+        </div>
+      </section>
+
+      {/* Stock & catalog */}
+      <section className="mt-8">
+        <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-zinc-500">
+          Stock & catalog
+        </h3>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <DashCard
+            href="/products"
+            icon="🥤"
+            title="Products"
+            subtitle="Drinks, snacks, prices"
+          />
+          <DashCard
+            href="/categories"
+            icon="🏷️"
+            title="Categories"
+            subtitle="Group products with an icon"
+          />
+          <DashCard
+            href="/suppliers"
+            icon="🚚"
+            title="Suppliers"
+            subtitle="Who you buy from"
+          />
+        </div>
+      </section>
+
+      {/* Reports & people */}
+      <section className="mt-8">
+        <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-zinc-500">
+          Reports & people
+        </h3>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+          <DashCard
+            href="/reports"
+            icon="📊"
+            title="Daily summary"
+            subtitle="Sales, expenses, top sellers"
+          />
+          <DashCard
+            href="/users"
+            icon="👥"
+            title="People"
+            subtitle="Owners and sellers"
+          />
+          <DashCard
+            href="/channels"
+            icon="🛍️"
+            title="Channels"
+            subtitle="Retail, wholesale, delivery…"
+          />
         </div>
       </section>
     </main>
+  );
+}
+
+function DashCard({
+  href,
+  icon,
+  title,
+  subtitle,
+  tone,
+}: {
+  href: string;
+  icon: string;
+  title: string;
+  subtitle: string;
+  tone?: "neutral" | "active";
+}) {
+  const tint =
+    tone === "active"
+      ? "border-green-200 bg-green-50 hover:border-green-300"
+      : "border-zinc-200 bg-white hover:border-zinc-300";
+  return (
+    <Link
+      href={href}
+      className={`flex items-center gap-4 rounded-2xl border p-4 transition hover:shadow-sm ${tint}`}
+    >
+      <span className="text-3xl" aria-hidden>
+        {icon}
+      </span>
+      <div className="flex-1 min-w-0">
+        <h4 className="text-base font-medium">{title}</h4>
+        <p className="mt-0.5 text-xs text-zinc-600">{subtitle}</p>
+      </div>
+      <span className="text-zinc-400" aria-hidden>
+        →
+      </span>
+    </Link>
   );
 }

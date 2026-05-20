@@ -9,28 +9,36 @@ export function CartHeader({ channelName }: { channelName: string }) {
   const itemCount = cart?.items.reduce((s, i) => s + i.qty, 0) ?? 0;
   const hasItems = ready && itemCount > 0;
 
+  if (!hasItems) return null;
+
   return (
-    <div className="sticky top-0 z-10 -mx-4 mb-4 border-b border-zinc-200 bg-white/95 px-4 py-2 backdrop-blur sm:-mx-6 sm:px-6">
+    <Link
+      href="/sell/checkout"
+      className="fixed bottom-0 left-0 right-0 z-20 mx-auto block max-w-2xl bg-zinc-900 px-4 py-3 text-white shadow-2xl sm:px-6"
+    >
       <div className="flex items-center justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-[10px] uppercase tracking-wide text-zinc-500">
-            Channel
-          </p>
-          <p className="truncate text-sm font-medium">{channelName}</p>
-        </div>
-        {hasItems ? (
-          <Link
-            href="/sell/checkout"
-            className="rounded-lg bg-zinc-900 px-3 py-2 text-sm font-medium text-white hover:bg-zinc-800"
-          >
-            🛒 {itemCount} · {formatRWF(total)}
-          </Link>
-        ) : (
-          <span className="rounded-lg bg-zinc-100 px-3 py-2 text-xs text-zinc-500">
-            Cart empty
+        <div className="flex items-center gap-3 min-w-0">
+          <span className="text-2xl" aria-hidden>
+            🛒
           </span>
-        )}
+          <div className="min-w-0">
+            <p className="text-xs uppercase tracking-wide text-zinc-300">
+              Selling on {channelName}
+            </p>
+            <p className="truncate text-sm font-medium">
+              {itemCount} {itemCount === 1 ? "item" : "items"}
+            </p>
+          </div>
+        </div>
+        <div className="text-right">
+          <p className="font-mono text-lg font-semibold tabular-nums">
+            {formatRWF(total)}
+          </p>
+          <p className="text-[10px] uppercase tracking-wide text-zinc-300">
+            Tap to pay →
+          </p>
+        </div>
       </div>
-    </div>
+    </Link>
   );
 }

@@ -24,38 +24,40 @@ export function AddToCartForm({
   const router = useRouter();
   const { addItem } = useCart();
 
-  const defaultUnit: "UNIT" | "CARTON" =
-    product.sellableAsUnit ? "UNIT" : "CARTON";
+  const defaultUnit: "UNIT" | "CARTON" = product.sellableAsUnit
+    ? "UNIT"
+    : "CARTON";
 
   const [saleUnit, setSaleUnit] = useState<"UNIT" | "CARTON">(defaultUnit);
   const [qty, setQty] = useState(1);
   const [error, setError] = useState<string | null>(null);
 
-  const unitPrice = saleUnit === "UNIT" ? product.unitPrice : product.cartonPrice;
+  const unitPrice =
+    saleUnit === "UNIT" ? product.unitPrice : product.cartonPrice;
   const lineTotal = useMemo(() => unitPrice * qty, [unitPrice, qty]);
-
-  const maxQty =
-    saleUnit === "UNIT" ? product.unitsPerCarton : product.sealedCartons;
 
   function handleAdd() {
     setError(null);
 
     if (saleUnit === "UNIT") {
-      if (qty < 1) return setError("Qty must be at least 1");
+      if (qty < 1) return setError("Type at least 1");
       if (qty > product.unitsPerCarton) {
         return setError(
-          `Max ${product.unitsPerCarton} per unit-sale (carton size). Pick CARTON instead.`,
+          `Max ${product.unitsPerCarton} when selling singles. Switch to "Whole carton" for more.`,
         );
       }
-      const totalAvailable = product.openedUnits + product.sealedCartons * product.unitsPerCarton;
+      const totalAvailable =
+        product.openedUnits + product.sealedCartons * product.unitsPerCarton;
       if (totalAvailable < qty) {
-        return setError(`Out of stock (${totalAvailable} unit(s) available)`);
+        return setError(
+          `Out of stock — only ${totalAvailable} ${totalAvailable === 1 ? "single" : "singles"} left.`,
+        );
       }
     } else {
-      if (qty < 1) return setError("Qty must be at least 1");
+      if (qty < 1) return setError("Type at least 1");
       if (product.sealedCartons < qty) {
         return setError(
-          `Only ${product.sealedCartons} sealed carton(s) available`,
+          `Out of stock — only ${product.sealedCartons} sealed carton${product.sealedCartons === 1 ? "" : "s"} left.`,
         );
       }
     }
@@ -74,59 +76,69 @@ export function AddToCartForm({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       {error && (
-        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {error}
         </div>
       )}
 
-      <div className="grid grid-cols-2 gap-2">
-        <button
-          type="button"
-          onClick={() => {
-            setSaleUnit("UNIT");
-            setQty(1);
-          }}
-          disabled={!product.sellableAsUnit}
-          className={`rounded-2xl border px-3 py-3 text-sm font-medium transition disabled:opacity-50 ${
-            saleUnit === "UNIT"
-              ? "border-zinc-900 bg-zinc-900 text-white"
-              : "border-zinc-300 bg-white text-zinc-900 hover:bg-zinc-50"
-          }`}
-        >
-          Per unit
-          <div className="mt-1 text-xs font-normal opacity-80">
-            {formatRWF(product.unitPrice)}
-          </div>
-        </button>
-        <button
-          type="button"
-          onClick={() => {
-            setSaleUnit("CARTON");
-            setQty(1);
-          }}
-          disabled={!product.sellableAsCarton}
-          className={`rounded-2xl border px-3 py-3 text-sm font-medium transition disabled:opacity-50 ${
-            saleUnit === "CARTON"
-              ? "border-zinc-900 bg-zinc-900 text-white"
-              : "border-zinc-300 bg-white text-zinc-900 hover:bg-zinc-50"
-          }`}
-        >
-          Per carton
-          <div className="mt-1 text-xs font-normal opacity-80">
-            {formatRWF(product.cartonPrice)}
-          </div>
-        </button>
+      {/* Selling unit — two big tap cards */}
+      <div>
+        <p className="mb-2 text-sm font-medium text-zinc-700">Selling as</p>
+        <div className="grid grid-cols-2 gap-3">
+          <button
+            type="button"
+            onClick={() => {
+              setSaleUnit("UNIT");
+              setQty(1);
+            }}
+            disabled={!product.sellableAsUnit}
+            className={`rounded-2xl border-2 px-4 py-4 text-center transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 ${
+              saleUnit === "UNIT"
+                ? "border-zinc-900 bg-zinc-900 text-white"
+                : "border-zinc-300 bg-white text-zinc-900 hover:border-zinc-400"
+            }`}
+          >
+            <p className="text-base font-semibold">Single</p>
+            <p
+              className={`mt-1 font-mono text-sm tabular-nums ${saleUnit === "UNIT" ? "text-zinc-200" : "text-zinc-700"}`}
+            >
+              {formatRWF(product.unitPrice)}
+            </p>
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setSaleUnit("CARTON");
+              setQty(1);
+            }}
+            disabled={!product.sellableAsCarton}
+            className={`rounded-2xl border-2 px-4 py-4 text-center transition active:scale-95 disabled:cursor-not-allowed disabled:opacity-40 ${
+              saleUnit === "CARTON"
+                ? "border-zinc-900 bg-zinc-900 text-white"
+                : "border-zinc-300 bg-white text-zinc-900 hover:border-zinc-400"
+            }`}
+          >
+            <p className="text-base font-semibold">Whole carton</p>
+            <p
+              className={`mt-1 font-mono text-sm tabular-nums ${saleUnit === "CARTON" ? "text-zinc-200" : "text-zinc-700"}`}
+            >
+              {formatRWF(product.cartonPrice)}
+            </p>
+          </button>
+        </div>
       </div>
 
+      {/* Quantity stepper — large */}
       <div>
-        <p className="text-sm font-medium">Quantity</p>
-        <div className="mt-1 flex items-center gap-2">
+        <p className="mb-2 text-sm font-medium text-zinc-700">How many?</p>
+        <div className="flex items-center gap-3">
           <button
             type="button"
             onClick={() => setQty(Math.max(1, qty - 1))}
-            className="h-12 w-12 rounded-2xl border border-zinc-300 bg-white text-xl font-medium hover:bg-zinc-50"
+            aria-label="Decrease quantity"
+            className="h-16 w-16 rounded-2xl border-2 border-zinc-300 bg-white text-3xl font-medium hover:bg-zinc-50 active:scale-95"
           >
             −
           </button>
@@ -137,32 +149,38 @@ export function AddToCartForm({
             onChange={(e) =>
               setQty(Math.max(1, Math.floor(Number(e.target.value || 1))))
             }
-            className="h-12 flex-1 rounded-2xl border border-zinc-300 bg-white text-center text-2xl font-semibold tabular-nums"
+            className="h-16 flex-1 rounded-2xl border-2 border-zinc-300 bg-white text-center text-3xl font-semibold tabular-nums"
           />
           <button
             type="button"
             onClick={() => setQty(qty + 1)}
-            className="h-12 w-12 rounded-2xl border border-zinc-300 bg-white text-xl font-medium hover:bg-zinc-50"
+            aria-label="Increase quantity"
+            className="h-16 w-16 rounded-2xl border-2 border-zinc-300 bg-white text-3xl font-medium hover:bg-zinc-50 active:scale-95"
           >
             +
           </button>
         </div>
-        {maxQty > 0 && saleUnit === "CARTON" && (
-          <p className="mt-1 text-xs text-zinc-500">
-            {product.sealedCartons} sealed carton(s) available
+        {saleUnit === "UNIT" && (
+          <p className="mt-2 text-xs text-zinc-500">
+            Up to {product.unitsPerCarton} per ticket. For more, switch to
+            &quot;Whole carton&quot;.
           </p>
         )}
-        {saleUnit === "UNIT" && (
-          <p className="mt-1 text-xs text-zinc-500">
-            Max {product.unitsPerCarton} per UNIT line; pick CARTON for more
+        {saleUnit === "CARTON" && product.sealedCartons > 0 && (
+          <p className="mt-2 text-xs text-zinc-500">
+            {product.sealedCartons} sealed carton
+            {product.sealedCartons === 1 ? "" : "s"} available.
           </p>
         )}
       </div>
 
-      <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-3">
-        <div className="flex items-center justify-between text-sm">
-          <span>{qty} × {formatRWF(unitPrice)}</span>
-          <span className="font-mono text-lg font-semibold tabular-nums">
+      {/* Total preview */}
+      <div className="rounded-2xl border-2 border-zinc-200 bg-zinc-50 px-4 py-3">
+        <div className="flex items-center justify-between">
+          <span className="text-sm text-zinc-700">
+            {qty} × {formatRWF(unitPrice)}
+          </span>
+          <span className="font-mono text-2xl font-semibold tabular-nums">
             {formatRWF(lineTotal)}
           </span>
         </div>
@@ -171,7 +189,7 @@ export function AddToCartForm({
       <button
         type="button"
         onClick={handleAdd}
-        className="w-full rounded-2xl bg-zinc-900 px-4 py-4 text-base font-medium text-white hover:bg-zinc-800"
+        className="w-full rounded-2xl bg-zinc-900 px-5 py-5 text-lg font-semibold text-white shadow-md transition hover:bg-zinc-800 active:scale-[0.98]"
       >
         Add to cart
       </button>
