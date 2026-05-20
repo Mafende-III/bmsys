@@ -6,8 +6,15 @@ import { useRouter } from "next/navigation";
 import type { Product } from "@prisma/client";
 import { formatRWF } from "@/lib/format";
 import { createProduct, updateProduct } from "@/lib/products/actions";
+import { IconPicker } from "@/app/_components/IconPicker";
+import { iconForKey } from "@/lib/icons";
 
-type CategoryOption = { id: string; name: string; iconEmoji: string };
+type CategoryOption = {
+  id: string;
+  name: string;
+  iconKey: string | null;
+  iconEmoji: string;
+};
 
 type Mode =
   | { kind: "create" }
@@ -17,6 +24,7 @@ type Initial = {
   sku: string;
   name: string;
   categoryId: string;
+  iconKey: string | null;
   iconEmoji: string;
   unitsPerCarton: number;
   costPerCarton: number;
@@ -34,6 +42,7 @@ function initialFromMode(mode: Mode): Initial {
       sku: mode.product.sku,
       name: mode.product.name,
       categoryId: mode.product.categoryId ?? "",
+      iconKey: mode.product.iconKey,
       iconEmoji: mode.product.iconEmoji ?? "",
       unitsPerCarton: mode.product.unitsPerCarton,
       costPerCarton: mode.product.costPerCarton,
@@ -49,6 +58,7 @@ function initialFromMode(mode: Mode): Initial {
     sku: "",
     name: "",
     categoryId: "",
+    iconKey: null,
     iconEmoji: "",
     unitsPerCarton: 12,
     costPerCarton: 0,
@@ -79,6 +89,7 @@ export function ProductForm({
 
   // Live state
   const [categoryId, setCategoryId] = useState(initial.categoryId);
+  const [iconKey, setIconKey] = useState<string | null>(initial.iconKey);
   const [iconEmoji, setIconEmoji] = useState(initial.iconEmoji);
   const [unitsPerCarton, setUnitsPerCarton] = useState(initial.unitsPerCarton);
   const [costPerCarton, setCostPerCarton] = useState(initial.costPerCarton);
@@ -86,7 +97,9 @@ export function ProductForm({
   const [cartonPrice, setCartonPrice] = useState(initial.cartonPrice);
 
   const selectedCategory = categories.find((c) => c.id === categoryId);
-  const effectiveIcon =
+  const effectiveIconKey = iconKey ?? selectedCategory?.iconKey ?? null;
+  const EffectiveIcon = effectiveIconKey ? iconForKey(effectiveIconKey) : null;
+  const effectiveEmoji =
     iconEmoji || selectedCategory?.iconEmoji || "📦";
 
   const margins = useMemo(() => {
@@ -107,6 +120,7 @@ export function ProductForm({
     const data: Record<string, unknown> = {
       name: String(formData.get("name") ?? ""),
       categoryId: categoryId || "",
+      iconKey: iconKey ?? "",
       iconEmoji: iconEmoji || "",
       unitsPerCarton: Number(formData.get("unitsPerCarton") ?? 0),
       costPerCarton: Number(formData.get("costPerCarton") ?? 0),
@@ -183,50 +197,73 @@ export function ProductForm({
         />
       </label>
 
-      <div className="grid grid-cols-[1fr_auto] gap-3">
-        <label className="block">
-          <span className="text-sm font-medium">Category</span>
-          <select
-            value={categoryId}
-            onChange={(e) => setCategoryId(e.target.value)}
-            className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
-          >
-            <option value="">— Uncategorised —</option>
-            {categories.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.iconEmoji} {c.name}
-              </option>
-            ))}
-          </select>
-          {categories.length === 0 && (
-            <span className="mt-1 block text-xs text-amber-700">
-              No categories yet.{" "}
-              <a href="/categories/new" className="underline">
-                Add one
-              </a>
-              .
-            </span>
-          )}
-        </label>
-        <label className="block">
-          <span className="text-sm font-medium">Icon</span>
-          <input
-            type="text"
-            value={iconEmoji}
-            onChange={(e) => setIconEmoji(e.target.value)}
-            placeholder={selectedCategory?.iconEmoji ?? "📦"}
-            maxLength={10}
-            className="mt-1 block w-20 rounded-lg border border-zinc-300 px-3 py-2 text-center text-xl"
-          />
-          <span className="mt-1 block text-xs text-zinc-500">
-            Override
+      <label className="block">
+        <span className="text-sm font-medium">Category</span>
+        <select
+          value={categoryId}
+          onChange={(e) => setCategoryId(e.target.value)}
+          className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+        >
+          <option value="">— Uncategorised —</option>
+          {categories.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.iconEmoji} {c.name}
+            </option>
+          ))}
+        </select>
+        {categories.length === 0 && (
+          <span className="mt-1 block text-xs text-amber-700">
+            No categories yet.{" "}
+            <a href="/categories/new" className="underline">
+              Add one
+            </a>
+            .
           </span>
-        </label>
+        )}
+      </label>
+
+      <div>
+        <span className="text-sm font-medium">Icon override</span>
+        <p className="mt-0.5 text-xs text-zinc-500">
+          Leave empty to use the category icon.
+        </p>
+        <div className="mt-1">
+          <IconPicker
+            value={iconKey}
+            onChange={setIconKey}
+            allowClear
+            clearLabel="Use category icon"
+          />
+        </div>
+        <details className="mt-2 text-xs text-zinc-600">
+          <summary className="cursor-pointer">Emoji fallback (optional)</summary>
+          <div className="mt-2 flex items-center gap-2">
+            <input
+              type="text"
+              value={iconEmoji}
+              onChange={(e) => setIconEmoji(e.target.value)}
+              placeholder={selectedCategory?.iconEmoji ?? "📦"}
+              maxLength={10}
+              className="block w-20 rounded-lg border border-zinc-300 px-2 py-1 text-center text-xl"
+              aria-label="Emoji fallback"
+            />
+            <span className="text-zinc-500">
+              Shown if a device can&apos;t render the icon above.
+            </span>
+          </div>
+        </details>
       </div>
 
-      <div className="rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm">
-        <span className="text-zinc-600">POS preview:</span>{" "}
-        <span className="text-2xl">{effectiveIcon}</span>{" "}
+      <div className="flex items-center gap-3 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm">
+        <span className="text-zinc-600">POS preview:</span>
+        {EffectiveIcon ? (
+          <EffectiveIcon
+            className="h-7 w-7 text-zinc-800"
+            strokeWidth={1.5}
+          />
+        ) : (
+          <span className="text-2xl">{effectiveEmoji}</span>
+        )}
         <span className="text-zinc-800">{initial.name || "(name)"}</span>
       </div>
 

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireSeller } from "@/lib/auth-guards";
 import { formatRWF } from "@/lib/format";
+import { iconForKey } from "@/lib/icons";
 import { listAllowedChannels } from "@/lib/permissions";
 import { getActiveChannelId } from "@/lib/sales/actions";
 import {
@@ -44,9 +45,18 @@ export default async function SellCategoryPage({
           ← All categories
         </Link>
         <h2 className="mt-2 flex items-center gap-3 text-2xl font-semibold">
-          <span className="text-4xl" aria-hidden>
-            {category.iconEmoji}
-          </span>
+          {category.iconKey ? (
+            (() => {
+              const Icon = iconForKey(category.iconKey);
+              return (
+                <Icon className="h-9 w-9 text-zinc-800" strokeWidth={1.5} />
+              );
+            })()
+          ) : (
+            <span className="text-4xl" aria-hidden>
+              {category.iconEmoji}
+            </span>
+          )}
           <span>{category.name}</span>
         </h2>
       </div>
@@ -56,6 +66,7 @@ export default async function SellCategoryPage({
           const totalAvailable =
             p.openedUnits + p.sealedCartons * p.unitsPerCarton;
           const out = totalAvailable === 0;
+          const Icon = p.iconKey ? iconForKey(p.iconKey) : null;
           return (
             <Link
               key={p.id}
@@ -66,9 +77,16 @@ export default async function SellCategoryPage({
                   : "border-zinc-200 hover:border-zinc-400 hover:shadow-sm"
               }`}
             >
-              <span className="text-4xl" aria-hidden>
-                {p.iconEmoji}
-              </span>
+              {Icon ? (
+                <Icon
+                  className="h-9 w-9 shrink-0 text-zinc-800"
+                  strokeWidth={1.5}
+                />
+              ) : (
+                <span className="text-4xl" aria-hidden>
+                  {p.iconEmoji}
+                </span>
+              )}
               <div className="flex-1 min-w-0">
                 <p className="line-clamp-2 text-base font-medium">{p.name}</p>
                 <p className="mt-0.5 text-sm tabular-nums text-zinc-700">

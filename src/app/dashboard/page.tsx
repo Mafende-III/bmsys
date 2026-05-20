@@ -151,7 +151,7 @@ export default async function DashboardPage() {
           <DashCard
             href="/users"
             Icon={Users}
-            title="People"
+            title="Users"
             subtitle="Owners and sellers"
           />
           <DashCard

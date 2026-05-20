@@ -183,7 +183,8 @@ model Product {
   sku                      String   @unique
   name                     String
   categoryId               String?
-  iconEmoji                String?  // optional per-product override of the category icon
+  iconKey                  String?  // optional per-product Lucide icon (takes precedence over category)
+  iconEmoji                String?  // optional per-product emoji (legacy fallback)
   unitsPerCarton           Int
   costPerCarton            Int      // RWF, integer (no decimals)
   unitPrice                Int      // RWF
@@ -212,6 +213,7 @@ model Category {
   id        String   @id @default(cuid())
   name      String   @unique
   slug      String   @unique
+  iconKey   String?
   iconEmoji String   @default("📦")
   sortOrder Int      @default(0)
   active    Boolean  @default(true)

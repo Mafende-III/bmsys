@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { Package } from "lucide-react";
 import { requireSeller } from "@/lib/auth-guards";
+import { iconForKey } from "@/lib/icons";
 import { listAllowedChannels } from "@/lib/permissions";
 import { getActiveChannelId } from "@/lib/sales/actions";
 import { listSellableCategories } from "@/lib/sales/queries";
@@ -50,21 +51,33 @@ export default async function SellHome() {
         Pick a category
       </h2>
       <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-        {categories.map((c) => (
-          <Link
-            key={c.slug}
-            href={`/sell/category/${c.slug}`}
-            className="flex aspect-square flex-col items-center justify-center gap-2 rounded-3xl border-2 border-zinc-200 bg-white p-4 text-center shadow-sm transition hover:border-zinc-300 hover:shadow-md active:scale-95"
-          >
-            <span className="text-5xl" aria-hidden>
-              {c.iconEmoji}
-            </span>
-            <span className="text-sm font-medium leading-tight">{c.name}</span>
-            <span className="text-[10px] uppercase tracking-wide text-zinc-500">
-              {c.productCount} {c.productCount === 1 ? "item" : "items"}
-            </span>
-          </Link>
-        ))}
+        {categories.map((c) => {
+          const Icon = c.iconKey ? iconForKey(c.iconKey) : null;
+          return (
+            <Link
+              key={c.slug}
+              href={`/sell/category/${c.slug}`}
+              className="flex aspect-square flex-col items-center justify-center gap-2 rounded-3xl border-2 border-zinc-200 bg-white p-4 text-center shadow-sm transition hover:border-zinc-300 hover:shadow-md active:scale-95"
+            >
+              {Icon ? (
+                <Icon
+                  className="h-12 w-12 text-zinc-800"
+                  strokeWidth={1.5}
+                />
+              ) : (
+                <span className="text-5xl" aria-hidden>
+                  {c.iconEmoji}
+                </span>
+              )}
+              <span className="text-sm font-medium leading-tight">
+                {c.name}
+              </span>
+              <span className="text-[10px] uppercase tracking-wide text-zinc-500">
+                {c.productCount} {c.productCount === 1 ? "item" : "items"}
+              </span>
+            </Link>
+          );
+        })}
       </div>
     </div>
   );

@@ -18,9 +18,15 @@ const optionalEmoji = z.preprocess(
   z.string().trim().max(10).nullable().optional(),
 );
 
+const optionalIconKey = z.preprocess(
+  (v) => (typeof v === "string" && v.trim() === "" ? null : v),
+  z.string().trim().max(50).nullable().optional(),
+);
+
 const baseFields = {
   name: z.string().trim().min(1, "Name is required").max(200),
   categoryId: optionalString,
+  iconKey: optionalIconKey,
   iconEmoji: optionalEmoji,
   unitsPerCarton: positiveInt("Units per carton").min(
     1,

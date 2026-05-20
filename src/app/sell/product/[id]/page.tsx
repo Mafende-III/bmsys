@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireSeller } from "@/lib/auth-guards";
+import { iconForKey } from "@/lib/icons";
 import { listAllowedChannels } from "@/lib/permissions";
 import { getActiveChannelId } from "@/lib/sales/actions";
 import { listProductsForChannel } from "@/lib/sales/queries";
@@ -38,7 +39,21 @@ export default async function SellProductPage({
           ← Back
         </Link>
         <div className="mt-2 flex items-center gap-3">
-          <span className="text-5xl" aria-hidden>{product.iconEmoji}</span>
+          {product.iconKey ? (
+            (() => {
+              const Icon = iconForKey(product.iconKey);
+              return (
+                <Icon
+                  className="h-12 w-12 text-zinc-800"
+                  strokeWidth={1.5}
+                />
+              );
+            })()
+          ) : (
+            <span className="text-5xl" aria-hidden>
+              {product.iconEmoji}
+            </span>
+          )}
           <h2 className="text-2xl font-semibold leading-tight">
             {product.name}
           </h2>

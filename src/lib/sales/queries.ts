@@ -8,7 +8,8 @@ export type SellableProduct = {
   categoryId: string | null;
   categoryName: string | null;
   categorySlug: string | null;
-  iconEmoji: string;           // resolved: product.iconEmoji ?? category.iconEmoji ?? 📦
+  iconKey: string | null;       // resolved: product.iconKey ?? category.iconKey
+  iconEmoji: string;            // resolved: product.iconEmoji ?? category.iconEmoji ?? 📦
   unitsPerCarton: number;
   sellableAsUnit: boolean;
   sellableAsCarton: boolean;
@@ -23,7 +24,8 @@ const FALLBACK_ICON = "📦";
 
 /**
  * Products eligible for selling on the given channel. Joins Category
- * for icon resolution (product.iconEmoji overrides category.iconEmoji).
+ * for icon resolution — product.iconKey/iconEmoji override the
+ * category-level values.
  */
 export async function listProductsForChannel(
   channelId: string,
@@ -39,7 +41,9 @@ export async function listProductsForChannel(
     orderBy: { name: "asc" },
     include: {
       channelPriceOverrides: { where: { channelId } },
-      category: { select: { name: true, slug: true, iconEmoji: true } },
+      category: {
+        select: { name: true, slug: true, iconKey: true, iconEmoji: true },
+      },
     },
   });
 
@@ -78,6 +82,7 @@ export async function listProductsForChannel(
       categoryId: p.categoryId,
       categoryName: p.category?.name ?? null,
       categorySlug: p.category?.slug ?? null,
+      iconKey: p.iconKey ?? p.category?.iconKey ?? null,
       iconEmoji:
         p.iconEmoji ?? p.category?.iconEmoji ?? FALLBACK_ICON,
       unitsPerCarton: p.unitsPerCarton,
@@ -96,6 +101,7 @@ export type SellableCategory = {
   id: string | null;            // null = synthetic Uncategorised bucket
   name: string;
   slug: string;
+  iconKey: string | null;
   iconEmoji: string;
   productCount: number;
 };
@@ -126,6 +132,7 @@ export async function listSellableCategories(
     id: c.id,
     name: c.name,
     slug: c.slug,
+    iconKey: c.iconKey,
     iconEmoji: c.iconEmoji,
     productCount: c._count.products,
   }));
@@ -135,6 +142,7 @@ export async function listSellableCategories(
       id: null,
       name: "Uncategorised",
       slug: "uncategorised",
+      iconKey: null,
       iconEmoji: FALLBACK_ICON,
       productCount: uncategorisedCount,
     });
@@ -149,11 +157,23 @@ export async function listSellableCategories(
  */
 export async function findCategoryBySlug(slug: string) {
   if (slug === "uncategorised") {
-    return { id: null, name: "Uncategorised", slug, iconEmoji: FALLBACK_ICON };
+    return {
+      id: null,
+      name: "Uncategorised",
+      slug,
+      iconKey: null,
+      iconEmoji: FALLBACK_ICON,
+    };
   }
   const cat = await prisma.category.findUnique({
     where: { slug },
-    select: { id: true, name: true, slug: true, iconEmoji: true },
+    select: {
+      id: true,
+      name: true,
+      slug: true,
+      iconKey: true,
+      iconEmoji: true,
+    },
   });
   return cat;
 }

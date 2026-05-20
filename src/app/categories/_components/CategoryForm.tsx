@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import type { Category } from "@prisma/client";
 import { createCategory, updateCategory } from "@/lib/categories/actions";
+import { IconPicker } from "@/app/_components/IconPicker";
 
 type Mode =
   | { kind: "create" }
@@ -18,23 +19,6 @@ function slugify(name: string): string {
     .slice(0, 50);
 }
 
-const EMOJI_SUGGESTIONS = [
-  "💧",
-  "🍺",
-  "🥤",
-  "🧃",
-  "🍷",
-  "🥃",
-  "🍾",
-  "🍿",
-  "🍪",
-  "🍞",
-  "🚬",
-  "🧴",
-  "🧂",
-  "📦",
-];
-
 export function CategoryForm({ mode }: { mode: Mode }) {
   const router = useRouter();
 
@@ -43,14 +27,23 @@ export function CategoryForm({ mode }: { mode: Mode }) {
       ? {
           name: mode.category.name,
           slug: mode.category.slug,
+          iconKey: mode.category.iconKey,
           iconEmoji: mode.category.iconEmoji,
           sortOrder: mode.category.sortOrder,
           active: mode.category.active,
         }
-      : { name: "", slug: "", iconEmoji: "📦", sortOrder: 0, active: true };
+      : {
+          name: "",
+          slug: "",
+          iconKey: "package" as string | null,
+          iconEmoji: "📦",
+          sortOrder: 0,
+          active: true,
+        };
 
   const [name, setName] = useState(initial.name);
   const [slug, setSlug] = useState(initial.slug);
+  const [iconKey, setIconKey] = useState<string | null>(initial.iconKey);
   const [iconEmoji, setIconEmoji] = useState(initial.iconEmoji);
   const [sortOrder, setSortOrder] = useState(String(initial.sortOrder));
   const [active, setActive] = useState(initial.active);
@@ -72,6 +65,7 @@ export function CategoryForm({ mode }: { mode: Mode }) {
 
     const data: Record<string, unknown> = {
       name,
+      iconKey,
       iconEmoji,
       sortOrder,
     };
@@ -148,37 +142,26 @@ export function CategoryForm({ mode }: { mode: Mode }) {
       </label>
 
       <div>
-        <label className="block">
-          <span className="text-sm font-medium">Icon</span>
-          <input
-            type="text"
-            required
-            value={iconEmoji}
-            onChange={(e) => setIconEmoji(e.target.value)}
-            maxLength={10}
-            className="mt-1 block w-24 rounded-lg border border-zinc-300 px-3 py-2 text-center text-2xl"
-          />
-        </label>
-        <div className="mt-2 flex flex-wrap gap-1">
-          {EMOJI_SUGGESTIONS.map((e) => (
-            <button
-              key={e}
-              type="button"
-              onClick={() => setIconEmoji(e)}
-              className={`h-9 w-9 rounded-lg border text-xl transition ${
-                iconEmoji === e
-                  ? "border-zinc-900 bg-zinc-900"
-                  : "border-zinc-300 bg-white hover:bg-zinc-50"
-              }`}
-              aria-label={`Pick ${e}`}
-            >
-              {e}
-            </button>
-          ))}
+        <span className="text-sm font-medium">Icon</span>
+        <div className="mt-1">
+          <IconPicker value={iconKey} onChange={setIconKey} />
         </div>
-        <p className="mt-1 text-xs text-zinc-500">
-          Pick one above, or paste any emoji into the box.
-        </p>
+        <details className="mt-2 text-xs text-zinc-600">
+          <summary className="cursor-pointer">Emoji fallback (optional)</summary>
+          <div className="mt-2 flex items-center gap-2">
+            <input
+              type="text"
+              value={iconEmoji}
+              onChange={(e) => setIconEmoji(e.target.value)}
+              maxLength={10}
+              className="block w-20 rounded-lg border border-zinc-300 px-2 py-1 text-center text-xl"
+              aria-label="Emoji fallback"
+            />
+            <span className="text-zinc-500">
+              Shown if a device can&apos;t render the icon above.
+            </span>
+          </div>
+        </details>
       </div>
 
       <label className="block">

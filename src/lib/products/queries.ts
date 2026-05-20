@@ -108,6 +108,6 @@ export async function getCategoriesForPicker() {
   return prisma.category.findMany({
     where: { active: true },
     orderBy: [{ sortOrder: "asc" }, { name: "asc" }],
-    select: { id: true, name: true, iconEmoji: true },
+    select: { id: true, name: true, iconKey: true, iconEmoji: true },
   });
 }
