@@ -3,6 +3,14 @@ import { getSettings } from "@/lib/settings/queries";
 import { HelpButton } from "./_components/HelpButton";
 import "./globals.css";
 
+// The root layout reads from Settings on every render so a logo or
+// theme change is picked up immediately without a redeploy. That
+// means no page can be statically prerendered at build time (Prisma
+// has no DATABASE_URL during `next build`). Opting the whole tree
+// into dynamic rendering is the right call for this single-tenant
+// authenticated app — every request is per-user anyway.
+export const dynamic = "force-dynamic";
+
 export async function generateMetadata(): Promise<Metadata> {
   const { companyName, logoUrl } = await getSettings();
   return {
