@@ -2,6 +2,7 @@ import Link from "next/link";
 import {
   AlertTriangle,
   Banknote,
+  LineChart,
   PackageX,
   ShoppingCart,
   Wallet,
@@ -23,6 +24,9 @@ import {
   type PeriodKey,
 } from "@/lib/analytics/period";
 import { formatRWF } from "@/lib/format";
+import { DonutChart } from "./_components/DonutChart";
+import { SalesByDayChart } from "./_components/SalesByDayChart";
+import { TopSellersChart } from "./_components/TopSellersChart";
 
 type SearchParams = { period?: string };
 
@@ -65,8 +69,6 @@ export default async function AnalyticsPage({
       (m, d) => (m === null || d.total < m.total ? d : m),
       null,
     );
-  const dailyMax = Math.max(...daily.map((d) => d.total), 1);
-
   return (
     <main className="mx-auto max-w-6xl p-4 sm:p-6">
       <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
@@ -188,34 +190,26 @@ export default async function AnalyticsPage({
           </div>
         </div>
         {kpis.revenue === 0 ? (
-          <p className="mt-6 text-center text-sm text-zinc-500">
-            {t("noData")}
-          </p>
+          <div className="mt-6 flex flex-col items-center gap-2 py-8 text-center text-zinc-500">
+            <LineChart className="h-10 w-10 text-zinc-300" strokeWidth={1.5} />
+            <p className="text-sm font-medium text-zinc-700">
+              {t("noSalesYet")}
+            </p>
+            <p className="text-xs">{t("noSalesHint")}</p>
+          </div>
         ) : (
-          <div className="mt-4 flex h-32 items-end gap-[2px] overflow-x-auto pb-1">
-            {daily.map((d) => {
-              const pct = (d.total / dailyMax) * 100;
-              const isMax = d === maxDay && d.total > 0;
-              const isMin = minDay && d === minDay;
-              const bar =
-                isMax
-                  ? "bg-green-600"
-                  : isMin
-                    ? "bg-amber-500"
-                    : "bg-zinc-300";
-              return (
-                <div
-                  key={d.date.toISOString()}
-                  className="flex w-full min-w-[4px] flex-col items-center justify-end"
-                  title={`${d.date.toLocaleDateString()} — ${formatRWF(d.total)}`}
-                >
-                  <div
-                    className={`w-full rounded-t ${bar}`}
-                    style={{ height: `${pct}%` }}
-                  />
-                </div>
-              );
-            })}
+          <div className="mt-4">
+            <SalesByDayChart
+              data={daily.map((d) => ({
+                iso: d.date.toISOString(),
+                label: d.date.toLocaleDateString(undefined, {
+                  day: "numeric",
+                  month: "short",
+                }),
+                total: d.total,
+                count: d.count,
+              }))}
+            />
           </div>
         )}
       </section>
@@ -228,34 +222,9 @@ export default async function AnalyticsPage({
           {top.length === 0 ? (
             <p className="mt-4 text-sm text-zinc-500">{t("noData")}</p>
           ) : (
-            <ol className="mt-3 space-y-2">
-              {top.map((p, i) => (
-                <li
-                  key={p.productId}
-                  className="flex items-center justify-between gap-3 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2"
-                >
-                  <div className="flex min-w-0 items-center gap-2">
-                    <span className="text-sm font-semibold text-zinc-500">
-                      {i + 1}.
-                    </span>
-                    <div className="min-w-0">
-                      <p className="truncate text-sm font-medium">{p.name}</p>
-                      <p className="font-mono text-[10px] text-zinc-500">
-                        {p.sku}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="text-right text-xs">
-                    <p className="font-medium">
-                      {t("topProductUnits", { count: p.unitsSold })}
-                    </p>
-                    <p className="font-mono text-zinc-600">
-                      {formatRWF(p.revenue)}
-                    </p>
-                  </div>
-                </li>
-              ))}
-            </ol>
+            <div className="mt-4">
+              <TopSellersChart data={top} />
+            </div>
           )}
         </section>
 
@@ -265,25 +234,16 @@ export default async function AnalyticsPage({
           {channels.length === 0 ? (
             <p className="mt-4 text-sm text-zinc-500">{t("noData")}</p>
           ) : (
-            <ul className="mt-3 space-y-2">
-              {channels.map((c) => {
-                const pct = kpis.revenue > 0 ? (c.total / kpis.revenue) * 100 : 0;
-                return (
-                  <li key={c.channelId}>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="font-medium">{c.channelName}</span>
-                      <span className="font-mono">{formatRWF(c.total)}</span>
-                    </div>
-                    <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-zinc-100">
-                      <div
-                        className="h-full bg-zinc-700"
-                        style={{ width: `${pct}%` }}
-                      />
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
+            <div className="mt-4">
+              <DonutChart
+                totalLabel={t("salesTotal")}
+                data={channels.map((c) => ({
+                  id: c.channelId,
+                  label: c.channelName,
+                  value: c.total,
+                }))}
+              />
+            </div>
           )}
         </section>
       </div>
@@ -368,26 +328,16 @@ export default async function AnalyticsPage({
           {expensesByCat.length === 0 ? (
             <p className="mt-4 text-sm text-zinc-500">{t("noData")}</p>
           ) : (
-            <ul className="mt-3 space-y-2">
-              {expensesByCat.map((e) => {
-                const pct =
-                  kpis.expenses > 0 ? (e.total / kpis.expenses) * 100 : 0;
-                return (
-                  <li key={e.categoryId}>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="font-medium">{e.categoryName}</span>
-                      <span className="font-mono">{formatRWF(e.total)}</span>
-                    </div>
-                    <div className="mt-1 h-1.5 w-full overflow-hidden rounded-full bg-zinc-100">
-                      <div
-                        className="h-full bg-amber-500"
-                        style={{ width: `${pct}%` }}
-                      />
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
+            <div className="mt-4">
+              <DonutChart
+                totalLabel={t("expensesTotal")}
+                data={expensesByCat.map((e) => ({
+                  id: e.categoryId,
+                  label: e.categoryName,
+                  value: e.total,
+                }))}
+              />
+            </div>
           )}
         </section>
       </div>

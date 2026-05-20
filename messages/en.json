@@ -405,7 +405,11 @@
     "stockValueNote": "Valued at current cost.",
     "viewAll": "View all",
     "noData": "Nothing here yet for this period.",
-    "currentCostNote": "Cost of stock sold is approximate (uses current cost). Historical batch costing comes later."
+    "currentCostNote": "Cost of stock sold is approximate (uses current cost). Historical batch costing comes later.",
+    "salesTotal": "Sales total",
+    "expensesTotal": "Expenses total",
+    "noSalesYet": "No sales in this period yet",
+    "noSalesHint": "Once a few sales come in, the trend will appear here."
   },
   "audit": {
     "title": "Activity log",

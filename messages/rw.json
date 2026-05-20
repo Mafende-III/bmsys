@@ -405,7 +405,11 @@
     "stockValueNote": "Bibarwa ku giciro cy'ubu.",
     "viewAll": "Reba byose",
     "noData": "Nta kintu kiri muri iki gihe.",
-    "currentCostNote": "Igiciro cy'ibyacurujwe ni igenekereje (gikoresha igiciro cy'ubu). Igikora ku ma batches kizaza."
+    "currentCostNote": "Igiciro cy'ibyacurujwe ni igenekereje (gikoresha igiciro cy'ubu). Igikora ku ma batches kizaza.",
+    "salesTotal": "Igiteranyo cy'ibyacurujwe",
+    "expensesTotal": "Igiteranyo cy'amafaranga yasohotse",
+    "noSalesYet": "Nta byacurujwe muri iki gihe",
+    "noSalesHint": "Iyo ibyacurujwe bigeze, igishushanyo kizagaragara hano."
   },
   "audit": {
     "title": "Inyandiko z'ibikorwa",
