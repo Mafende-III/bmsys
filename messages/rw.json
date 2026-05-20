@@ -36,7 +36,9 @@
     "subtitle": "Injira kugira ngo ucunge ibyacuruzwa n'ububiko",
     "phone": "Telefoni",
     "pin": "PIN",
-    "phonePlaceholder": "+250 7XX XXX XXX"
+    "phonePlaceholder": "+250 7XX XXX XXX",
+    "rememberMe": "Nzigumemo iminsi 90",
+    "rememberMeHint": "Ntukande iki niba ukoresha telefoni isangiwe."
   },
   "dashboard": {
     "hello": "Muraho, {name}.",

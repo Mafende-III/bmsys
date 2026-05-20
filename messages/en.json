@@ -36,7 +36,9 @@
     "subtitle": "Sign in to manage sales and stock",
     "phone": "Phone",
     "pin": "PIN",
-    "phonePlaceholder": "+250 7XX XXX XXX"
+    "phonePlaceholder": "+250 7XX XXX XXX",
+    "rememberMe": "Keep me signed in for 90 days",
+    "rememberMeHint": "Don't tick this on a shared device."
   },
   "dashboard": {
     "hello": "Hello, {name}.",

@@ -38,6 +38,7 @@ export default async function LoginPage() {
             await signIn("credentials", {
               phone: formData.get("phone"),
               pin: formData.get("pin"),
+              remember: formData.get("remember") === "on" ? "on" : "",
               redirectTo: "/dashboard",
             });
           }}
@@ -65,6 +66,20 @@ export default async function LoginPage() {
               autoComplete="off"
               className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-zinc-900 focus:ring-1 focus:ring-zinc-900"
             />
+          </label>
+
+          <label className="flex items-start gap-2 text-sm">
+            <input
+              type="checkbox"
+              name="remember"
+              className="mt-0.5 h-4 w-4 rounded border-zinc-300"
+            />
+            <span>
+              <span className="font-medium">{t("login.rememberMe")}</span>
+              <span className="mt-0.5 block text-xs text-zinc-500">
+                {t("login.rememberMeHint")}
+              </span>
+            </span>
           </label>
 
           <button

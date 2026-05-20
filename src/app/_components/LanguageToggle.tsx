@@ -3,12 +3,13 @@
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Languages } from "lucide-react";
-import { LOCALES, LOCALE_COOKIE, LOCALE_LABEL, type Locale } from "@/i18n/config";
+import { setLanguage } from "@/lib/i18n/actions";
+import { LOCALES, LOCALE_LABEL, type Locale } from "@/i18n/config";
 
 /**
- * Compact EN ↔ RW switcher. Writes the chosen locale into a cookie
- * and refreshes so the server-rendered tree re-renders with the new
- * messages bundle. Per-device (cookie scoped to the host).
+ * Compact EN ↔ RW switcher. The server action both sets the cookie
+ * (so the next render is instant) and — when signed in — persists
+ * the choice on the User row so it follows the user across devices.
  */
 export function LanguageToggle({ current }: { current: Locale }) {
   const router = useRouter();
@@ -16,9 +17,10 @@ export function LanguageToggle({ current }: { current: Locale }) {
 
   function setLocale(next: Locale) {
     if (next === current || isPending) return;
-    // 365 days, scoped to root, lax SameSite for normal page nav.
-    document.cookie = `${LOCALE_COOKIE}=${next}; path=/; max-age=${60 * 60 * 24 * 365}; SameSite=Lax`;
-    startTransition(() => router.refresh());
+    startTransition(async () => {
+      await setLanguage(next);
+      router.refresh();
+    });
   }
 
   return (

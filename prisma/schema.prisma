@@ -133,6 +133,7 @@ model User {
   pinHash   String
   role      UserRole @default(OWNER)
   active    Boolean  @default(true)
+  language  String?  // "en" | "rw" — falls back to org default if null
   createdAt DateTime @default(now())
 
   stockMoves        StockMove[]
