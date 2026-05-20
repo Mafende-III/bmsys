@@ -164,7 +164,7 @@ export function ProductForm({
       )}
 
       <label className="block" data-tour="product-sku">
-        <span className="text-sm font-medium">SKU</span>
+        <span className="text-sm font-medium">Product code</span>
         {mode.kind === "edit" ? (
           <input
             value={mode.product.sku}
@@ -182,7 +182,7 @@ export function ProductForm({
           />
         )}
         <span className="mt-1 block text-xs text-zinc-500">
-          Cannot be changed once created.
+          A short unique code (e.g. WATER-500ML). Cannot be changed later.
         </span>
       </label>
 
@@ -356,8 +356,9 @@ export function ProductForm({
         data-tour="product-sellable"
         className="rounded-lg border border-zinc-200 px-4 py-3"
       >
-        <legend className="px-1 text-sm font-medium">Sellable as</legend>
-        <div className="mt-1 flex gap-6">
+        <legend className="px-1 text-sm font-medium">How you sell this</legend>
+        <p className="px-1 text-xs text-zinc-500">Tick at least one.</p>
+        <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:gap-6">
           <label className="flex items-center gap-2 text-sm">
             <input
               type="checkbox"
@@ -365,7 +366,7 @@ export function ProductForm({
               defaultChecked={initial.sellableAsUnit}
               className="h-4 w-4 rounded border-zinc-300"
             />
-            Unit
+            Sell singles
           </label>
           <label className="flex items-center gap-2 text-sm">
             <input
@@ -374,7 +375,7 @@ export function ProductForm({
               defaultChecked={initial.sellableAsCarton}
               className="h-4 w-4 rounded border-zinc-300"
             />
-            Carton
+            Sell whole cartons
           </label>
         </div>
       </fieldset>

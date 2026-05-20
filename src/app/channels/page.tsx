@@ -136,7 +136,7 @@ export default async function ChannelsPage({
                   colSpan={5}
                   className="px-3 py-6 text-center text-zinc-500"
                 >
-                  No channels match these filters.
+                  Nothing matches. Try changing the status filter, or add a channel above.
                 </td>
               </tr>
             )}
@@ -177,7 +177,7 @@ export default async function ChannelsPage({
         ))}
         {channels.length === 0 && (
           <p className="rounded-2xl border border-zinc-200 bg-white p-6 text-center text-sm text-zinc-500">
-            No channels match these filters.
+            Nothing matches. Try changing the status filter, or add a channel above.
           </p>
         )}
       </div>

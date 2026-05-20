@@ -146,7 +146,7 @@ export default async function ExpensesPage({
             {expenses.length === 0 && (
               <tr>
                 <td colSpan={5} className="px-3 py-6 text-center text-zinc-500">
-                  No expenses match.
+                  No expenses match. Try clearing the filters, or log one above.
                 </td>
               </tr>
             )}

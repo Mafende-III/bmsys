@@ -4,7 +4,8 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createAdjustment } from "@/lib/adjustments/actions";
-import { ADJUSTMENT_REASONS, REASON_LABEL, type AdjustmentReason } from "@/lib/adjustments/schema";
+import { ADJUSTMENT_REASONS, type AdjustmentReason } from "@/lib/adjustments/schema";
+import { ADJUSTMENT_LABEL } from "@/lib/copy";
 
 type ProductOption = {
   id: string;
@@ -105,7 +106,7 @@ export function AdjustmentForm({ products }: { products: ProductOption[] }) {
         >
           {ADJUSTMENT_REASONS.map((r) => (
             <option key={r} value={r}>
-              {REASON_LABEL[r]}
+              {ADJUSTMENT_LABEL[r] ?? r}
             </option>
           ))}
         </select>

@@ -97,7 +97,7 @@ export default async function SuppliersPage({
             {suppliers.length === 0 && (
               <tr>
                 <td colSpan={4} className="px-3 py-6 text-center text-zinc-500">
-                  No suppliers match.
+                  Nothing matches. Try clearing the search, or add a supplier above.
                 </td>
               </tr>
             )}
@@ -133,7 +133,7 @@ export default async function SuppliersPage({
         ))}
         {suppliers.length === 0 && (
           <p className="rounded-2xl border border-zinc-200 bg-white p-6 text-center text-sm text-zinc-500">
-            No suppliers match.
+            Nothing matches. Try clearing the search, or add a supplier above.
           </p>
         )}
       </div>

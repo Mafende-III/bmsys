@@ -83,7 +83,7 @@ export default async function CategoriesPage() {
             {categories.length === 0 && (
               <tr>
                 <td colSpan={6} className="px-3 py-6 text-center text-zinc-500">
-                  No categories yet.
+                  No categories yet. Tap <strong>+ New category</strong> to group products on the sell screen.
                 </td>
               </tr>
             )}

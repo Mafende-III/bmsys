@@ -2,6 +2,7 @@ import Link from "next/link";
 import { requireOwner } from "@/lib/auth-guards";
 import { formatRWF } from "@/lib/format";
 import { computeDailySummary } from "@/lib/reports/daily";
+import { STOCK_REASON_LABEL } from "@/lib/copy";
 
 function parseDateParam(s?: string): Date {
   if (!s) return new Date();
@@ -22,20 +23,6 @@ function adjustDate(d: Date, days: number): string {
   c.setDate(c.getDate() + days);
   return toDateInput(c);
 }
-
-const reasonLabel: Record<string, string> = {
-  PURCHASE: "Purchases received",
-  SALE_UNIT: "Sales (units)",
-  SALE_CARTON: "Sales (cartons)",
-  RETURN: "Returns",
-  CARTON_OPEN: "Cartons opened",
-  ADJUSTMENT_BREAKAGE: "Breakage",
-  ADJUSTMENT_EXPIRY: "Expiry",
-  ADJUSTMENT_PERSONAL: "Personal use",
-  ADJUSTMENT_THEFT: "Theft",
-  ADJUSTMENT_SAMPLE: "Sample",
-  STOCKTAKE_VARIANCE: "Stocktake variance",
-};
 
 export default async function ReportsPage({
   searchParams,
@@ -150,7 +137,7 @@ export default async function ReportsPage({
           title="Stock movements"
           headers={["Reason", "#", "Net units"]}
           rows={summary.stockMovesByReason.map((r) => [
-            reasonLabel[r.reason] ?? r.reason,
+            STOCK_REASON_LABEL[r.reason] ?? r.reason,
             r.moveCount.toString(),
             r.netUnits > 0 ? `+${r.netUnits}` : r.netUnits.toString(),
           ])}

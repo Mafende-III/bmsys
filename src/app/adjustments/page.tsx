@@ -3,9 +3,9 @@ import { requireOwner } from "@/lib/auth-guards";
 import { listAdjustments } from "@/lib/adjustments/queries";
 import {
   ADJUSTMENT_REASONS,
-  REASON_LABEL,
   type AdjustmentReason,
 } from "@/lib/adjustments/schema";
+import { ADJUSTMENT_LABEL, EMPTY } from "@/lib/copy";
 
 type SearchParams = { reason?: string };
 
@@ -38,17 +38,17 @@ export default async function AdjustmentsPage({
           >
             ← Dashboard
           </Link>
-          <h1 className="mt-1 text-2xl font-semibold">Adjustments</h1>
+          <h1 className="mt-1 text-2xl font-semibold">Losses</h1>
           <p className="text-sm text-zinc-600">
-            Breakage, expiry, theft and other stock losses with a required
-            note.
+            Stock that didn&apos;t sell — broken, expired, taken, or given
+            away. Every entry needs a note.
           </p>
         </div>
         <Link
           href="/adjustments/new"
           className="self-start rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 sm:self-auto"
         >
-          + New adjustment
+          + Record loss
         </Link>
       </header>
 
@@ -63,7 +63,7 @@ export default async function AdjustmentsPage({
             <option value="all">All reasons</option>
             {ADJUSTMENT_REASONS.map((r) => (
               <option key={r} value={r}>
-                {REASON_LABEL[r]}
+                {ADJUSTMENT_LABEL[r] ?? r}
               </option>
             ))}
           </select>
@@ -104,7 +104,7 @@ export default async function AdjustmentsPage({
                   <span
                     className={`rounded-full px-2 py-0.5 text-[10px] uppercase ${reasonBadge[a.reason] ?? "bg-zinc-100 text-zinc-700"}`}
                   >
-                    {REASON_LABEL[a.reason as AdjustmentReason] ?? a.reason}
+                    {ADJUSTMENT_LABEL[a.reason] ?? a.reason}
                   </span>
                 </td>
                 <td className="px-3 py-2 text-right font-mono text-sm tabular-nums text-red-700">
@@ -121,7 +121,7 @@ export default async function AdjustmentsPage({
             {adjustments.length === 0 && (
               <tr>
                 <td colSpan={6} className="px-3 py-6 text-center text-zinc-500">
-                  No adjustments yet.
+                  No losses recorded yet.
                 </td>
               </tr>
             )}

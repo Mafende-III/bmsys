@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { requireOwner } from "@/lib/auth-guards";
+import { describeVariance } from "@/lib/copy";
 import { formatRWF } from "@/lib/format";
 import { getOpenSession, listSessions } from "@/lib/cash-sessions/queries";
 import { OpenSessionForm } from "./_components/OpenSessionForm";
@@ -111,7 +112,7 @@ export default async function CashSessionsPage() {
                       : "—"}
                   </td>
                   <td
-                    className={`px-3 py-2 text-right font-mono text-xs tabular-nums ${
+                    className={`px-3 py-2 text-right text-xs ${
                       s.variance == null
                         ? ""
                         : s.variance === 0
@@ -121,9 +122,23 @@ export default async function CashSessionsPage() {
                             : "text-red-700"
                     }`}
                   >
-                    {s.variance == null
-                      ? "—"
-                      : `${s.variance > 0 ? "+" : ""}${formatRWF(s.variance)}`}
+                    {s.variance == null ? (
+                      "—"
+                    ) : (
+                      <span title={describeVariance(s.variance).sentence}>
+                        <span className="font-medium">
+                          {describeVariance(s.variance).label}
+                        </span>
+                        {s.variance !== 0 && (
+                          <>
+                            {" "}
+                            <span className="font-mono tabular-nums">
+                              {formatRWF(Math.abs(s.variance))}
+                            </span>
+                          </>
+                        )}
+                      </span>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -133,7 +148,7 @@ export default async function CashSessionsPage() {
                     colSpan={5}
                     className="px-3 py-6 text-center text-zinc-500"
                   >
-                    No sessions yet.
+                    No till activity here yet.
                   </td>
                 </tr>
               )}

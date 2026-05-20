@@ -10,14 +10,6 @@ export const ADJUSTMENT_REASONS = [
 
 export type AdjustmentReason = (typeof ADJUSTMENT_REASONS)[number];
 
-export const REASON_LABEL: Record<AdjustmentReason, string> = {
-  ADJUSTMENT_BREAKAGE: "Breakage",
-  ADJUSTMENT_EXPIRY: "Expiry",
-  ADJUSTMENT_PERSONAL: "Personal use",
-  ADJUSTMENT_THEFT: "Theft",
-  ADJUSTMENT_SAMPLE: "Sample",
-};
-
 export const createAdjustmentSchema = z.object({
   productId: z.string().min(1, "Product is required"),
   reason: z.enum(ADJUSTMENT_REASONS),

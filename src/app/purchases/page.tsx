@@ -118,7 +118,7 @@ export default async function PurchasesPage({
             {purchases.length === 0 && (
               <tr>
                 <td colSpan={5} className="px-3 py-6 text-center text-zinc-500">
-                  No purchases match.
+                  Nothing matches. Try clearing the filters, or log a new purchase above.
                 </td>
               </tr>
             )}

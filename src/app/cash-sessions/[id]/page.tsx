@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireOwner } from "@/lib/auth-guards";
+import { describeVariance } from "@/lib/copy";
 import { formatRWF } from "@/lib/format";
 import { getSession } from "@/lib/cash-sessions/queries";
 import { CloseSessionForm } from "../_components/CloseSessionForm";
@@ -59,9 +60,9 @@ export default async function CashSessionDetailPage({
               <dd className="text-right font-mono tabular-nums">
                 {formatRWF(session.closingCount ?? 0)}
               </dd>
-              <dt className="font-medium text-zinc-800">Variance</dt>
+              <dt className="font-medium text-zinc-800">Result</dt>
               <dd
-                className={`text-right font-mono font-medium tabular-nums ${
+                className={`text-right font-medium ${
                   session.variance === 0
                     ? "text-green-700"
                     : (session.variance ?? 0) > 0
@@ -69,8 +70,15 @@ export default async function CashSessionDetailPage({
                       : "text-red-700"
                 }`}
               >
-                {(session.variance ?? 0) > 0 ? "+" : ""}
-                {formatRWF(session.variance ?? 0)}
+                {describeVariance(session.variance ?? 0).label}
+                {(session.variance ?? 0) !== 0 && (
+                  <>
+                    {" — "}
+                    <span className="font-mono tabular-nums">
+                      {formatRWF(Math.abs(session.variance ?? 0))} RWF
+                    </span>
+                  </>
+                )}
               </dd>
             </>
           )}

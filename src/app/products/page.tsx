@@ -68,7 +68,7 @@ export default async function ProductsPage({
             type="search"
             name="search"
             defaultValue={search ?? ""}
-            placeholder="Name or SKU"
+            placeholder="Name or code"
             className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
           />
         </label>
@@ -112,7 +112,7 @@ export default async function ProductsPage({
         <table className="w-full text-sm">
           <thead className="bg-zinc-50 text-left text-xs font-medium uppercase text-zinc-600">
             <tr>
-              <th className="px-3 py-2">SKU</th>
+              <th className="px-3 py-2">Code</th>
               <th className="px-3 py-2">Name</th>
               <th className="px-3 py-2">Category</th>
               <th className="px-3 py-2 text-right">Unit</th>
@@ -173,7 +173,8 @@ export default async function ProductsPage({
             {products.length === 0 && (
               <tr>
                 <td colSpan={8} className="px-3 py-6 text-center text-zinc-500">
-                  No products match these filters.
+                  Nothing matches. Try clearing the filters, or tap{" "}
+                  <strong>+ New product</strong>.
                 </td>
               </tr>
             )}

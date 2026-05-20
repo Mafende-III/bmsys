@@ -2,8 +2,9 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { formatRWF } from "@/lib/format";
 import { closeCashSession } from "@/lib/cash-sessions/actions";
+import { describeVariance } from "@/lib/copy";
+import { formatRWF } from "@/lib/format";
 
 export function CloseSessionForm({
   sessionId,
@@ -85,28 +86,7 @@ export function CloseSessionForm({
           />
         </label>
 
-        <div
-          className={`rounded-lg border px-4 py-3 text-sm ${
-            variance === 0
-              ? "border-green-200 bg-green-50 text-green-800"
-              : variance > 0
-                ? "border-amber-200 bg-amber-50 text-amber-800"
-                : "border-red-200 bg-red-50 text-red-700"
-          }`}
-        >
-          <span className="font-medium">Variance: </span>
-          <span className="font-mono tabular-nums">
-            {variance >= 0 ? "+" : ""}
-            {formatRWF(variance)}
-          </span>{" "}
-          <span className="text-xs">
-            {variance === 0
-              ? "(balanced)"
-              : variance > 0
-                ? "(over — more cash than expected)"
-                : "(short — cash missing)"}
-          </span>
-        </div>
+        <VarianceCallout variance={variance} />
 
         <label className="block">
           <span className="text-sm font-medium">Note (optional)</span>
@@ -128,6 +108,22 @@ export function CloseSessionForm({
           {isPending ? "Closing..." : "Close till"}
         </button>
       </div>
+    </div>
+  );
+}
+
+function VarianceCallout({ variance }: { variance: number }) {
+  const { tone, label, sentence } = describeVariance(variance);
+  const styles =
+    tone === "balanced"
+      ? "border-green-200 bg-green-50 text-green-800"
+      : tone === "over"
+        ? "border-amber-200 bg-amber-50 text-amber-800"
+        : "border-red-200 bg-red-50 text-red-700";
+  return (
+    <div className={`rounded-lg border px-4 py-3 text-sm ${styles}`}>
+      <span className="font-semibold">{label}</span>{" "}
+      <span>{sentence}</span>
     </div>
   );
 }
