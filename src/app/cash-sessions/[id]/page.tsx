@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { requireOwner } from "@/lib/auth-guards";
+import { requireSeller } from "@/lib/auth-guards";
 import { describeVariance } from "@/lib/copy";
 import { formatRWF } from "@/lib/format";
 import { getSession } from "@/lib/cash-sessions/queries";
@@ -11,7 +11,7 @@ export default async function CashSessionDetailPage({
 }: {
   params: Promise<{ id: string }>;
 }) {
-  await requireOwner();
+  await requireSeller();
 
   const { id } = await params;
   const session = await getSession(id);

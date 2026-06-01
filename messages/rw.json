@@ -426,6 +426,21 @@
     "noSalesYet": "Nta byacurujwe muri iki gihe",
     "noSalesHint": "Iyo ibyacurujwe bigeze, igishushanyo kizagaragara hano."
   },
+  "myDay": {
+    "title": "Umunsi wanjye",
+    "subtitle": "Ibyo wacurujwe kugeza uyu munsi, {name}.",
+    "back": "Garuka",
+    "salesToday": "Ibyacurujwe uyu munsi",
+    "totalToday": "Amafaranga yinjijwe uyu munsi",
+    "topItem": "Igicuruzwa cyacurujwe cyane",
+    "noTopItem": "Nta byacurujwe",
+    "topItemSub": "{units, plural, =1 {imwe yacurujwe} other {# zicurujwe}}",
+    "trendTitle": "Iminsi 7 ishize",
+    "trendSubtitle": "Akabati k'umukara ni uyu munsi.",
+    "salesShort": "byacurujwe",
+    "noSalesYet": "Nta byacurujwe mu minsi 7 ishize.",
+    "scopeNote": "Bigaragaza ibyo wacurujwe wenyine. Ibyacurujwe n'abandi bigirwa ibanga."
+  },
   "audit": {
     "title": "Inyandiko z'ibikorwa",
     "subtitle": "Kwinjira, itandukaniro rinini ry'amafaranga, n'ibindi byashobora kuba bigaragaye. Iminsi 30 ishize.",

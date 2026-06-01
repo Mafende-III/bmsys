@@ -1,13 +1,13 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
-import { requireOwner } from "@/lib/auth-guards";
+import { requireSeller } from "@/lib/auth-guards";
 import { describeVariance } from "@/lib/copy";
 import { formatRWF } from "@/lib/format";
 import { getOpenSession, listSessions } from "@/lib/cash-sessions/queries";
 import { OpenSessionForm } from "./_components/OpenSessionForm";
 
 export default async function CashSessionsPage() {
-  await requireOwner();
+  await requireSeller();
 
   const [open, history] = await Promise.all([
     getOpenSession(),

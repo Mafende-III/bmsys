@@ -426,6 +426,21 @@
     "noSalesYet": "No sales in this period yet",
     "noSalesHint": "Once a few sales come in, the trend will appear here."
   },
+  "myDay": {
+    "title": "My day",
+    "subtitle": "What you've sold so far today, {name}.",
+    "back": "Back",
+    "salesToday": "Sales today",
+    "totalToday": "Money rung up today",
+    "topItem": "Top item today",
+    "noTopItem": "No sales yet",
+    "topItemSub": "{units, plural, =1 {# unit sold} other {# units sold}}",
+    "trendTitle": "Last 7 days",
+    "trendSubtitle": "Black bar is today.",
+    "salesShort": "sales",
+    "noSalesYet": "No sales in the last 7 days yet.",
+    "scopeNote": "Shows only your own sales. Other sellers' numbers are private."
+  },
   "audit": {
     "title": "Activity log",
     "subtitle": "Sign-ins, big cash variances, and other things worth a glance. Last 30 days.",

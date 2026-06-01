@@ -152,6 +152,28 @@ export const TOURS: TourDefinition[] = [
   },
 
   // ------------------------------------------------------------------
+  // My day (per-seller performance view)
+  // ------------------------------------------------------------------
+  {
+    id: "my-day-home",
+    match: /^\/my-day\/?$/,
+    steps: [
+      {
+        element: '[data-tour="my-day-today"]',
+        title: "Your numbers today",
+        body: "Sales you've rung up, money you've taken in, and your hottest item — all just for you. Other sellers' numbers are private.",
+        side: "bottom",
+      },
+      {
+        element: '[data-tour="my-day-trend"]',
+        title: "Last 7 days",
+        body: "A simple bar per day so you can spot which day of the week is busiest for you. Today is the black bar on the right.",
+        side: "top",
+      },
+    ],
+  },
+
+  // ------------------------------------------------------------------
   // Profile
   // ------------------------------------------------------------------
   {

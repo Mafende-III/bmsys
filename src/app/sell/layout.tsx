@@ -65,54 +65,68 @@ export default async function SellLayout({
   const activeChannel = allowedChannels.find((c) => c.id === activeChannelId);
   const openSession = await getOpenSession();
 
-  // Owner-only quick actions visible inside POS mode. Icons are
+  // Quick actions for the three-dot menu inside POS mode. Icons are
   // passed as string keys so the layout (server component) can hand
   // them to QuickActionsMenu (client component) — component refs
   // can't cross the boundary.
-  const ownerActions: QuickAction[] = [
-    openSession
-      ? {
-          href: "/cash-sessions",
-          label: "Close till",
-          icon: "banknote",
-          hint: `Open since ${new Date(openSession.openedAt).toLocaleTimeString()}`,
-        }
-      : {
-          href: "/cash-sessions",
-          label: "Open till",
-          icon: "banknote",
-          hint: "Required before cash sales",
-        },
-    {
-      href: "/expenses/new",
-      label: "Log an expense",
-      icon: "wallet",
-      hint: "Rent, fuel, transport…",
-    },
-    {
-      href: "/purchases/new",
-      label: "Receive stock",
-      icon: "package",
-      hint: "Log a purchase from a supplier",
-    },
-    {
-      href: "/adjustments/new",
-      label: "Record loss",
-      icon: "warning",
-      hint: "Broken, expired, stolen, sample",
-    },
-    {
-      href: "/reports",
-      label: "Today's summary",
-      icon: "chart",
-    },
-    {
-      href: "/dashboard",
-      label: "Exit POS",
-      icon: "back",
-      hint: "Back to admin",
-    },
-  ];
+  //
+  // Sellers get a tight set: open/close the till they're standing at,
+  // and check their own day. Owners get the fuller admin list.
+  const tillAction: QuickAction = openSession
+    ? {
+        href: "/cash-sessions",
+        label: "Close till",
+        icon: "banknote",
+        hint: `Open since ${new Date(openSession.openedAt).toLocaleTimeString()}`,
+      }
+    : {
+        href: "/cash-sessions",
+        label: "Open till",
+        icon: "banknote",
+        hint: "Required before cash sales",
+      };
+  const myDayAction: QuickAction = {
+    href: "/my-day",
+    label: "My day",
+    icon: "chart",
+    hint: "Your sales today",
+  };
+  const quickActions: QuickAction[] =
+    user.role === "OWNER"
+      ? [
+          tillAction,
+          {
+            href: "/expenses/new",
+            label: "Log an expense",
+            icon: "wallet",
+            hint: "Rent, fuel, transport…",
+          },
+          {
+            href: "/purchases/new",
+            label: "Receive stock",
+            icon: "package",
+            hint: "Log a purchase from a supplier",
+          },
+          {
+            href: "/adjustments/new",
+            label: "Record loss",
+            icon: "warning",
+            hint: "Broken, expired, stolen, sample",
+          },
+          {
+            href: "/reports",
+            label: "Today's summary",
+            icon: "chart",
+          },
+          myDayAction,
+          {
+            href: "/dashboard",
+            label: "Exit POS",
+            icon: "back",
+            hint: "Back to admin",
+          },
+        ]
+      : [tillAction, myDayAction];
 
   return (
     <CartProvider currentChannelId={activeChannelId}>
@@ -146,9 +160,7 @@ export default async function SellLayout({
               </div>
             </div>
             <div className="flex items-center gap-2" data-tour="sell-quick-actions">
-              {user.role === "OWNER" ? (
-                <QuickActionsMenu ownerActions={ownerActions} />
-              ) : null}
+              <QuickActionsMenu ownerActions={quickActions} />
               <Link
                 href="/profile"
                 aria-label={tc("profile")}
