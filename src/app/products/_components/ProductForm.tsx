@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
@@ -15,6 +15,22 @@ import {
 import { IconImageUpload } from "@/app/_components/IconImageUpload";
 import { IconPicker } from "@/app/_components/IconPicker";
 import { iconForKey } from "@/lib/icons";
+
+/**
+ * Turn a free-text product name into a SKU that satisfies the
+ * server-side validator: starts with a letter or digit, only
+ * uppercase A-Z 0-9 and the three symbols . _ -. Multiple disallowed
+ * characters collapse to a single dash; leading/trailing dashes are
+ * trimmed; max 50 chars.
+ */
+function skuify(name: string): string {
+  return name
+    .toUpperCase()
+    .replace(/[^A-Z0-9._-]+/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^[-._]+|[-._]+$/g, "")
+    .slice(0, 50);
+}
 
 type CategoryOption = {
   id: string;
@@ -101,6 +117,8 @@ export function ProductForm({
   );
 
   // Live state
+  const [name, setName] = useState(initial.name);
+  const [sku, setSku] = useState(initial.sku);
   const [categoryId, setCategoryId] = useState(initial.categoryId);
   const [iconKey, setIconKey] = useState<string | null>(initial.iconKey);
   const [iconEmoji, setIconEmoji] = useState(initial.iconEmoji);
@@ -108,6 +126,16 @@ export function ProductForm({
   const [costPerCarton, setCostPerCarton] = useState(initial.costPerCarton);
   const [unitPrice, setUnitPrice] = useState(initial.unitPrice);
   const [cartonPrice, setCartonPrice] = useState(initial.cartonPrice);
+
+  // Auto-suggest the SKU from the name during create — stops once the
+  // user edits the SKU field by hand. Edit mode never auto-fills (the
+  // SKU is locked after creation anyway).
+  const skuTouched = useRef(mode.kind === "edit");
+  useEffect(() => {
+    if (mode.kind === "create" && !skuTouched.current) {
+      setSku(skuify(name));
+    }
+  }, [name, mode.kind]);
 
   const selectedCategory = categories.find((c) => c.id === categoryId);
   const effectiveIconKey = iconKey ?? selectedCategory?.iconKey ?? null;
@@ -189,13 +217,19 @@ export function ProductForm({
             type="text"
             name="sku"
             required
-            defaultValue={initial.sku}
+            value={sku}
+            onChange={(e) => {
+              skuTouched.current = true;
+              setSku(e.target.value);
+            }}
             placeholder="e.g. WATER-500ML"
             className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:ring-1 focus:ring-zinc-900"
           />
         )}
         <span className="mt-1 block text-xs text-zinc-500">
-          A short unique code (e.g. WATER-500ML). Cannot be changed later.
+          {mode.kind === "create"
+            ? "Auto-filled from the name. Override if you want. Letters, digits, dashes, dots, underscores only. Cannot be changed later."
+            : "A short unique code (e.g. WATER-500ML). Cannot be changed later."}
         </span>
       </label>
 
@@ -205,7 +239,8 @@ export function ProductForm({
           type="text"
           name="name"
           required
-          defaultValue={initial.name}
+          value={name}
+          onChange={(e) => setName(e.target.value)}
           className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:ring-1 focus:ring-zinc-900"
         />
       </label>
