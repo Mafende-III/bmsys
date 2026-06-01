@@ -1,7 +1,15 @@
 import Link from "next/link";
-import { ShoppingCart, Star, TrendingUp } from "lucide-react";
+import {
+  AlertTriangle,
+  CheckCircle2,
+  PackageX,
+  ShoppingCart,
+  Star,
+  TrendingUp,
+} from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { requireSeller } from "@/lib/auth-guards";
+import { getStockHealth } from "@/lib/analytics/queries";
 import { getMyDay } from "@/lib/sales/my-day";
 import { formatRWF } from "@/lib/format";
 
@@ -9,11 +17,15 @@ export const dynamic = "force-dynamic";
 
 export default async function MyDayPage() {
   const session = await requireSeller();
-  const data = await getMyDay(session.id);
+  const [data, stock] = await Promise.all([
+    getMyDay(session.id),
+    getStockHealth(),
+  ]);
   const t = await getTranslations("myDay");
 
   const dailyMax = Math.max(...data.daily.map((d) => d.total), 1);
   const todayKey = data.today.date.toISOString().slice(0, 10);
+  const stockOk = stock.outOfStock.length === 0 && stock.lowStock.length === 0;
 
   return (
     <main className="mx-auto max-w-3xl p-4 sm:p-6">
@@ -121,6 +133,65 @@ export default async function MyDayPage() {
           <p className="mt-4 text-center text-xs text-zinc-500">
             {t("noSalesYet")}
           </p>
+        )}
+      </section>
+
+      {/* Stock to watch — what to tell customers about */}
+      <section
+        data-tour="my-day-stock"
+        className="mt-6 rounded-2xl border border-zinc-200 bg-white p-4"
+      >
+        <h2 className="text-base font-medium">{t("stockTitle")}</h2>
+        <p className="mt-0.5 text-xs text-zinc-600">{t("stockSubtitle")}</p>
+
+        {stockOk ? (
+          <div className="mt-3 flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-800">
+            <CheckCircle2 className="h-4 w-4 shrink-0" strokeWidth={2} />
+            <span>{t("stockAllOk")}</span>
+          </div>
+        ) : (
+          <ul className="mt-3 divide-y divide-zinc-100 overflow-hidden rounded-lg border border-zinc-200">
+            {/* Out of stock rows first, then low (ascending by units) */}
+            {stock.outOfStock.map((p) => (
+              <li
+                key={p.productId}
+                className="flex items-center justify-between gap-3 bg-white px-3 py-2 text-sm"
+              >
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-medium text-zinc-800">{p.name}</p>
+                  <p className="font-mono text-[10px] text-zinc-500">
+                    {p.sku}
+                  </p>
+                </div>
+                <span className="shrink-0 rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-red-800">
+                  <PackageX className="-mt-0.5 mr-1 inline h-3 w-3" />{" "}
+                  {t("stockOutBadge")}
+                </span>
+              </li>
+            ))}
+            {stock.lowStock.map((p) => (
+              <li
+                key={p.productId}
+                className="flex items-center justify-between gap-3 bg-white px-3 py-2 text-sm"
+              >
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-medium text-zinc-800">{p.name}</p>
+                  <p className="font-mono text-[10px] text-zinc-500">
+                    {p.sku}
+                  </p>
+                </div>
+                <div className="shrink-0 text-right">
+                  <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-800">
+                    <AlertTriangle className="-mt-0.5 mr-1 inline h-3 w-3" />{" "}
+                    {t("stockLowBadge")}
+                  </span>
+                  <p className="mt-0.5 font-mono text-[10px] text-zinc-600">
+                    {p.units}/{p.threshold}
+                  </p>
+                </div>
+              </li>
+            ))}
+          </ul>
         )}
       </section>
 

@@ -439,6 +439,14 @@
     "trendSubtitle": "Akabati k'umukara ni uyu munsi.",
     "salesShort": "byacurujwe",
     "noSalesYet": "Nta byacurujwe mu minsi 7 ishize.",
+    "stockTitle": "Ububiko bwo gukurikiranira",
+    "stockSubtitle": "Ibishobora kurangira uyu munsi.",
+    "stockAllOk": "Byose biri mu bubiko — nta kibura.",
+    "stockOutCount": "{count, plural, =1 {# byarangiye} other {# byarangiye}}",
+    "stockLowCount": "{count, plural, =1 {# bigiye kurangira} other {# bigiye kurangira}}",
+    "stockOutBadge": "Byarangiye",
+    "stockLowBadge": "Bigiye kurangira",
+    "stockMore": "+ {count} byindi",
     "scopeNote": "Bigaragaza ibyo wacurujwe wenyine. Ibyacurujwe n'abandi bigirwa ibanga."
   },
   "audit": {

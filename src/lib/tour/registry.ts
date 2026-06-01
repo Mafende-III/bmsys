@@ -170,6 +170,12 @@ export const TOURS: TourDefinition[] = [
         body: "A simple bar per day so you can spot which day of the week is busiest for you. Today is the black bar on the right.",
         side: "top",
       },
+      {
+        element: '[data-tour="my-day-stock"]',
+        title: "Stock to watch",
+        body: "What's out and what's running low across the whole shop — so you know what to tell customers before they ask. Red is out, amber is low.",
+        side: "top",
+      },
     ],
   },
 

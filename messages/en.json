@@ -439,6 +439,14 @@
     "trendSubtitle": "Black bar is today.",
     "salesShort": "sales",
     "noSalesYet": "No sales in the last 7 days yet.",
+    "stockTitle": "Stock to watch",
+    "stockSubtitle": "What you might run out of today.",
+    "stockAllOk": "Everything in stock — no shortages.",
+    "stockOutCount": "{count, plural, =1 {# out of stock} other {# out of stock}}",
+    "stockLowCount": "{count, plural, =1 {# running low} other {# running low}}",
+    "stockOutBadge": "Out",
+    "stockLowBadge": "Low",
+    "stockMore": "+ {count} more",
     "scopeNote": "Shows only your own sales. Other sellers' numbers are private."
   },
   "audit": {
