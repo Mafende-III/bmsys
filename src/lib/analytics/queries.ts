@@ -342,3 +342,57 @@ export async function getStockHealth(): Promise<StockHealth> {
     activeProductCount: products.length,
   };
 }
+
+export type StockRow = {
+  productId: string;
+  sku: string;
+  name: string;
+  units: number;
+  threshold: number;
+  status: "out" | "low" | "ok";
+};
+
+/**
+ * Complete stock breakdown for every active product — sorted by
+ * urgency (out → low → ok), then by units ascending within each
+ * bucket. The single source of truth for "what's on the shelves".
+ */
+export async function getStockList(): Promise<StockRow[]> {
+  const products = await prisma.product.findMany({
+    where: { active: true },
+    select: {
+      id: true,
+      sku: true,
+      name: true,
+      lowStockThresholdUnits: true,
+    },
+  });
+
+  const moves = await prisma.stockMove.groupBy({
+    by: ["productId"],
+    where: { productId: { in: products.map((p) => p.id) } },
+    _sum: { qtyUnits: true },
+  });
+  const unitsByProduct = new Map<string, number>();
+  for (const m of moves) {
+    unitsByProduct.set(m.productId, m._sum.qtyUnits ?? 0);
+  }
+
+  const rows: StockRow[] = products.map((p) => {
+    const units = unitsByProduct.get(p.id) ?? 0;
+    const threshold = p.lowStockThresholdUnits;
+    let status: StockRow["status"] = "ok";
+    if (units <= 0) status = "out";
+    else if (threshold > 0 && units <= threshold) status = "low";
+    return { productId: p.id, sku: p.sku, name: p.name, units, threshold, status };
+  });
+
+  const rank = { out: 0, low: 1, ok: 2 } as const;
+  rows.sort((a, b) => {
+    if (rank[a.status] !== rank[b.status]) return rank[a.status] - rank[b.status];
+    if (a.units !== b.units) return a.units - b.units;
+    return a.name.localeCompare(b.name);
+  });
+
+  return rows;
+}

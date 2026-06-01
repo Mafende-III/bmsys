@@ -9,7 +9,7 @@ import {
 } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { requireSeller } from "@/lib/auth-guards";
-import { getStockHealth } from "@/lib/analytics/queries";
+import { getStockList } from "@/lib/analytics/queries";
 import { getMyDay } from "@/lib/sales/my-day";
 import { formatRWF } from "@/lib/format";
 
@@ -19,13 +19,14 @@ export default async function MyDayPage() {
   const session = await requireSeller();
   const [data, stock] = await Promise.all([
     getMyDay(session.id),
-    getStockHealth(),
+    getStockList(),
   ]);
   const t = await getTranslations("myDay");
 
   const dailyMax = Math.max(...data.daily.map((d) => d.total), 1);
   const todayKey = data.today.date.toISOString().slice(0, 10);
-  const stockOk = stock.outOfStock.length === 0 && stock.lowStock.length === 0;
+  const outCount = stock.filter((s) => s.status === "out").length;
+  const lowCount = stock.filter((s) => s.status === "low").length;
 
   return (
     <main className="mx-auto max-w-3xl p-4 sm:p-6">
@@ -136,7 +137,7 @@ export default async function MyDayPage() {
         )}
       </section>
 
-      {/* Stock to watch — what to tell customers about */}
+      {/* Stock to watch — status banner + full inventory list */}
       <section
         data-tour="my-day-stock"
         className="mt-6 rounded-2xl border border-zinc-200 bg-white p-4"
@@ -144,55 +145,80 @@ export default async function MyDayPage() {
         <h2 className="text-base font-medium">{t("stockTitle")}</h2>
         <p className="mt-0.5 text-xs text-zinc-600">{t("stockSubtitle")}</p>
 
-        {stockOk ? (
+        {outCount + lowCount === 0 ? (
           <div className="mt-3 flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-800">
             <CheckCircle2 className="h-4 w-4 shrink-0" strokeWidth={2} />
             <span>{t("stockAllOk")}</span>
           </div>
         ) : (
-          <ul className="mt-3 divide-y divide-zinc-100 overflow-hidden rounded-lg border border-zinc-200">
-            {/* Out of stock rows first, then low (ascending by units) */}
-            {stock.outOfStock.map((p) => (
+          <div className="mt-3 flex flex-wrap items-center gap-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs">
+            {outCount > 0 && (
+              <span className="inline-flex items-center gap-1 text-red-800">
+                <PackageX className="h-3.5 w-3.5" strokeWidth={2} />
+                {t("stockOutCount", { count: outCount })}
+              </span>
+            )}
+            {lowCount > 0 && (
+              <span className="inline-flex items-center gap-1 text-amber-900">
+                <AlertTriangle className="h-3.5 w-3.5" strokeWidth={2} />
+                {t("stockLowCount", { count: lowCount })}
+              </span>
+            )}
+            <span className="ml-auto text-zinc-600">
+              {t("stockTotalProducts", { count: stock.length })}
+            </span>
+          </div>
+        )}
+
+        <ul className="mt-3 divide-y divide-zinc-100 overflow-hidden rounded-lg border border-zinc-200">
+          {stock.map((row) => {
+            const tone =
+              row.status === "out"
+                ? "bg-red-100 text-red-800"
+                : row.status === "low"
+                  ? "bg-amber-100 text-amber-800"
+                  : "bg-zinc-100 text-zinc-700";
+            const Icon =
+              row.status === "out"
+                ? PackageX
+                : row.status === "low"
+                  ? AlertTriangle
+                  : CheckCircle2;
+            return (
               <li
-                key={p.productId}
+                key={row.productId}
                 className="flex items-center justify-between gap-3 bg-white px-3 py-2 text-sm"
               >
                 <div className="min-w-0 flex-1">
-                  <p className="truncate font-medium text-zinc-800">{p.name}</p>
-                  <p className="font-mono text-[10px] text-zinc-500">
-                    {p.sku}
+                  <p className="truncate font-medium text-zinc-800">
+                    {row.name}
                   </p>
-                </div>
-                <span className="shrink-0 rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-red-800">
-                  <PackageX className="-mt-0.5 mr-1 inline h-3 w-3" />{" "}
-                  {t("stockOutBadge")}
-                </span>
-              </li>
-            ))}
-            {stock.lowStock.map((p) => (
-              <li
-                key={p.productId}
-                className="flex items-center justify-between gap-3 bg-white px-3 py-2 text-sm"
-              >
-                <div className="min-w-0 flex-1">
-                  <p className="truncate font-medium text-zinc-800">{p.name}</p>
                   <p className="font-mono text-[10px] text-zinc-500">
-                    {p.sku}
+                    {row.sku}
                   </p>
                 </div>
                 <div className="shrink-0 text-right">
-                  <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-800">
-                    <AlertTriangle className="-mt-0.5 mr-1 inline h-3 w-3" />{" "}
-                    {t("stockLowBadge")}
+                  <span
+                    className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${tone}`}
+                  >
+                    <Icon className="h-3 w-3" strokeWidth={2.5} />
+                    <span className="font-mono tabular-nums">{row.units}</span>
                   </span>
-                  <p className="mt-0.5 font-mono text-[10px] text-zinc-600">
-                    {p.units}/{p.threshold}
-                  </p>
+                  {row.status === "low" && row.threshold > 0 && (
+                    <p className="mt-0.5 font-mono text-[10px] text-zinc-500">
+                      {t("stockThreshold", { threshold: row.threshold })}
+                    </p>
+                  )}
                 </div>
               </li>
-            ))}
-          </ul>
-        )}
+            );
+          })}
+          {stock.length === 0 && (
+            <li className="bg-white px-3 py-6 text-center text-xs text-zinc-500">
+              {t("stockEmpty")}
+            </li>
+          )}
+        </ul>
       </section>
 
       <p className="mt-6 text-center text-xs text-zinc-500">{t("scopeNote")}</p>

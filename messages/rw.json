@@ -447,6 +447,9 @@
     "stockOutBadge": "Byarangiye",
     "stockLowBadge": "Bigiye kurangira",
     "stockMore": "+ {count} byindi",
+    "stockTotalProducts": "{count, plural, =1 {igicuruzwa #} other {ibicuruzwa #}}",
+    "stockThreshold": "Bigiye kurangira ku {threshold}",
+    "stockEmpty": "Nta byacuruzwa biraho.",
     "scopeNote": "Bigaragaza ibyo wacurujwe wenyine. Ibyacurujwe n'abandi bigirwa ibanga."
   },
   "audit": {
