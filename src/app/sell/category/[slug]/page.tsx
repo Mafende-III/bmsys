@@ -89,27 +89,32 @@ export default async function SellCategoryPage({
                   : "border-zinc-200 hover:border-zinc-400 hover:shadow-sm"
               }`}
             >
-              <div className="flex aspect-[4/3] items-center justify-center bg-zinc-50 p-3">
-                {p.iconImagePath ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={`/uploads/${p.iconImagePath}`}
-                    alt=""
-                    className="max-h-full max-w-full object-contain"
-                  />
-                ) : Icon ? (
-                  <Icon
-                    className="h-16 w-16 text-zinc-700"
-                    strokeWidth={1.5}
-                  />
-                ) : (
-                  <span className="text-6xl" aria-hidden>
-                    {p.iconEmoji}
-                  </span>
-                )}
+              <div className="relative aspect-[4/3] w-full overflow-hidden bg-zinc-50">
+                <div className="absolute inset-0 flex items-center justify-center p-3">
+                  {p.iconImagePath ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={`/uploads/${p.iconImagePath}`}
+                      alt=""
+                      className="max-h-full max-w-full object-contain"
+                    />
+                  ) : Icon ? (
+                    <Icon
+                      className="h-16 w-16 text-zinc-700"
+                      strokeWidth={1.5}
+                    />
+                  ) : (
+                    <span className="text-6xl" aria-hidden>
+                      {p.iconEmoji}
+                    </span>
+                  )}
+                </div>
               </div>
               <div className="flex flex-1 flex-col gap-1 p-3">
-                <p className="line-clamp-2 text-sm font-medium leading-tight">
+                <p
+                  className="line-clamp-3 text-sm font-medium leading-tight"
+                  title={p.name}
+                >
                   {p.name}
                 </p>
                 <p className="tabular-nums text-base font-semibold text-zinc-900">
