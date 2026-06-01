@@ -39,7 +39,14 @@ export default async function SellProductPage({
           ← Back
         </Link>
         <div className="mt-2 flex items-center gap-3">
-          {product.iconKey ? (
+          {product.iconImagePath ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={`/uploads/${product.iconImagePath}`}
+              alt=""
+              className="h-14 w-14 shrink-0 object-contain"
+            />
+          ) : product.iconKey ? (
             (() => {
               const Icon = iconForKey(product.iconKey);
               return (

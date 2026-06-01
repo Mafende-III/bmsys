@@ -8,6 +8,8 @@ export type SellableProduct = {
   categoryId: string | null;
   categoryName: string | null;
   categorySlug: string | null;
+  /** Resolved uploaded image path (product → category → null). */
+  iconImagePath: string | null;
   iconKey: string | null;       // resolved: product.iconKey ?? category.iconKey
   iconEmoji: string;            // resolved: product.iconEmoji ?? category.iconEmoji ?? 📦
   unitsPerCarton: number;
@@ -42,7 +44,13 @@ export async function listProductsForChannel(
     include: {
       channelPriceOverrides: { where: { channelId } },
       category: {
-        select: { name: true, slug: true, iconKey: true, iconEmoji: true },
+        select: {
+          name: true,
+          slug: true,
+          iconKey: true,
+          iconEmoji: true,
+          iconImagePath: true,
+        },
       },
     },
   });
@@ -82,6 +90,7 @@ export async function listProductsForChannel(
       categoryId: p.categoryId,
       categoryName: p.category?.name ?? null,
       categorySlug: p.category?.slug ?? null,
+      iconImagePath: p.iconImagePath ?? p.category?.iconImagePath ?? null,
       iconKey: p.iconKey ?? p.category?.iconKey ?? null,
       iconEmoji:
         p.iconEmoji ?? p.category?.iconEmoji ?? FALLBACK_ICON,
@@ -101,6 +110,7 @@ export type SellableCategory = {
   id: string | null;            // null = synthetic Uncategorised bucket
   name: string;
   slug: string;
+  iconImagePath: string | null;
   iconKey: string | null;
   iconEmoji: string;
   productCount: number;
@@ -132,6 +142,7 @@ export async function listSellableCategories(
     id: c.id,
     name: c.name,
     slug: c.slug,
+    iconImagePath: c.iconImagePath,
     iconKey: c.iconKey,
     iconEmoji: c.iconEmoji,
     productCount: c._count.products,
@@ -142,6 +153,7 @@ export async function listSellableCategories(
       id: null,
       name: "Uncategorised",
       slug: "uncategorised",
+      iconImagePath: null,
       iconKey: null,
       iconEmoji: FALLBACK_ICON,
       productCount: uncategorisedCount,
@@ -161,6 +173,7 @@ export async function findCategoryBySlug(slug: string) {
       id: null,
       name: "Uncategorised",
       slug,
+      iconImagePath: null,
       iconKey: null,
       iconEmoji: FALLBACK_ICON,
     };
@@ -171,6 +184,7 @@ export async function findCategoryBySlug(slug: string) {
       id: true,
       name: true,
       slug: true,
+      iconImagePath: true,
       iconKey: true,
       iconEmoji: true,
     },

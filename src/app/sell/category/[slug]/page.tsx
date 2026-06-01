@@ -47,7 +47,14 @@ export default async function SellCategoryPage({
           ← {t("backToCategories")}
         </Link>
         <h2 className="mt-2 flex items-center gap-3 text-2xl font-semibold">
-          {category.iconKey ? (
+          {category.iconImagePath ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={`/uploads/${category.iconImagePath}`}
+              alt=""
+              className="h-10 w-10 shrink-0 object-contain"
+            />
+          ) : category.iconKey ? (
             (() => {
               const Icon = iconForKey(category.iconKey);
               return (
@@ -82,7 +89,14 @@ export default async function SellCategoryPage({
                   : "border-zinc-200 hover:border-zinc-400 hover:shadow-sm"
               }`}
             >
-              {Icon ? (
+              {p.iconImagePath ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={`/uploads/${p.iconImagePath}`}
+                  alt=""
+                  className="h-10 w-10 shrink-0 object-contain"
+                />
+              ) : Icon ? (
                 <Icon
                   className="h-9 w-9 shrink-0 text-zinc-800"
                   strokeWidth={1.5}

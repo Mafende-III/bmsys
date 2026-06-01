@@ -186,6 +186,9 @@ model Product {
   categoryId               String?
   iconKey                  String?  // optional per-product Lucide icon (takes precedence over category)
   iconEmoji                String?  // optional per-product emoji (legacy fallback)
+  /// Optional uploaded image. Takes precedence over iconKey and iconEmoji
+  /// at the product level. Falls back to the category's image/icon when null.
+  iconImagePath            String?
   unitsPerCarton           Int
   costPerCarton            Int      // RWF, integer (no decimals)
   unitPrice                Int      // RWF
@@ -211,14 +214,18 @@ model Product {
 /// First-class product category. Holds the shared icon shown in the POS
 /// grid. A product may override via `Product.iconEmoji`.
 model Category {
-  id        String   @id @default(cuid())
-  name      String   @unique
-  slug      String   @unique
-  iconKey   String?
-  iconEmoji String   @default("📦")
-  sortOrder Int      @default(0)
-  active    Boolean  @default(true)
-  createdAt DateTime @default(now())
+  id            String   @id @default(cuid())
+  name          String   @unique
+  slug          String   @unique
+  iconKey       String?
+  iconEmoji     String   @default("📦")
+  /// Optional uploaded image, relative path under the uploads volume
+  /// (e.g. "category-icons/abc123.png"). Takes precedence over iconKey
+  /// and iconEmoji when rendering on the POS.
+  iconImagePath String?
+  sortOrder     Int      @default(0)
+  active        Boolean  @default(true)
+  createdAt     DateTime @default(now())
 
   products Product[]
 }

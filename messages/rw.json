@@ -172,7 +172,12 @@
       "create": "Andika igicuruzwa",
       "saving": "Birabikwa…",
       "skuCannotChange": "Ntishobora guhinduka nyuma.",
-      "posPreview": "Igaragara kuri POS:"
+      "posPreview": "Igaragara kuri POS:",
+      "imageLabel": "Ifoto (ntibitegetswe)",
+      "imageHint": "Shyiraho ifoto y'iki gicuruzwa — ifoto y'agasanduku nyacyo ni nziza. Igaragara kuri POS aho kugaragaza ikimenyetso. Bipanga MB 2.",
+      "imageUpload": "Shyiraho ifoto",
+      "imageReplace": "Hindura ifoto",
+      "imageRemove": "Vanaho"
     }
   },
   "categories": {
@@ -195,7 +200,12 @@
       "sortOrder": "Urutonde",
       "sortHint": "Imibare mito itangira mbere muri grid ya /sell. Imibare ingana iharangwa n'izina.",
       "activeLabel": "Bikora (bigaragara muri /sell)",
-      "create": "Andika itsinda"
+      "create": "Andika itsinda",
+      "imageLabel": "Ifoto (ntibitegetswe)",
+      "imageHint": "Shyiraho ifoto y'iri tsinda. Igaragara ku gakaramu kuri POS. PNG, JPG, WebP, cyangwa SVG. Bipanga MB 2.",
+      "imageUpload": "Shyiraho ifoto",
+      "imageReplace": "Hindura ifoto",
+      "imageRemove": "Vanaho"
     }
   },
   "suppliers": {

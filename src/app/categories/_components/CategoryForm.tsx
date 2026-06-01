@@ -3,9 +3,16 @@
 import { useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import type { Category } from "@prisma/client";
-import { createCategory, updateCategory } from "@/lib/categories/actions";
+import {
+  createCategory,
+  removeCategoryIcon,
+  updateCategory,
+  uploadCategoryIcon,
+} from "@/lib/categories/actions";
 import { IconPicker } from "@/app/_components/IconPicker";
+import { IconImageUpload } from "@/app/_components/IconImageUpload";
 
 type Mode =
   | { kind: "create" }
@@ -21,6 +28,13 @@ function slugify(name: string): string {
 
 export function CategoryForm({ mode }: { mode: Mode }) {
   const router = useRouter();
+  const tForm = useTranslations("categories.form");
+
+  const editingId = mode.kind === "edit" ? mode.id : null;
+  const initialImageUrl =
+    mode.kind === "edit" && mode.category.iconImagePath
+      ? `/uploads/${mode.category.iconImagePath}?v=${Date.now()}`
+      : null;
 
   const initial =
     mode.kind === "edit"
@@ -140,6 +154,19 @@ export function CategoryForm({ mode }: { mode: Mode }) {
           Used in /sell URLs. Cannot be changed after creation.
         </span>
       </label>
+
+      {editingId && (
+        <IconImageUpload
+          initialUrl={initialImageUrl}
+          upload={(formData) => uploadCategoryIcon(editingId, formData)}
+          remove={() => removeCategoryIcon(editingId)}
+          label={tForm("imageLabel")}
+          hint={tForm("imageHint")}
+          uploadCta={tForm("imageUpload")}
+          replaceCta={tForm("imageReplace")}
+          removeCta={tForm("imageRemove")}
+        />
+      )}
 
       <div data-tour="category-icon">
         <span className="text-sm font-medium">Icon</span>

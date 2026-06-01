@@ -61,7 +61,14 @@ export default async function SellHome() {
               href={`/sell/category/${c.slug}`}
               className="flex aspect-square flex-col items-center justify-center gap-2 rounded-3xl border-2 border-zinc-200 bg-white p-4 text-center shadow-sm transition hover:border-zinc-300 hover:shadow-md active:scale-95"
             >
-              {Icon ? (
+              {c.iconImagePath ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  src={`/uploads/${c.iconImagePath}`}
+                  alt=""
+                  className="h-14 w-14 object-contain"
+                />
+              ) : Icon ? (
                 <Icon
                   className="h-12 w-12 text-zinc-800"
                   strokeWidth={1.5}

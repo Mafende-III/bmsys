@@ -172,7 +172,12 @@
       "create": "Create product",
       "saving": "Saving…",
       "skuCannotChange": "Cannot be changed once created.",
-      "posPreview": "POS preview:"
+      "posPreview": "POS preview:",
+      "imageLabel": "Photo (optional)",
+      "imageHint": "Upload a photo for this product — the actual carton works best. Shown on the POS tile instead of the icon. Max 2 MB.",
+      "imageUpload": "Upload photo",
+      "imageReplace": "Replace photo",
+      "imageRemove": "Remove"
     }
   },
   "categories": {
@@ -195,7 +200,12 @@
       "sortOrder": "Sort order",
       "sortHint": "Lower numbers appear first in the /sell grid. Same numbers sort by name.",
       "activeLabel": "Active (visible in /sell)",
-      "create": "Create category"
+      "create": "Create category",
+      "imageLabel": "Photo (optional)",
+      "imageHint": "Upload a photo for this category. Shown on the POS tile instead of the icon. PNG, JPG, WebP, or SVG. Max 2 MB.",
+      "imageUpload": "Upload photo",
+      "imageReplace": "Replace photo",
+      "imageRemove": "Remove"
     }
   },
   "suppliers": {

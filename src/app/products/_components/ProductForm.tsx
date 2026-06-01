@@ -3,9 +3,16 @@
 import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import type { Product } from "@prisma/client";
 import { formatRWF } from "@/lib/format";
-import { createProduct, updateProduct } from "@/lib/products/actions";
+import {
+  createProduct,
+  removeProductIcon,
+  updateProduct,
+  uploadProductIcon,
+} from "@/lib/products/actions";
+import { IconImageUpload } from "@/app/_components/IconImageUpload";
 import { IconPicker } from "@/app/_components/IconPicker";
 import { iconForKey } from "@/lib/icons";
 
@@ -78,6 +85,12 @@ export function ProductForm({
   mode: Mode;
   categories: CategoryOption[];
 }) {
+  const tForm = useTranslations("products.form");
+  const editingId = mode.kind === "edit" ? mode.id : null;
+  const initialImageUrl =
+    mode.kind === "edit" && mode.product.iconImagePath
+      ? `/uploads/${mode.product.iconImagePath}?v=${Date.now()}`
+      : null;
   const router = useRouter();
   const initial = initialFromMode(mode);
 
@@ -221,6 +234,19 @@ export function ProductForm({
           </span>
         )}
       </label>
+
+      {editingId && (
+        <IconImageUpload
+          initialUrl={initialImageUrl}
+          upload={(formData) => uploadProductIcon(editingId, formData)}
+          remove={() => removeProductIcon(editingId)}
+          label={tForm("imageLabel")}
+          hint={tForm("imageHint")}
+          uploadCta={tForm("imageUpload")}
+          replaceCta={tForm("imageReplace")}
+          removeCta={tForm("imageRemove")}
+        />
+      )}
 
       <div data-tour="product-icon">
         <span className="text-sm font-medium">Icon override</span>
