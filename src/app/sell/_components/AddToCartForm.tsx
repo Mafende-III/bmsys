@@ -142,7 +142,7 @@ export function AddToCartForm({
             type="button"
             onClick={() => setQty(Math.max(1, qty - 1))}
             aria-label="Decrease quantity"
-            className="h-16 w-16 rounded-2xl border-2 border-zinc-300 bg-white text-3xl font-medium hover:bg-zinc-50 active:scale-95"
+            className="h-16 w-16 shrink-0 rounded-2xl border-2 border-zinc-300 bg-white text-3xl font-medium hover:bg-zinc-50 active:scale-95"
           >
             −
           </button>
@@ -153,13 +153,13 @@ export function AddToCartForm({
             onChange={(e) =>
               setQty(Math.max(1, Math.floor(Number(e.target.value || 1))))
             }
-            className="h-16 flex-1 rounded-2xl border-2 border-zinc-300 bg-white text-center text-3xl font-semibold tabular-nums"
+            className="h-16 w-full min-w-0 flex-1 rounded-2xl border-2 border-zinc-300 bg-white text-center text-3xl font-semibold tabular-nums"
           />
           <button
             type="button"
             onClick={() => setQty(qty + 1)}
             aria-label="Increase quantity"
-            className="h-16 w-16 rounded-2xl border-2 border-zinc-300 bg-white text-3xl font-medium hover:bg-zinc-50 active:scale-95"
+            className="h-16 w-16 shrink-0 rounded-2xl border-2 border-zinc-300 bg-white text-3xl font-medium hover:bg-zinc-50 active:scale-95"
           >
             +
           </button>

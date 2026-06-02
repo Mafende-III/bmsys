@@ -63,7 +63,7 @@ export default async function DashboardPage() {
           <div className="flex gap-2">
             <Link
               href="/profile"
-              className="rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm hover:bg-zinc-100"
+              className="whitespace-nowrap rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm hover:bg-zinc-100"
             >
               {tc("profile")}
             </Link>
@@ -75,7 +75,7 @@ export default async function DashboardPage() {
             >
               <button
                 type="submit"
-                className="rounded-lg border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-100"
+                className="whitespace-nowrap rounded-lg border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-100"
               >
                 {tc("signOut")}
               </button>

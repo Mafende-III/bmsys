@@ -117,10 +117,12 @@ export default async function SellCategoryPage({
                 >
                   {p.name}
                 </p>
-                <p className="tabular-nums text-base font-semibold text-zinc-900">
-                  {formatRWF(p.unitPrice)}{" "}
-                  <span className="text-xs font-normal text-zinc-500">
-                    / single
+                <p className="tabular-nums leading-tight">
+                  <span className="block text-base font-semibold text-zinc-900">
+                    {formatRWF(p.unitPrice)}
+                  </span>
+                  <span className="text-[10px] uppercase tracking-wide text-zinc-500">
+                    per single
                   </span>
                 </p>
                 {out ? (

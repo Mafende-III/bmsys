@@ -45,10 +45,10 @@ export default async function MyDayPage() {
         </div>
       </header>
 
-      {/* Hero cards: today */}
+      {/* Hero cards: today — stack on tiny phones (320px), 3 cols sm+ */}
       <section
         data-tour="my-day-today"
-        className="grid grid-cols-2 gap-3 sm:grid-cols-3"
+        className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-2 sm:grid-cols-3"
       >
         <KpiCard
           icon={<ShoppingCart className="h-5 w-5" strokeWidth={1.75} />}
