@@ -4,6 +4,7 @@ import {
   ArrowRight,
   BarChart3,
   Banknote,
+  ClipboardList,
   type LucideIcon,
   Package,
   Settings as SettingsIcon,
@@ -105,7 +106,7 @@ export default async function DashboardPage() {
         <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-zinc-500">
           {t("runShop")}
         </h3>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
           <DashCard
             href="/cash-sessions"
             Icon={Banknote}
@@ -132,6 +133,12 @@ export default async function DashboardPage() {
             Icon={AlertTriangle}
             title={t("losses")}
             subtitle={t("lossesSubtitle")}
+          />
+          <DashCard
+            href="/stock-take"
+            Icon={ClipboardList}
+            title={t("stockTake")}
+            subtitle={t("stockTakeSubtitle")}
           />
         </div>
       </section>

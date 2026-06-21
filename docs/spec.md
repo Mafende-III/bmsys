@@ -342,7 +342,7 @@ Delivery channel and customer accounts.
 ### Phase 3 (weeks 9 to 12)
 Engagement and operational maturity.
 
-- Stock-takes with variance reconciliation
+- ~~Stock-takes with variance reconciliation~~ — shipped early in Phase 1.5
 - P&L vs projection report
 - **Loyalty program**: points, rewards, tenure bonuses
 - **Digital receipts** (SMS/WhatsApp/Email)

@@ -114,6 +114,12 @@ export default async function SellLayout({
             hint: "Broken, expired, stolen, sample",
           },
           {
+            href: "/stock-take",
+            label: "Stock take",
+            icon: "package",
+            hint: "Count shelves vs system",
+          },
+          {
             href: "/reports",
             label: "Today's summary",
             icon: "chart",
