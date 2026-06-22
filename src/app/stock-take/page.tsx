@@ -1,20 +1,28 @@
 import Link from "next/link";
-import { getTranslations } from "next-intl/server";
+import { getTranslations, getLocale } from "next-intl/server";
 import { requireOwner } from "@/lib/auth-guards";
-import { listStockTakeRows } from "@/lib/stock-takes/queries";
+import {
+  listStockTakeRows,
+  listStockTakeHistory,
+} from "@/lib/stock-takes/queries";
 import { StockTakeForm } from "./_components/StockTakeForm";
+import { StockTakeHistory } from "./_components/StockTakeHistory";
 
 export const dynamic = "force-dynamic";
 
 export default async function StockTakePage() {
   await requireOwner();
-  const rows = await listStockTakeRows();
+  const [rows, history] = await Promise.all([
+    listStockTakeRows(),
+    listStockTakeHistory(10),
+  ]);
   const t = await getTranslations("stockTake");
   const tc = await getTranslations("common");
+  const locale = await getLocale();
 
   return (
-    <main className="mx-auto max-w-3xl p-4 sm:p-6">
-      <header className="mb-4">
+    <main className="mx-auto max-w-3xl space-y-6 p-4 sm:p-6">
+      <header>
         <Link
           href="/dashboard"
           className="text-sm text-zinc-600 hover:underline"
@@ -32,6 +40,8 @@ export default async function StockTakePage() {
       ) : (
         <StockTakeForm rows={rows} />
       )}
+
+      <StockTakeHistory entries={history} locale={locale} />
     </main>
   );
 }

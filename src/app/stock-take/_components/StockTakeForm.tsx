@@ -11,22 +11,29 @@ type LineState = {
   productId: string;
   sku: string;
   name: string;
-  systemUnits: number;
-  countedRaw: string; // keep as string so empty stays empty (not 0)
+  unitsPerCarton: number;
+  systemTotalUnits: number;
+  systemSealedCartons: number;
+  systemLooseUnits: number;
+  cartonsRaw: string; // string so empty stays empty (not 0)
+  looseRaw: string;
 };
 
 export function StockTakeForm({ rows }: { rows: StockTakeRow[] }) {
   const router = useRouter();
   const t = useTranslations("stockTake");
-  const tc = useTranslations("common");
 
   const [lines, setLines] = useState<LineState[]>(() =>
     rows.map((r) => ({
       productId: r.productId,
       sku: r.sku,
       name: r.name,
-      systemUnits: r.systemUnits,
-      countedRaw: "",
+      unitsPerCarton: r.unitsPerCarton,
+      systemTotalUnits: r.systemTotalUnits,
+      systemSealedCartons: r.systemSealedCartons,
+      systemLooseUnits: r.systemLooseUnits,
+      cartonsRaw: "",
+      looseRaw: "",
     })),
   );
   const [note, setNote] = useState("");
@@ -37,12 +44,37 @@ export function StockTakeForm({ rows }: { rows: StockTakeRow[] }) {
     crypto.randomUUID(),
   );
 
-  function setCounted(productId: string, raw: string) {
+  function setCartons(productId: string, raw: string) {
     setLines((prev) =>
       prev.map((l) =>
-        l.productId === productId ? { ...l, countedRaw: raw } : l,
+        l.productId === productId ? { ...l, cartonsRaw: raw } : l,
       ),
     );
+  }
+  function setLoose(productId: string, raw: string) {
+    setLines((prev) =>
+      prev.map((l) =>
+        l.productId === productId ? { ...l, looseRaw: raw } : l,
+      ),
+    );
+  }
+
+  /**
+   * A line counts as "counted" once at least one of cartons / loose
+   * has been typed (even if it's 0). That way owners with sealed-
+   * only stock can leave the loose field blank — but if they leave
+   * BOTH blank we treat it as not-yet-counted.
+   */
+  function isLineCounted(l: LineState): boolean {
+    return l.cartonsRaw !== "" || l.looseRaw !== "";
+  }
+
+  function lineCountedTotal(l: LineState): number | null {
+    if (!isLineCounted(l)) return null;
+    const cartons = l.cartonsRaw === "" ? 0 : Number(l.cartonsRaw);
+    const loose = l.looseRaw === "" ? 0 : Number(l.looseRaw);
+    if (Number.isNaN(cartons) || Number.isNaN(loose)) return null;
+    return cartons * l.unitsPerCarton + loose;
   }
 
   const summary = useMemo(() => {
@@ -50,9 +82,10 @@ export function StockTakeForm({ rows }: { rows: StockTakeRow[] }) {
     let positive = 0;
     let negative = 0;
     for (const l of lines) {
-      if (l.countedRaw === "") continue;
+      const total = lineCountedTotal(l);
+      if (total == null) continue;
       counted += 1;
-      const v = Number(l.countedRaw) - l.systemUnits;
+      const v = total - l.systemTotalUnits;
       if (v > 0) positive += 1;
       else if (v < 0) negative += 1;
     }
@@ -83,7 +116,8 @@ export function StockTakeForm({ rows }: { rows: StockTakeRow[] }) {
       note: note.trim(),
       lines: lines.map((l) => ({
         productId: l.productId,
-        countedUnits: Number(l.countedRaw),
+        countedCartons: l.cartonsRaw === "" ? 0 : Number(l.cartonsRaw),
+        countedLooseUnits: l.looseRaw === "" ? 0 : Number(l.looseRaw),
       })),
     };
 
@@ -141,11 +175,7 @@ export function StockTakeForm({ rows }: { rows: StockTakeRow[] }) {
           value={summary.negative}
           tone={summary.negative > 0 ? "warn" : "neutral"}
         />
-        <SummaryStat
-          label={t("statOver")}
-          value={summary.positive}
-          tone={summary.positive > 0 ? "neutral" : "neutral"}
-        />
+        <SummaryStat label={t("statOver")} value={summary.positive} />
       </section>
 
       {/* Lines */}
@@ -155,10 +185,9 @@ export function StockTakeForm({ rows }: { rows: StockTakeRow[] }) {
       >
         <ul className="divide-y divide-zinc-100">
           {lines.map((l) => {
-            const enteredEmpty = l.countedRaw === "";
-            const counted = enteredEmpty ? null : Number(l.countedRaw);
+            const counted = lineCountedTotal(l);
             const variance =
-              counted == null ? null : counted - l.systemUnits;
+              counted == null ? null : counted - l.systemTotalUnits;
             const varianceTone =
               variance == null
                 ? "text-zinc-400"
@@ -167,52 +196,72 @@ export function StockTakeForm({ rows }: { rows: StockTakeRow[] }) {
                   : variance > 0
                     ? "text-amber-700"
                     : "text-red-700";
+            const upcDisplay = l.unitsPerCarton;
             return (
               <li
                 key={l.productId}
-                className="flex flex-col gap-2 p-3 sm:flex-row sm:items-center sm:justify-between"
+                className="flex flex-col gap-3 p-3 sm:flex-row sm:items-start sm:justify-between"
               >
+                {/* Name + system breakdown */}
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-medium text-zinc-800">
                     {l.name}
                   </p>
-                  <p className="font-mono text-[10px] text-zinc-500">
-                    {l.sku}
+                  <p className="font-mono text-[10px] text-zinc-500">{l.sku}</p>
+                  <p className="mt-1 text-[11px] text-zinc-600">
+                    {t("systemBreakdown", {
+                      cartons: l.systemSealedCartons,
+                      loose: l.systemLooseUnits,
+                      total: l.systemTotalUnits,
+                      unitsPerCarton: upcDisplay,
+                    })}
                   </p>
                 </div>
-                <div className="flex shrink-0 items-center gap-2">
-                  <div className="text-right">
+
+                {/* Counted inputs + computed total + variance */}
+                <div className="flex shrink-0 items-end gap-2">
+                  <div className="text-center">
                     <p className="text-[10px] uppercase tracking-wide text-zinc-500">
-                      {t("systemLabel")}
-                    </p>
-                    <p className="font-mono text-sm tabular-nums text-zinc-700">
-                      {l.systemUnits}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-[10px] uppercase tracking-wide text-zinc-500">
-                      {t("countedLabel")}
+                      {t("cartonsLabel")}
                     </p>
                     <input
                       type="number"
                       inputMode="numeric"
                       min={0}
                       step={1}
-                      value={l.countedRaw}
-                      onChange={(e) => setCounted(l.productId, e.target.value)}
+                      value={l.cartonsRaw}
+                      onChange={(e) => setCartons(l.productId, e.target.value)}
                       placeholder="—"
-                      className="mt-0.5 block h-10 w-20 rounded-lg border border-zinc-300 bg-white px-2 text-center font-mono text-base tabular-nums"
+                      className="mt-0.5 block h-10 w-16 rounded-lg border border-zinc-300 bg-white px-2 text-center font-mono text-base tabular-nums"
                     />
                   </div>
-                  <div className="w-16 text-right">
+                  <div className="text-center">
                     <p className="text-[10px] uppercase tracking-wide text-zinc-500">
-                      {t("varianceLabel")}
+                      {t("looseLabel")}
+                    </p>
+                    <input
+                      type="number"
+                      inputMode="numeric"
+                      min={0}
+                      step={1}
+                      value={l.looseRaw}
+                      onChange={(e) => setLoose(l.productId, e.target.value)}
+                      placeholder="—"
+                      className="mt-0.5 block h-10 w-16 rounded-lg border border-zinc-300 bg-white px-2 text-center font-mono text-base tabular-nums"
+                    />
+                  </div>
+                  <div className="w-20 text-right">
+                    <p className="text-[10px] uppercase tracking-wide text-zinc-500">
+                      {t("countedTotalLabel")}
+                    </p>
+                    <p className="mt-0.5 font-mono text-sm font-semibold tabular-nums text-zinc-800">
+                      {counted == null ? "—" : counted}
                     </p>
                     <p
-                      className={`font-mono text-sm font-semibold tabular-nums ${varianceTone}`}
+                      className={`text-[11px] font-mono font-semibold tabular-nums ${varianceTone}`}
                     >
                       {variance == null
-                        ? "—"
+                        ? ""
                         : variance > 0
                           ? `+${variance}`
                           : variance}

@@ -1,16 +1,23 @@
 import { z } from "zod";
 
 /**
- * One line of a stock-take submission. countedUnits is the physical
- * count entered by the owner; the operation computes the variance
- * against the system's derived stock and writes a signed StockMove.
+ * One line of a stock-take submission. The owner counts the physical
+ * stock as two pieces: how many sealed cartons are on the shelf, and
+ * how many loose units are sitting outside cartons (open packets,
+ * single bottles, etc.). The operation multiplies cartons by the
+ * product's unitsPerCarton and adds loose to get the counted total,
+ * then writes the signed variance against the system's total.
  */
 export const stockTakeLineSchema = z.object({
   productId: z.string().min(1),
-  countedUnits: z.coerce
-    .number({ invalid_type_error: "Counted units must be a number" })
-    .int("Counted units must be a whole number")
-    .min(0, "Counted units cannot be negative"),
+  countedCartons: z.coerce
+    .number({ invalid_type_error: "Cartons must be a number" })
+    .int("Cartons must be a whole number")
+    .min(0, "Cartons cannot be negative"),
+  countedLooseUnits: z.coerce
+    .number({ invalid_type_error: "Loose units must be a number" })
+    .int("Loose units must be a whole number")
+    .min(0, "Loose units cannot be negative"),
 });
 
 export const stockTakeSchema = z.object({

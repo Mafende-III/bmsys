@@ -26,7 +26,7 @@ The shop can fully operate on bmsys: catalog → receive stock → sell → mana
 | **POS** (mobile-first): category tiles → product → cart → checkout, auto-open carton | ✅ | `/sell` |
 | **Cash sessions**: open with float, close with variance (subtracts cash expenses) | ✅ | `/cash-sessions` |
 | **Adjustments**: 5 reasons, mandatory note, ledger-safe | ✅ | `/adjustments` |
-| **Stock-take**: count shelves vs system, single-transaction reconciliation, `STOCKTAKE_VARIANCE` moves | ✅ | `/stock-take` |
+| **Stock-take**: count cartons + loose units, single-transaction reconciliation, `STOCKTAKE_VARIANCE` moves, expandable history with full per-product breakdown | ✅ | `/stock-take` |
 | **Expenses**: CASH/MOMO/BANK + supplier ref | ✅ | `/expenses` |
 | **Recurring expenses**: WEEKLY/MONTHLY with manual "run now" | ✅ | `/expenses/recurring` |
 | **Daily summary**: sales/expenses/top products/stock/cash by date | ✅ | `/reports` |
@@ -72,7 +72,7 @@ categories                       7
 adjustments                      6
 expenses + recurring             12
 reports (daily)                  5
-stock-takes                      8
+stock-takes                      9
 ```
 
 ## Branches / PRs ready to merge (in order)

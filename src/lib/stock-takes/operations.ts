@@ -23,14 +23,21 @@ export type StockTakeResult = {
 };
 
 /**
- * Records a stock-take: for every product whose counted units differ
- * from the system's derived stock, writes one StockMove with the
- * signed variance and reason STOCKTAKE_VARIANCE. Products whose
- * counts match are not written — only real variances land in the
- * ledger.
+ * Records a stock-take. For each product line, computes:
  *
- * The whole batch is one transaction, one AuditLog entry, and one
- * idempotency key — so a retried submission can't double-write.
+ *   counted total = countedCartons × unitsPerCarton + countedLooseUnits
+ *   variance      = counted total − system total
+ *
+ * Writes one StockMove with reason STOCKTAKE_VARIANCE per non-zero
+ * variance, signed. Matching lines aren't written so the ledger
+ * stays quiet on normal counts.
+ *
+ * Whole batch is one transaction, one AuditLog row, one idempotency
+ * key — retried submissions can't double-write.
+ *
+ * Note: this only reconciles the *total* units. The Carton table's
+ * OPENED/EMPTY state isn't touched; if the sealed-vs-loose split is
+ * out of sync, it self-corrects on the next sale or carton open.
  */
 export async function runStockTakeOp(
   userId: string,
@@ -47,14 +54,17 @@ export async function runStockTakeOp(
       "stock-takes.run",
       () =>
         prisma.$transaction(async (tx) => {
-          // Re-derive current system stock inside the transaction so a
-          // sale that lands a moment before the stock-take is reflected.
           const productIds = input.lines.map((l) => l.productId);
           const products = await tx.product.findMany({
             where: { id: { in: productIds }, active: true },
-            select: { id: true, sku: true, name: true },
+            select: {
+              id: true,
+              sku: true,
+              name: true,
+              unitsPerCarton: true,
+            },
           });
-          const knownIds = new Set(products.map((p) => p.id));
+          const productById = new Map(products.map((p) => [p.id, p]));
 
           const sums = await tx.stockMove.groupBy({
             by: ["productId"],
@@ -72,17 +82,20 @@ export async function runStockTakeOp(
             name: string;
             system: number;
             counted: number;
+            countedCartons: number;
+            countedLooseUnits: number;
             variance: number;
           }> = [];
           let adjustedCount = 0;
           const moveCreates: Prisma.StockMoveCreateManyInput[] = [];
 
           for (const line of input.lines) {
-            if (!knownIds.has(line.productId)) continue;
-            const product = products.find((p) => p.id === line.productId);
-            if (!product) continue;
-            const system = sysByProduct.get(line.productId) ?? 0;
-            const counted = line.countedUnits;
+            const product = productById.get(line.productId);
+            if (!product) continue; // archived or unknown — skip silently
+            const upc = product.unitsPerCarton || 1;
+            const counted =
+              line.countedCartons * upc + line.countedLooseUnits;
+            const system = sysByProduct.get(product.id) ?? 0;
             const variance = counted - system;
             auditLines.push({
               productId: product.id,
@@ -90,6 +103,8 @@ export async function runStockTakeOp(
               name: product.name,
               system,
               counted,
+              countedCartons: line.countedCartons,
+              countedLooseUnits: line.countedLooseUnits,
               variance,
             });
             if (variance === 0) continue;

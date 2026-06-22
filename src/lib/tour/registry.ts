@@ -194,14 +194,20 @@ export const TOURS: TourDefinition[] = [
       },
       {
         element: '[data-tour="stock-take-lines"]',
-        title: "Count each product",
-        body: "Type the physical count for every product. The system column is what the books say; the difference column shows green when you match, amber/red when you don't.",
+        title: "Count cartons + loose",
+        body: "Type sealed cartons in the first input and loose pieces in the second. The system column shows the same split for the books — green when you match, amber/red when you don't.",
         side: "top",
       },
       {
         element: '[data-tour="stock-take-note"]',
         title: "Note is required",
         body: "Add a short reason — \"monthly count\", \"Sunday close\", \"broke 3 bottles\" — so future you understands why the variance was written.",
+        side: "top",
+      },
+      {
+        element: '[data-tour="stock-take-history"]',
+        title: "Past stock-takes",
+        body: "Every saved count lives here with its per-product breakdown. Tap a row to expand and review what was counted, what the books said, and what got adjusted.",
         side: "top",
       },
     ],
