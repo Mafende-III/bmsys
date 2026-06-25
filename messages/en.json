@@ -126,7 +126,11 @@
     "replaceLogo": "Replace logo",
     "remove": "Remove",
     "refreshTabs": "Saved. Refresh other tabs to see the new look.",
-    "language": "Language"
+    "language": "Language",
+    "discountFloor": "Discount floor",
+    "discountFloorHint": "Sets the shop-wide minimum profit margin. Ad-hoc discounts can never drop a sale below this floor unless an owner explicitly overrides. Products that set their own margin floor on the product page override this default.",
+    "discountFloorLabel": "Default minimum margin",
+    "discountFloorExample": "Example: 30% means a product that cost 500 RWF can be discounted down to a sell price of 650 RWF (cost + 30%) but no lower."
   },
   "products": {
     "title": "Products",

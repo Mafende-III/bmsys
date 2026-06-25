@@ -60,6 +60,18 @@ export const TOURS: TourDefinition[] = [
       },
     ],
   },
+  {
+    id: "sell-checkout",
+    match: /^\/sell\/checkout\/?$/,
+    steps: [
+      {
+        element: '[data-tour="checkout-lines"]',
+        title: "Apply discounts per line",
+        body: "Tap \"Apply discount\" on any line to take an amount off — RWF or percent. Add a reason so the audit log remembers why. The shop won't let you sell below the minimum profit margin unless you tick the override.",
+        side: "bottom",
+      },
+    ],
+  },
 
   // ------------------------------------------------------------------
   // Dashboard

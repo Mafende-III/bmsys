@@ -38,6 +38,11 @@ const baseFields = {
   sellableAsUnit: z.boolean().default(true),
   sellableAsCarton: z.boolean().default(true),
   lowStockThresholdUnits: positiveInt("Low-stock threshold").default(0),
+  /// Minimum profit margin in basis points (10000 = 100%) — the floor
+  /// for ad-hoc discounts. 0 means "use the global default".
+  minMarginBps: positiveInt("Minimum margin")
+    .max(10000, "Minimum margin cannot exceed 100%")
+    .default(0),
   loyaltyPointsPerUnit: positiveInt("Loyalty points per unit").default(0),
 };
 

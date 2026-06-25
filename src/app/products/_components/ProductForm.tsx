@@ -56,6 +56,7 @@ type Initial = {
   sellableAsUnit: boolean;
   sellableAsCarton: boolean;
   lowStockThresholdUnits: number;
+  minMarginBps: number;
   loyaltyPointsPerUnit: number;
 };
 
@@ -74,6 +75,7 @@ function initialFromMode(mode: Mode): Initial {
       sellableAsUnit: mode.product.sellableAsUnit,
       sellableAsCarton: mode.product.sellableAsCarton,
       lowStockThresholdUnits: mode.product.lowStockThresholdUnits,
+      minMarginBps: mode.product.minMarginBps,
       loyaltyPointsPerUnit: mode.product.loyaltyPointsPerUnit,
     };
   }
@@ -90,6 +92,7 @@ function initialFromMode(mode: Mode): Initial {
     sellableAsUnit: true,
     sellableAsCarton: true,
     lowStockThresholdUnits: 0,
+    minMarginBps: 0,
     loyaltyPointsPerUnit: 0,
   };
 }
@@ -170,6 +173,10 @@ export function ProductForm({
       sellableAsUnit: formData.get("sellableAsUnit") === "on",
       sellableAsCarton: formData.get("sellableAsCarton") === "on",
       lowStockThresholdUnits: Number(formData.get("lowStockThresholdUnits") ?? 0),
+      // % → basis points (10000 = 100%). Round to whole bps.
+      minMarginBps: Math.round(
+        Number(formData.get("minMarginPct") ?? 0) * 100,
+      ),
       loyaltyPointsPerUnit: Number(formData.get("loyaltyPointsPerUnit") ?? 0),
     };
     if (mode.kind === "create") {
@@ -469,6 +476,28 @@ export function ProductForm({
               defaultValue={initial.loyaltyPointsPerUnit}
               className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
             />
+          </label>
+          <label className="block sm:col-span-2">
+            <span className="text-sm font-medium">
+              Minimum profit margin (%)
+            </span>
+            <input
+              type="number"
+              name="minMarginPct"
+              min={0}
+              max={100}
+              step="0.1"
+              defaultValue={
+                initial.minMarginBps > 0 ? initial.minMarginBps / 100 : ""
+              }
+              placeholder="e.g. 30"
+              className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+            />
+            <span className="mt-1 block text-xs text-zinc-500">
+              The floor for ad-hoc discounts. Discounts can never drop the
+              price below cost + this margin. Leave blank to use the shop-wide
+              default.
+            </span>
           </label>
         </div>
       </details>

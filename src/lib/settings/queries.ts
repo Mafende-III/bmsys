@@ -6,6 +6,7 @@ export type AppSettings = {
   theme: ThemeKey;
   logoPath: string | null;
   logoUrl: string | null;
+  defaultMinMarginBps: number;
   updatedAt: Date;
 };
 
@@ -14,6 +15,7 @@ const DEFAULT_SETTINGS: AppSettings = {
   theme: "default",
   logoPath: null,
   logoUrl: null,
+  defaultMinMarginBps: 0,
   updatedAt: new Date(0),
 };
 
@@ -42,6 +44,7 @@ export async function getSettings(): Promise<AppSettings> {
       theme: row.theme as ThemeKey,
       logoPath: row.logoPath,
       logoUrl,
+      defaultMinMarginBps: row.defaultMinMarginBps,
       updatedAt: row.updatedAt,
     };
   } catch {

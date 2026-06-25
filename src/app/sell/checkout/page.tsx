@@ -3,7 +3,7 @@ import { requireSeller } from "@/lib/auth-guards";
 import { CheckoutForm } from "../_components/CheckoutForm";
 
 export default async function CheckoutPage() {
-  await requireSeller();
+  const user = await requireSeller();
 
   return (
     <div>
@@ -13,7 +13,7 @@ export default async function CheckoutPage() {
         </Link>
         <h2 className="mt-1 text-xl font-semibold">Checkout</h2>
       </div>
-      <CheckoutForm />
+      <CheckoutForm isOwner={user.role === "OWNER"} />
     </div>
   );
 }

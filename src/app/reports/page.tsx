@@ -96,6 +96,22 @@ export default async function ReportsPage({
         <Card label="Net cash flow" value={formatRWF(summary.totals.netCash)} tone={summary.totals.netCash >= 0 ? "ok" : "warn"} />
       </section>
 
+      {summary.totals.discountedLineCount > 0 && (
+        <section className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+          <p>
+            <span className="font-semibold">
+              {formatRWF(summary.totals.discountsTotal)}
+            </span>{" "}
+            in discounts on {summary.totals.discountedLineCount} line
+            {summary.totals.discountedLineCount === 1 ? "" : "s"}
+            {summary.totals.floorOverrideCount > 0
+              ? ` — ${summary.totals.floorOverrideCount} broke the margin floor`
+              : ""}
+            .
+          </p>
+        </section>
+      )}
+
       <section className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
         <Table
           title="Sales by channel"

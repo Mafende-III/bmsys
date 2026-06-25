@@ -36,6 +36,14 @@ export const THEMES: Record<ThemeKey, { label: string; preview: string }> = {
 export const settingsUpdateSchema = z.object({
   companyName: z.string().trim().min(1, "Company name is required").max(80),
   theme: z.enum(THEME_KEYS),
+  /// Shop-wide fallback discount floor, in basis points (10000 = 100%).
+  /// Applied when a product leaves its own minMarginBps at 0.
+  defaultMinMarginBps: z.coerce
+    .number({ invalid_type_error: "Default margin must be a number" })
+    .int("Default margin must be a whole number")
+    .min(0, "Default margin cannot be negative")
+    .max(10000, "Default margin cannot exceed 100%")
+    .default(0),
 });
 
 export type SettingsUpdateInput = z.infer<typeof settingsUpdateSchema>;

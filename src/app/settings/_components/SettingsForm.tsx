@@ -19,6 +19,7 @@ type Initial = {
   companyName: string;
   theme: ThemeKey;
   logoUrl: string | null;
+  defaultMinMarginBps: number;
 };
 
 export function SettingsForm({ initial }: { initial: Initial }) {
@@ -27,6 +28,13 @@ export function SettingsForm({ initial }: { initial: Initial }) {
   const tc = useTranslations("common");
   const [companyName, setCompanyName] = useState(initial.companyName);
   const [theme, setTheme] = useState<ThemeKey>(initial.theme);
+  // Stored in basis points (10000 = 100%) but shown as a percentage for
+  // humans. Empty string while editing is allowed; converted on submit.
+  const [defaultMarginPct, setDefaultMarginPct] = useState<string>(
+    initial.defaultMinMarginBps > 0
+      ? String(initial.defaultMinMarginBps / 100)
+      : "",
+  );
   const [error, setError] = useState<string | null>(null);
   const [savedAt, setSavedAt] = useState<number | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -38,9 +46,15 @@ export function SettingsForm({ initial }: { initial: Initial }) {
     setError(null);
     setSavedAt(null);
     startTransition(async () => {
+      const pct = Number(defaultMarginPct);
+      const defaultMinMarginBps =
+        defaultMarginPct.trim() === "" || Number.isNaN(pct)
+          ? 0
+          : Math.max(0, Math.min(10000, Math.round(pct * 100)));
       const result = await updateSettings(idempotencyKey, {
         companyName,
         theme,
+        defaultMinMarginBps,
       });
       if (!result.ok) {
         setError(result.error);
@@ -126,6 +140,41 @@ export function SettingsForm({ initial }: { initial: Initial }) {
             );
           })}
         </div>
+      </section>
+
+      <section
+        data-tour="settings-discount-floor"
+        className="rounded-2xl border border-zinc-200 bg-white p-4"
+      >
+        <h2 className="text-base font-medium">{t("discountFloor")}</h2>
+        <p className="mt-0.5 text-xs text-zinc-600">
+          {t("discountFloorHint")}
+        </p>
+        <div className="mt-3 flex items-end gap-3">
+          <label className="block flex-1">
+            <span className="text-xs text-zinc-600">
+              {t("discountFloorLabel")}
+            </span>
+            <div className="relative mt-1">
+              <input
+                type="number"
+                min={0}
+                max={100}
+                step="0.1"
+                value={defaultMarginPct}
+                onChange={(e) => setDefaultMarginPct(e.target.value)}
+                placeholder="0"
+                className="block w-full rounded-lg border border-zinc-300 pl-3 pr-8 py-2 text-sm"
+              />
+              <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-zinc-500">
+                %
+              </span>
+            </div>
+          </label>
+        </div>
+        <p className="mt-2 text-[11px] text-zinc-500">
+          {t("discountFloorExample")}
+        </p>
       </section>
 
       <div className="flex justify-end">

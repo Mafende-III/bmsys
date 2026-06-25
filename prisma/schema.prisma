@@ -196,6 +196,11 @@ model Product {
   sellableAsUnit           Boolean  @default(true)
   sellableAsCarton         Boolean  @default(true)
   lowStockThresholdUnits   Int      @default(0)
+  /// Minimum profit margin in basis points (10000 = 100%) that any sale
+  /// of this product must keep after ad-hoc discounts. e.g. 3000 = "discount
+  /// must leave at least 30% margin over cost". 0 means "fall back to the
+  /// Settings.defaultMinMarginBps". Validated at checkout in createSaleOp.
+  minMarginBps             Int      @default(0)
   loyaltyPointsPerUnit     Int      @default(0)
   active                   Boolean  @default(true)
   createdAt                DateTime @default(now())
@@ -384,6 +389,14 @@ model SaleLine {
   saleUnit  SaleUnit
   qty       Int
   unitPrice Int
+  /// Total RWF discount applied to this line (already factored into
+  /// lineTotal). Always >= 0. Reason is required when > 0.
+  discountAmount  Int     @default(0)
+  discountReason  String?
+  /// Was the per-product minMargin floor explicitly overridden by an
+  /// owner at checkout? Audit-relevant; helps weekly reports flag
+  /// margin-breaking discounts.
+  floorOverride   Boolean @default(false)
   lineTotal Int
   cartonId  String?
 
@@ -628,6 +641,11 @@ model Settings {
   companyName String   @default("HydroMart Shop")
   theme       String   @default("default") // "default" | "sky" | "light-blue"
   logoPath    String?  // path relative to the uploads volume, e.g. "logo.png"
+  /// Default minimum profit margin in basis points (10000 = 100%) for
+  /// products that don't set their own Product.minMarginBps. 0 means
+  /// "no global floor" — products without a min-margin will accept any
+  /// discount that doesn't make the line total go negative.
+  defaultMinMarginBps Int @default(0)
   updatedAt   DateTime @updatedAt
 }
 

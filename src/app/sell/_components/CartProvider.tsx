@@ -16,7 +16,19 @@ export type CartItem = {
   saleUnit: "UNIT" | "CARTON";
   qty: number;
   unitPrice: number;
+  /// Final, post-discount RWF for the line. Equals qty × unitPrice
+  /// minus discountAmount.
   lineTotal: number;
+  // ── Discount-related fields carried through the cart so the
+  // CheckoutForm can show floor errors live (cost + margin must travel
+  // with the item, the server re-validates).
+  costPerCarton: number;
+  unitsPerCarton: number;
+  /// Already resolved at add-time (per-product > settings default).
+  effectiveMarginBps: number;
+  discountAmount: number;
+  discountReason: string | null;
+  floorOverride: boolean;
 };
 
 export type Cart = {
@@ -24,14 +36,24 @@ export type Cart = {
   items: CartItem[];
 };
 
-const STORAGE_KEY = "bmsys.cart.v1";
+// Bump storage version any time CartItem fields change so a tab with a
+// stale cart shape doesn't break on next visit.
+const STORAGE_KEY = "bmsys.cart.v2";
 
 type CartContextValue = {
   cart: Cart | null;
   setChannel: (channelId: string) => void;
   addItem: (item: CartItem) => void;
   removeItem: (index: number) => void;
+  setItemDiscount: (
+    index: number,
+    discountAmount: number,
+    discountReason: string | null,
+    floorOverride: boolean,
+  ) => void;
   clear: () => void;
+  subtotal: number;
+  discountTotal: number;
   total: number;
   ready: boolean;
 };
@@ -105,12 +127,16 @@ export function CartProvider({
   const addItem = useCallback((item: CartItem) => {
     setCart((prev) => {
       const base = prev ?? { channelId: "", items: [] };
-      // collapse if same product+saleUnit+price
+      // collapse if same product+saleUnit+price AND neither side has a
+      // discount applied (merging a discounted line with a fresh one
+      // would silently spread the discount over more qty)
       const existingIdx = base.items.findIndex(
         (i) =>
           i.productId === item.productId &&
           i.saleUnit === item.saleUnit &&
-          i.unitPrice === item.unitPrice,
+          i.unitPrice === item.unitPrice &&
+          i.discountAmount === 0 &&
+          item.discountAmount === 0,
       );
       if (existingIdx >= 0) {
         const next = [...base.items];
@@ -135,6 +161,35 @@ export function CartProvider({
     });
   }, []);
 
+  const setItemDiscount = useCallback(
+    (
+      index: number,
+      discountAmount: number,
+      discountReason: string | null,
+      floorOverride: boolean,
+    ) => {
+      setCart((prev) => {
+        if (!prev) return prev;
+        const next = [...prev.items];
+        const e = next[index];
+        if (!e) return prev;
+        const safeDiscount = Math.max(
+          0,
+          Math.min(e.qty * e.unitPrice, Math.round(discountAmount)),
+        );
+        next[index] = {
+          ...e,
+          discountAmount: safeDiscount,
+          discountReason: safeDiscount > 0 ? discountReason : null,
+          floorOverride: safeDiscount > 0 ? floorOverride : false,
+          lineTotal: e.qty * e.unitPrice - safeDiscount,
+        };
+        return { ...prev, items: next };
+      });
+    },
+    [],
+  );
+
   const clear = useCallback(() => {
     setCart((prev) => ({
       channelId: prev?.channelId ?? "",
@@ -142,17 +197,25 @@ export function CartProvider({
     }));
   }, []);
 
-  const total = useMemo(
-    () => (cart?.items ?? []).reduce((s, i) => s + i.lineTotal, 0),
-    [cart],
-  );
+  const { subtotal, discountTotal, total } = useMemo(() => {
+    let sub = 0;
+    let disc = 0;
+    for (const i of cart?.items ?? []) {
+      sub += i.qty * i.unitPrice;
+      disc += i.discountAmount;
+    }
+    return { subtotal: sub, discountTotal: disc, total: sub - disc };
+  }, [cart]);
 
   const value: CartContextValue = {
     cart,
     setChannel,
     addItem,
     removeItem,
+    setItemDiscount,
     clear,
+    subtotal,
+    discountTotal,
     total,
     ready,
   };

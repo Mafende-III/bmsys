@@ -17,6 +17,8 @@ export type SellableProduct = {
   sellableAsCarton: boolean;
   unitPrice: number;            // effective for the given channel
   cartonPrice: number;          // effective for the given channel
+  costPerCarton: number;
+  minMarginBps: number;
   totalUnits: number;
   openedUnits: number;
   sealedCartons: number;
@@ -99,6 +101,8 @@ export async function listProductsForChannel(
       sellableAsCarton: p.sellableAsCarton,
       unitPrice: override?.unitPrice ?? p.unitPrice,
       cartonPrice: override?.cartonPrice ?? p.cartonPrice,
+      costPerCarton: p.costPerCarton,
+      minMarginBps: p.minMarginBps,
       totalUnits,
       openedUnits,
       sealedCartons,

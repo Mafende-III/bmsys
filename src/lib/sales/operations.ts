@@ -4,6 +4,9 @@ import { prisma } from "@/lib/prisma";
 import { withIdempotency } from "@/lib/idempotency";
 import { userCanSellOnChannel } from "@/lib/permissions";
 import { createSaleSchema } from "./schema";
+import { maxAllowedLineDiscount } from "./floor";
+
+export { maxAllowedLineDiscount };
 
 export type ActionResult<T> =
   | { ok: true; data: T }
@@ -16,6 +19,7 @@ function firstError(error: ZodError): string {
 function errorMessage(e: unknown, fallback: string): string {
   return e instanceof Error ? e.message : fallback;
 }
+
 
 /**
  * Atomically:
@@ -50,6 +54,22 @@ export async function createSaleOp(
   try {
     const result = await withIdempotency(idempotencyKey, "sales.create", () =>
       prisma.$transaction(async (tx) => {
+        // Role check is needed up-front so we can decide whether to
+        // honour any floorOverride flags the caller passed in.
+        const user = await tx.user.findUnique({
+          where: { id: userId },
+          select: { role: true },
+        });
+        const isOwner = user?.role === "OWNER";
+
+        // Resolve the global default margin floor. Per-product floors
+        // override this; products that set 0 fall back here.
+        const settings = await tx.settings.findUnique({
+          where: { id: "default" },
+          select: { defaultMinMarginBps: true },
+        });
+        const defaultMinMarginBps = settings?.defaultMinMarginBps ?? 0;
+
         const productIds = input.items.map((i) => i.productId);
         const products = await tx.product.findMany({
           where: { id: { in: productIds } },
@@ -83,8 +103,20 @@ export async function createSaleOp(
           saleUnit: "UNIT" | "CARTON";
           qty: number;
           unitPrice: number;
+          discountAmount: number;
+          discountReason: string | null;
+          floorOverride: boolean;
           lineTotal: number;
           cartonId: string | null;
+        }> = [];
+        const discountAudit: Array<{
+          productId: string;
+          sku: string;
+          name: string;
+          discountAmount: number;
+          discountReason: string | null;
+          floorOverride: boolean;
+          maxAllowedAtFloor: number;
         }> = [];
 
         for (const item of input.items) {
@@ -112,7 +144,43 @@ export async function createSaleOp(
             item.saleUnit === "UNIT"
               ? (override?.unitPrice ?? product.unitPrice)
               : (override?.cartonPrice ?? product.cartonPrice);
-          const lineTotal = unitPrice * item.qty;
+          const grossLineTotal = unitPrice * item.qty;
+
+          // ── Discount + min-margin floor ─────────────────────────────
+          // Per-product margin overrides the global default; 0 means
+          // "use the global default", and 0 there means "no floor".
+          const effectiveMarginBps =
+            product.minMarginBps > 0
+              ? product.minMarginBps
+              : defaultMinMarginBps;
+          const maxAllowed = maxAllowedLineDiscount({
+            saleUnit: item.saleUnit,
+            qty: item.qty,
+            unitPrice,
+            costPerCarton: product.costPerCarton,
+            unitsPerCarton: product.unitsPerCarton,
+            marginBps: effectiveMarginBps,
+          });
+          const requestedDiscount = item.discountAmount;
+          // Only OWNER may bypass the floor. Sellers' overrides are
+          // silently dropped — schema-level defence in depth.
+          const floorOverride = isOwner && item.floorOverride === true;
+          if (requestedDiscount > grossLineTotal) {
+            throw new Error(
+              `${product.name}: discount of RWF ${requestedDiscount} exceeds the line price of RWF ${grossLineTotal}`,
+            );
+          }
+          if (!floorOverride && requestedDiscount > maxAllowed) {
+            if (product.costPerCarton <= 0) {
+              throw new Error(
+                `${product.name}: set a purchase cost on the product before applying a discount`,
+              );
+            }
+            throw new Error(
+              `${product.name}: max discount at the ${(effectiveMarginBps / 100).toFixed(1)}% margin floor is RWF ${maxAllowed}`,
+            );
+          }
+          const lineTotal = grossLineTotal - requestedDiscount;
 
           // Stock + carton handling
           let cartonId: string | null = null;
@@ -222,9 +290,23 @@ export async function createSaleOp(
             saleUnit: item.saleUnit,
             qty: item.qty,
             unitPrice,
+            discountAmount: requestedDiscount,
+            discountReason: item.discountReason ?? null,
+            floorOverride,
             lineTotal,
             cartonId,
           });
+          if (requestedDiscount > 0) {
+            discountAudit.push({
+              productId: product.id,
+              sku: product.sku,
+              name: product.name,
+              discountAmount: requestedDiscount,
+              discountReason: item.discountReason ?? null,
+              floorOverride,
+              maxAllowedAtFloor: maxAllowed,
+            });
+          }
         }
 
         // Create the Sale row
@@ -251,6 +333,9 @@ export async function createSaleOp(
               saleUnit: plan.saleUnit,
               qty: plan.qty,
               unitPrice: plan.unitPrice,
+              discountAmount: plan.discountAmount,
+              discountReason: plan.discountReason,
+              floorOverride: plan.floorOverride,
               lineTotal: plan.lineTotal,
               cartonId: plan.cartonId,
             },
@@ -273,16 +358,30 @@ export async function createSaleOp(
           });
         }
 
+        const discountTotal = discountAudit.reduce(
+          (a, d) => a + d.discountAmount,
+          0,
+        );
         await tx.auditLog.create({
           data: {
             tableName: "sales",
             recordId: sale.id,
             action: "INSERT",
+            category: discountAudit.length > 0 ? "SALE_DISCOUNT" : null,
             changes: {
               channelId: input.channelId,
               paymentMethod: input.paymentMethod,
               itemCount: input.items.length,
               total,
+              ...(discountAudit.length > 0
+                ? {
+                    discountTotal,
+                    discounts: discountAudit,
+                    floorOverrideApplied: discountAudit.some(
+                      (d) => d.floorOverride,
+                    ),
+                  }
+                : {}),
             } as Prisma.InputJsonValue,
             userId,
           },

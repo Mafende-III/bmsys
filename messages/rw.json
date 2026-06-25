@@ -126,7 +126,11 @@
     "replaceLogo": "Hindura logo",
     "remove": "Vanaho",
     "refreshTabs": "Byabitswe. Ongera ufungure izindi tabs urebe imiterere mishya.",
-    "language": "Ururimi"
+    "language": "Ururimi",
+    "discountFloor": "Imipaka y'igabanya",
+    "discountFloorHint": "Ishyiraho ikiguzi gito cy'inyungu kuri buri gurisha. Igabanya ntirishobora gukurura ikiguzi munsi y'iyi mipaka, keretse umuyobozi abibwiye. Ibicuruzwa bifite imipaka yabyo bwite biyobora iyi nimero.",
+    "discountFloorLabel": "Inyungu nto isabwa",
+    "discountFloorExample": "Urugero: 30% bivuga ko igicuruzwa kiri ku 500 RWF gishobora kugabanywa kugera ku 650 RWF (igiciro + 30%) ariko nta hasi y'aho."
   },
   "products": {
     "title": "Ibyacuruzwa",

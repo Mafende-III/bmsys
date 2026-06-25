@@ -28,6 +28,7 @@ export default async function SettingsPage() {
           companyName: settings.companyName,
           theme: settings.theme,
           logoUrl: settings.logoUrl,
+          defaultMinMarginBps: settings.defaultMinMarginBps,
         }}
       />
     </main>

@@ -9,6 +9,9 @@ export type DailySummary = {
     cashSalesTotal: number;
     cashExpensesTotal: number;
     netCash: number; // cashSalesTotal - cashExpensesTotal
+    discountsTotal: number;
+    discountedLineCount: number;
+    floorOverrideCount: number;
   };
   salesByChannel: Array<{
     channelId: string;
@@ -96,6 +99,8 @@ export async function computeDailySummary(date: Date): Promise<DailySummary> {
         qty: true,
         saleUnit: true,
         lineTotal: true,
+        discountAmount: true,
+        floorOverride: true,
       },
     }),
     prisma.expense.groupBy({
@@ -205,6 +210,17 @@ export async function computeDailySummary(date: Date): Promise<DailySummary> {
     0,
   );
 
+  let discountsTotal = 0;
+  let discountedLineCount = 0;
+  let floorOverrideCount = 0;
+  for (const line of saleLinesByProduct) {
+    if (line.discountAmount > 0) {
+      discountsTotal += line.discountAmount;
+      discountedLineCount += 1;
+      if (line.floorOverride) floorOverrideCount += 1;
+    }
+  }
+
   return {
     date,
     totals: {
@@ -214,6 +230,9 @@ export async function computeDailySummary(date: Date): Promise<DailySummary> {
       cashSalesTotal,
       cashExpensesTotal,
       netCash: cashSalesTotal - cashExpensesTotal,
+      discountsTotal,
+      discountedLineCount,
+      floorOverrideCount,
     },
     salesByChannel: salesByChannelRaw.map((r) => ({
       channelId: r.channelId,
