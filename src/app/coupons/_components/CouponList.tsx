@@ -17,8 +17,9 @@ const TAB_LABEL: Record<Tab, string> = {
 };
 
 function describeValue(c: CouponRow): string {
-  return c.type === "PERCENT"
-    ? `${c.value}% off`
+  if (c.type === "PERCENT") return `${c.value}% off`;
+  return c.perUnit
+    ? `${formatRWF(c.value)} off each`
     : `${formatRWF(c.value)} off`;
 }
 

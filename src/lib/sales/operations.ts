@@ -203,7 +203,9 @@ export async function createSaleOp(
               );
             }
           } else {
-            // FIXED
+            // FIXED. When perUnit is set, the value applies to each
+            // unit in the matched line(s). Compute the effective
+            // RWF target per line, then cap to that line's gross.
             const eligibleIdx = plans
               .map((_, i) => i)
               .filter(
@@ -220,30 +222,40 @@ export async function createSaleOp(
                 `Coupon "${coupon.code}" cannot be applied to a zero-value cart`,
               );
             }
-            const target = Math.min(coupon.value, eligibleGross);
-            if (eligibleIdx.length === 1) {
-              discountByIndex[eligibleIdx[0]!] = target;
-            } else {
-              // Largest-remainder distribution. Each eligible line gets
-              // floor(target * lineGross / sumGross); leftover RWF go to
-              // the lines with the largest fractional part so the math
-              // sums back to `target` exactly.
-              const fracs: Array<{ i: number; frac: number }> = [];
-              let assigned = 0;
+            if (coupon.perUnit) {
+              // Per-unit: value × qty per matched line, capped at gross.
               for (const i of eligibleIdx) {
-                const exact =
-                  (target * plans[i]!.grossLineTotal) / eligibleGross;
-                const base = Math.floor(exact);
-                discountByIndex[i] = base;
-                assigned += base;
-                fracs.push({ i, frac: exact - base });
+                const lineCap = plans[i]!.grossLineTotal;
+                const requested = coupon.value * plans[i]!.qty;
+                discountByIndex[i] = Math.min(requested, lineCap);
               }
-              let leftover = target - assigned;
-              fracs.sort((a, b) => b.frac - a.frac);
-              for (const { i } of fracs) {
-                if (leftover <= 0) break;
-                discountByIndex[i] = (discountByIndex[i] ?? 0) + 1;
-                leftover -= 1;
+            } else {
+              // Per-cart: distribute `value` across eligible lines.
+              const target = Math.min(coupon.value, eligibleGross);
+              if (eligibleIdx.length === 1) {
+                discountByIndex[eligibleIdx[0]!] = target;
+              } else {
+                // Largest-remainder distribution. Each eligible line gets
+                // floor(target * lineGross / sumGross); leftover RWF go to
+                // the lines with the largest fractional part so the math
+                // sums back to `target` exactly.
+                const fracs: Array<{ i: number; frac: number }> = [];
+                let assigned = 0;
+                for (const i of eligibleIdx) {
+                  const exact =
+                    (target * plans[i]!.grossLineTotal) / eligibleGross;
+                  const base = Math.floor(exact);
+                  discountByIndex[i] = base;
+                  assigned += base;
+                  fracs.push({ i, frac: exact - base });
+                }
+                let leftover = target - assigned;
+                fracs.sort((a, b) => b.frac - a.frac);
+                for (const { i } of fracs) {
+                  if (leftover <= 0) break;
+                  discountByIndex[i] = (discountByIndex[i] ?? 0) + 1;
+                  leftover -= 1;
+                }
               }
             }
           }

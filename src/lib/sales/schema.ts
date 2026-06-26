@@ -70,6 +70,10 @@ export const createCouponSchema = z
       .max(365, "Expiry can be at most 365 days")
       .default(7),
     allowFloorOverride: z.coerce.boolean().default(false),
+    /// Only meaningful when type=FIXED. When true the value multiplies
+    /// by qty in the matched line(s) — i.e. "RWF off each unit" instead
+    /// of "RWF off the whole line".
+    perUnit: z.coerce.boolean().default(false),
     notes: z.preprocess(
       (v) => (typeof v === "string" && v.trim() === "" ? null : v),
       z.string().trim().max(500).nullable().optional(),

@@ -8,6 +8,7 @@ export type CouponRow = {
   code: string;
   type: CouponType;
   value: number;
+  perUnit: boolean;
   productId: string | null;
   productName: string | null;
   productSku: string | null;
@@ -50,6 +51,7 @@ function project(
     code: c.code,
     type: c.type,
     value: c.value,
+    perUnit: c.perUnit,
     productId: c.productId,
     productName: c.product?.name ?? null,
     productSku: c.product?.sku ?? null,

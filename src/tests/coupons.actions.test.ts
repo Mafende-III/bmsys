@@ -204,6 +204,7 @@ describe("createSaleOp with coupon redemption", () => {
     value: number;
     productId: string | null;
     allowFloorOverride: boolean;
+    perUnit: boolean;
   }> = {}) {
     const r = await createCouponOp(ownerId, {
       code: extra.code ?? "TEST10",
@@ -212,6 +213,7 @@ describe("createSaleOp with coupon redemption", () => {
       productId: extra.productId ?? null,
       expiresInDays: 7,
       allowFloorOverride: extra.allowFloorOverride ?? false,
+      perUnit: extra.perUnit ?? false,
     });
     if (!r.ok) throw new Error(r.error);
     return r.data;
@@ -281,6 +283,62 @@ describe("createSaleOp with coupon redemption", () => {
     const sumDisc = lines.reduce((s, l) => s + l.discountAmount, 0);
     expect(sumDisc).toBe(300);
     expect(r.data.total).toBe(3200 - 300);
+  });
+
+  it("FIXED perUnit + product-locked: value × qty applied only to matched line", async () => {
+    // Mirrors the real-world wholesale case the owner reported: a
+    // small amount off per unit, scaled by quantity. Other lines stay
+    // untouched. Cost 375 + 30% floor = 488 min sell, so a 50-RWF
+    // per-unit discount sits comfortably above the floor.
+    const coupon = await makeCoupon({
+      code: "PERBOT",
+      type: "FIXED",
+      value: 50,
+      productId: productAId,
+      perUnit: true,
+    });
+    const r = await createSaleOp(ownerId, "sale-pu", {
+      channelId,
+      paymentMethod: "CASH",
+      items: [
+        { productId: productAId, saleUnit: "UNIT", qty: 5 }, // 5 × 600 = 3000
+        { productId: productBId, saleUnit: "UNIT", qty: 1 }, // 1 × 1000 = 1000
+      ],
+      couponCode: coupon.code,
+    });
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    const lines = await prisma.saleLine.findMany({
+      where: { saleId: r.data.saleId },
+    });
+    const lineA = lines.find((l) => l.productId === productAId)!;
+    const lineB = lines.find((l) => l.productId === productBId)!;
+    expect(lineA.discountAmount).toBe(250); // 5 × 50
+    expect(lineB.discountAmount).toBe(0);
+    expect(r.data.total).toBe(2750 + 1000);
+  });
+
+  it("FIXED perUnit caps at line gross when value × qty would exceed it", async () => {
+    // 1,000-RWF coupon per unit on a 600-RWF item is silly but the math
+    // must cap at the line gross instead of going negative. With the
+    // floor override the floor check is bypassed.
+    const coupon = await makeCoupon({
+      code: "BIGPER",
+      type: "FIXED",
+      value: 1000,
+      productId: productAId,
+      perUnit: true,
+      allowFloorOverride: true,
+    });
+    const r = await createSaleOp(ownerId, "sale-pu-cap", {
+      channelId,
+      paymentMethod: "CASH",
+      items: [{ productId: productAId, saleUnit: "UNIT", qty: 2 }], // 1200 gross
+      couponCode: coupon.code,
+    });
+    expect(r.ok).toBe(true);
+    if (!r.ok) return;
+    expect(r.data.total).toBe(0); // 2 × 1000 = 2000 requested → capped at 1200
   });
 
   it("PERCENT product-locked: only the matching line is discounted", async () => {

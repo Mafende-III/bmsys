@@ -440,8 +440,13 @@ model Coupon {
   /// Stored uppercase; lookups compare uppercase too.
   code              String     @unique
   type              CouponType
-  /// RWF when type=FIXED, basis points when type=PERCENT (1000 = 10%).
+  /// RWF when type=FIXED, integer percent (1..100) when type=PERCENT.
   value             Int
+  /// When true (FIXED only), the value is applied to each unit in the
+  /// matched line(s) instead of once across the line — i.e. "700 RWF
+  /// off each bottle" rather than "700 RWF off the cart". Ignored
+  /// when type=PERCENT (already proportional).
+  perUnit           Boolean    @default(false)
   /// When set, the coupon only applies to this product. Null = applies
   /// to the whole cart (FIXED distributes proportionally across lines,
   /// PERCENT applies independently to each line).

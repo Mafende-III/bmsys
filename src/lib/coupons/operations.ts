@@ -68,12 +68,18 @@ export async function createCouponOp(
 
     // Try the owner's typed code first if any, otherwise generate.
     // On collision: regenerate (only when auto) or surface "code taken".
+    // perUnit only makes sense for FIXED — for PERCENT it'd already be
+    // proportional. Silently coerce to false so the DB state stays
+    // honest and we can rely on `perUnit && FIXED` checks elsewhere.
+    const perUnit = input.type === "FIXED" ? input.perUnit : false;
+
     const tryWithCode = async (code: string) => {
       return prisma.coupon.create({
         data: {
           code,
           type: input.type,
           value: input.value,
+          perUnit,
           productId: input.productId ?? null,
           expiresAt,
           allowFloorOverride: input.allowFloorOverride,
@@ -242,6 +248,7 @@ export async function previewCouponOp(
   type Plan = {
     productId: string;
     productName: string;
+    qty: number;
     gross: number;
     maxAtFloor: number;
     marginBps: number;
@@ -274,6 +281,7 @@ export async function previewCouponOp(
     plans.push({
       productId: p.id,
       productName: p.name,
+      qty: it.qty,
       gross,
       maxAtFloor,
       marginBps,
@@ -301,25 +309,33 @@ export async function previewCouponOp(
     if (eligibleGross <= 0) {
       return { ok: false, error: "Cart total is zero — nothing to discount" };
     }
-    const target = Math.min(coupon.value, eligibleGross);
-    if (eligibleIdx.length === 1) {
-      discountByIndex[eligibleIdx[0]!] = target;
-    } else {
-      const fracs: Array<{ i: number; frac: number }> = [];
-      let assigned = 0;
+    if (coupon.perUnit) {
+      // Per-unit: value × qty per matched line, capped at gross.
       for (const i of eligibleIdx) {
-        const exact = (target * plans[i]!.gross) / eligibleGross;
-        const base = Math.floor(exact);
-        discountByIndex[i] = base;
-        assigned += base;
-        fracs.push({ i, frac: exact - base });
+        const requested = coupon.value * plans[i]!.qty;
+        discountByIndex[i] = Math.min(requested, plans[i]!.gross);
       }
-      let leftover = target - assigned;
-      fracs.sort((a, b) => b.frac - a.frac);
-      for (const { i } of fracs) {
-        if (leftover <= 0) break;
-        discountByIndex[i] = (discountByIndex[i] ?? 0) + 1;
-        leftover -= 1;
+    } else {
+      const target = Math.min(coupon.value, eligibleGross);
+      if (eligibleIdx.length === 1) {
+        discountByIndex[eligibleIdx[0]!] = target;
+      } else {
+        const fracs: Array<{ i: number; frac: number }> = [];
+        let assigned = 0;
+        for (const i of eligibleIdx) {
+          const exact = (target * plans[i]!.gross) / eligibleGross;
+          const base = Math.floor(exact);
+          discountByIndex[i] = base;
+          assigned += base;
+          fracs.push({ i, frac: exact - base });
+        }
+        let leftover = target - assigned;
+        fracs.sort((a, b) => b.frac - a.frac);
+        for (const { i } of fracs) {
+          if (leftover <= 0) break;
+          discountByIndex[i] = (discountByIndex[i] ?? 0) + 1;
+          leftover -= 1;
+        }
       }
     }
   }

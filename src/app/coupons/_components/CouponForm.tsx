@@ -24,6 +24,7 @@ export function CouponForm({ products }: { products: ProductOption[] }) {
   const [productId, setProductId] = useState("");
   const [expiresInDays, setExpiresInDays] = useState("7");
   const [allowFloorOverride, setAllowFloorOverride] = useState(false);
+  const [perUnit, setPerUnit] = useState(false);
   const [notes, setNotes] = useState("");
   const [code, setCode] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -32,9 +33,13 @@ export function CouponForm({ products }: { products: ProductOption[] }) {
 
   const selectedProduct = products.find((p) => p.id === productId) ?? null;
   const numericValue = Number(value);
+  // Per-unit math is well-defined for PERCENT (always) and FIXED+perUnit.
+  // For FIXED+per-cart, the discount spreads across qty which we don't
+  // know until checkout — so the preview is hidden in that case.
   const floorPreview = (() => {
     if (!selectedProduct) return null;
     if (!Number.isFinite(numericValue) || numericValue <= 0) return null;
+    if (type === "FIXED" && !perUnit) return null;
     const unitCost = Math.ceil(
       selectedProduct.costPerCarton / Math.max(1, selectedProduct.unitsPerCarton),
     );
@@ -63,6 +68,7 @@ export function CouponForm({ products }: { products: ProductOption[] }) {
         productId: productId || null,
         expiresInDays: Number(expiresInDays),
         allowFloorOverride,
+        perUnit: type === "FIXED" ? perUnit : false,
         notes: notes || null,
       });
       if (!result.ok) {
@@ -170,6 +176,26 @@ export function CouponForm({ products }: { products: ProductOption[] }) {
           className="mt-1 block w-full rounded-xl border-2 border-zinc-300 px-3 py-2.5 text-base tabular-nums"
         />
       </label>
+
+      {type === "FIXED" && (
+        <label className="flex cursor-pointer items-start gap-2 rounded-xl border border-zinc-200 bg-zinc-50 p-3 text-sm">
+          <input
+            type="checkbox"
+            checked={perUnit}
+            onChange={(e) => setPerUnit(e.target.checked)}
+            className="mt-0.5 h-4 w-4"
+          />
+          <span>
+            <span className="font-medium text-zinc-800">Apply per unit</span>
+            <span className="block text-xs text-zinc-500">
+              Tick this if the discount should come off <em>each item</em> in
+              the matched line — e.g. &ldquo;700 RWF off every bottle&rdquo; on
+              a 100-bottle order is 70,000 RWF total. Otherwise the discount
+              is taken once across the whole line.
+            </span>
+          </span>
+        </label>
+      )}
 
       <label className="block">
         <span className="text-sm font-medium text-zinc-800">
