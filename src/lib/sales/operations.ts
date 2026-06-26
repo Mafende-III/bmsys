@@ -20,21 +20,22 @@ function errorMessage(e: unknown, fallback: string): string {
   return e instanceof Error ? e.message : fallback;
 }
 
-
 /**
  * Atomically:
  *   1. Verify caller may sell on this channel
- *   2. Resolve effective prices and check stock for each line
- *   3. For UNIT lines: pick or auto-open a carton, decrement it
- *   4. For CARTON lines: check sealed carton availability
- *   5. Insert Sale + SaleLines + stock_moves + AuditLog
- *
- * Rules baked in:
- *   - UNIT lines refuse if qty > product.unitsPerCarton (force CARTON or
- *     split into smaller lines)
- *   - SALE_UNIT picks oldest OPENED carton with enough remaining; if not,
- *     auto-opens a new carton from sealed stock
- *   - SALE_CARTON requires sealed_cartons >= qty
+ *   2. Look up and validate any redeemed coupon code (exists/active/
+ *      not-expired/not-revoked/not-redeemed)
+ *   3. Resolve effective prices and stock for each line
+ *   4. Compute per-line discount from the coupon (PERCENT applies to
+ *      each line; FIXED + productId applies to the matched line; FIXED
+ *      cart-wide distributes proportionally across lines)
+ *   5. Enforce per-product min-margin floor unless the coupon was
+ *      created with allowFloorOverride
+ *   6. For UNIT lines: pick or auto-open a carton, decrement it
+ *   7. For CARTON lines: check sealed carton availability
+ *   8. Insert Sale + SaleLines + stock_moves
+ *   9. Atomically mark coupon redeemed (unique redeemedBySaleId)
+ *  10. Append a single AuditLog entry summarising the discount
  */
 export async function createSaleOp(
   userId: string,
@@ -54,14 +55,6 @@ export async function createSaleOp(
   try {
     const result = await withIdempotency(idempotencyKey, "sales.create", () =>
       prisma.$transaction(async (tx) => {
-        // Role check is needed up-front so we can decide whether to
-        // honour any floorOverride flags the caller passed in.
-        const user = await tx.user.findUnique({
-          where: { id: userId },
-          select: { role: true },
-        });
-        const isOwner = user?.role === "OWNER";
-
         // Resolve the global default margin floor. Per-product floors
         // override this; products that set 0 fall back here.
         const settings = await tx.settings.findUnique({
@@ -96,29 +89,54 @@ export async function createSaleOp(
           }
         }
 
-        let total = 0;
-        const linePlans: Array<{
+        // ── Coupon lookup (optional) ────────────────────────────────
+        const couponCode = input.couponCode ?? null;
+        const coupon = couponCode
+          ? await tx.coupon.findUnique({ where: { code: couponCode } })
+          : null;
+        if (couponCode && !coupon) {
+          throw new Error(`Coupon "${couponCode}" not found`);
+        }
+        if (coupon) {
+          if (coupon.revokedAt) {
+            throw new Error(`Coupon "${coupon.code}" has been revoked`);
+          }
+          if (coupon.redeemedAt || coupon.redeemedBySaleId) {
+            throw new Error(`Coupon "${coupon.code}" has already been used`);
+          }
+          if (coupon.expiresAt < new Date()) {
+            throw new Error(`Coupon "${coupon.code}" has expired`);
+          }
+          if (
+            coupon.productId &&
+            !input.items.some((i) => i.productId === coupon.productId)
+          ) {
+            const target = await tx.product.findUnique({
+              where: { id: coupon.productId },
+              select: { name: true },
+            });
+            throw new Error(
+              `Coupon "${coupon.code}" only applies to ${target?.name ?? "a product not in this cart"}`,
+            );
+          }
+        }
+
+        // ── First pass: resolve every line's price + sealed/loose
+        //    availability, so we know the gross subtotal needed to
+        //    distribute a FIXED cart-wide coupon proportionally. We
+        //    don't write anything yet.
+        type LinePlan = {
           productId: string;
           unitsPerCarton: number;
+          costPerCarton: number;
+          minMarginBps: number;
           saleUnit: "UNIT" | "CARTON";
           qty: number;
           unitPrice: number;
-          discountAmount: number;
-          discountReason: string | null;
-          floorOverride: boolean;
-          lineTotal: number;
-          cartonId: string | null;
-        }> = [];
-        const discountAudit: Array<{
-          productId: string;
-          sku: string;
-          name: string;
-          discountAmount: number;
-          discountReason: string | null;
-          floorOverride: boolean;
+          grossLineTotal: number;
           maxAllowedAtFloor: number;
-        }> = [];
-
+        };
+        const plans: LinePlan[] = [];
         for (const item of input.items) {
           const product = byId.get(item.productId);
           if (!product) throw new Error(`Unknown product: ${item.productId}`);
@@ -131,7 +149,6 @@ export async function createSaleOp(
             throw new Error(`${product.name} cannot be sold as carton`);
           }
 
-          // Resolve effective price for this (product, channel)
           const override = await tx.channelPriceOverride.findUnique({
             where: {
               productId_channelId: {
@@ -145,15 +162,11 @@ export async function createSaleOp(
               ? (override?.unitPrice ?? product.unitPrice)
               : (override?.cartonPrice ?? product.cartonPrice);
           const grossLineTotal = unitPrice * item.qty;
-
-          // ── Discount + min-margin floor ─────────────────────────────
-          // Per-product margin overrides the global default; 0 means
-          // "use the global default", and 0 there means "no floor".
           const effectiveMarginBps =
             product.minMarginBps > 0
               ? product.minMarginBps
               : defaultMinMarginBps;
-          const maxAllowed = maxAllowedLineDiscount({
+          const maxAllowedAtFloor = maxAllowedLineDiscount({
             saleUnit: item.saleUnit,
             qty: item.qty,
             unitPrice,
@@ -161,48 +174,140 @@ export async function createSaleOp(
             unitsPerCarton: product.unitsPerCarton,
             marginBps: effectiveMarginBps,
           });
-          const requestedDiscount = item.discountAmount;
-          // Only OWNER may bypass the floor. Sellers' overrides are
-          // silently dropped — schema-level defence in depth.
-          const floorOverride = isOwner && item.floorOverride === true;
-          if (requestedDiscount > grossLineTotal) {
-            throw new Error(
-              `${product.name}: discount of RWF ${requestedDiscount} exceeds the line price of RWF ${grossLineTotal}`,
-            );
-          }
-          if (!floorOverride && requestedDiscount > maxAllowed) {
-            if (product.costPerCarton <= 0) {
-              throw new Error(
-                `${product.name}: set a purchase cost on the product before applying a discount`,
+          plans.push({
+            productId: product.id,
+            unitsPerCarton: product.unitsPerCarton,
+            costPerCarton: product.costPerCarton,
+            minMarginBps: effectiveMarginBps,
+            saleUnit: item.saleUnit,
+            qty: item.qty,
+            unitPrice,
+            grossLineTotal,
+            maxAllowedAtFloor,
+          });
+        }
+
+        // ── Compute per-line discount from coupon (if any) ──────────
+        const discountByIndex = new Array<number>(plans.length).fill(0);
+        if (coupon) {
+          if (coupon.type === "PERCENT") {
+            // Apply percent to each eligible line independently.
+            // value is whole percent (1..100). floor() so we never
+            // round up against the merchant.
+            for (let i = 0; i < plans.length; i++) {
+              const plan = plans[i]!;
+              if (coupon.productId && plan.productId !== coupon.productId)
+                continue;
+              discountByIndex[i] = Math.floor(
+                (plan.grossLineTotal * coupon.value) / 100,
               );
             }
+          } else {
+            // FIXED
+            const eligibleIdx = plans
+              .map((_, i) => i)
+              .filter(
+                (i) =>
+                  !coupon.productId ||
+                  plans[i]!.productId === coupon.productId,
+              );
+            const eligibleGross = eligibleIdx.reduce(
+              (a, i) => a + plans[i]!.grossLineTotal,
+              0,
+            );
+            if (eligibleGross <= 0) {
+              throw new Error(
+                `Coupon "${coupon.code}" cannot be applied to a zero-value cart`,
+              );
+            }
+            const target = Math.min(coupon.value, eligibleGross);
+            if (eligibleIdx.length === 1) {
+              discountByIndex[eligibleIdx[0]!] = target;
+            } else {
+              // Largest-remainder distribution. Each eligible line gets
+              // floor(target * lineGross / sumGross); leftover RWF go to
+              // the lines with the largest fractional part so the math
+              // sums back to `target` exactly.
+              const fracs: Array<{ i: number; frac: number }> = [];
+              let assigned = 0;
+              for (const i of eligibleIdx) {
+                const exact =
+                  (target * plans[i]!.grossLineTotal) / eligibleGross;
+                const base = Math.floor(exact);
+                discountByIndex[i] = base;
+                assigned += base;
+                fracs.push({ i, frac: exact - base });
+              }
+              let leftover = target - assigned;
+              fracs.sort((a, b) => b.frac - a.frac);
+              for (const { i } of fracs) {
+                if (leftover <= 0) break;
+                discountByIndex[i] = (discountByIndex[i] ?? 0) + 1;
+                leftover -= 1;
+              }
+            }
+          }
+
+          // Floor enforcement. Skip when coupon was issued with
+          // allowFloorOverride so the owner can deliberately authorize
+          // a margin-breaking promotion.
+          if (!coupon.allowFloorOverride) {
+            for (let i = 0; i < plans.length; i++) {
+              const plan = plans[i]!;
+              const d = discountByIndex[i]!;
+              if (d > plan.maxAllowedAtFloor) {
+                const product = byId.get(plan.productId)!;
+                if (plan.costPerCarton <= 0) {
+                  throw new Error(
+                    `${product.name}: set a purchase cost before this coupon can apply (no margin floor possible)`,
+                  );
+                }
+                throw new Error(
+                  `${product.name}: coupon "${coupon.code}" would breach the ${(plan.minMarginBps / 100).toFixed(1)}% margin floor (max RWF ${plan.maxAllowedAtFloor})`,
+                );
+              }
+            }
+          }
+        }
+
+        // ── Second pass: stock + carton handling, persist lines ─────
+        let total = 0;
+        type Persisted = {
+          plan: LinePlan;
+          discountAmount: number;
+          lineTotal: number;
+          cartonId: string | null;
+        };
+        const persisted: Persisted[] = [];
+
+        for (let i = 0; i < plans.length; i++) {
+          const plan = plans[i]!;
+          const product = byId.get(plan.productId)!;
+          const discountAmount = discountByIndex[i]!;
+          if (discountAmount > plan.grossLineTotal) {
             throw new Error(
-              `${product.name}: max discount at the ${(effectiveMarginBps / 100).toFixed(1)}% margin floor is RWF ${maxAllowed}`,
+              `${product.name}: computed discount of RWF ${discountAmount} exceeds the line price of RWF ${plan.grossLineTotal}`,
             );
           }
-          const lineTotal = grossLineTotal - requestedDiscount;
+          const lineTotal = plan.grossLineTotal - discountAmount;
 
-          // Stock + carton handling
           let cartonId: string | null = null;
-
-          if (item.saleUnit === "UNIT") {
-            if (item.qty > product.unitsPerCarton) {
+          if (plan.saleUnit === "UNIT") {
+            if (plan.qty > plan.unitsPerCarton) {
               throw new Error(
-                `${product.name}: a UNIT sale can carry at most ${product.unitsPerCarton} unit(s). Use a CARTON sale or split into smaller lines.`,
+                `${product.name}: a UNIT sale can carry at most ${plan.unitsPerCarton} unit(s). Use a CARTON sale or split into smaller lines.`,
               );
             }
-
             const openedCarton = await tx.carton.findFirst({
-              where: { productId: product.id, state: "OPENED" },
+              where: { productId: plan.productId, state: "OPENED" },
               orderBy: { openedAt: "asc" },
             });
-
-            if (openedCarton && openedCarton.unitsRemaining >= item.qty) {
-              const willGoEmpty = openedCarton.unitsRemaining === item.qty;
+            if (openedCarton && openedCarton.unitsRemaining >= plan.qty) {
+              const willGoEmpty = openedCarton.unitsRemaining === plan.qty;
               await tx.carton.update({
                 where: { id: openedCarton.id },
                 data: {
-                  unitsRemaining: { decrement: item.qty },
+                  unitsRemaining: { decrement: plan.qty },
                   ...(willGoEmpty
                     ? { state: "EMPTY", closedAt: new Date() }
                     : {}),
@@ -210,21 +315,18 @@ export async function createSaleOp(
               });
               cartonId = openedCarton.id;
             } else {
-              // Need a fresh OPENED carton from sealed stock
               const stockSum = await tx.stockMove.aggregate({
-                where: { productId: product.id },
+                where: { productId: plan.productId },
                 _sum: { qtyUnits: true },
               });
               const totalUnits = stockSum._sum.qtyUnits ?? 0;
-
               const allOpened = await tx.carton.aggregate({
-                where: { productId: product.id, state: "OPENED" },
+                where: { productId: plan.productId, state: "OPENED" },
                 _sum: { unitsRemaining: true },
               });
               const openedUnits = allOpened._sum.unitsRemaining ?? 0;
-
               const sealedUnits = totalUnits - openedUnits;
-              if (sealedUnits < product.unitsPerCarton) {
+              if (sealedUnits < plan.unitsPerCarton) {
                 if (openedCarton) {
                   throw new Error(
                     `${product.name}: open carton has only ${openedCarton.unitsRemaining} unit(s) and no sealed cartons available.`,
@@ -232,22 +334,21 @@ export async function createSaleOp(
                 }
                 throw new Error(`${product.name}: out of stock`);
               }
-
               const tag = `AUTO-${product.sku}-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-              const willGoEmpty = item.qty === product.unitsPerCarton;
+              const willGoEmpty = plan.qty === plan.unitsPerCarton;
               const newCarton = await tx.carton.create({
                 data: {
-                  productId: product.id,
+                  productId: plan.productId,
                   tag,
                   state: willGoEmpty ? "EMPTY" : "OPENED",
-                  unitsRemaining: product.unitsPerCarton - item.qty,
+                  unitsRemaining: plan.unitsPerCarton - plan.qty,
                   openedByUserId: userId,
                   ...(willGoEmpty ? { closedAt: new Date() } : {}),
                 },
               });
               await tx.stockMove.create({
                 data: {
-                  productId: product.id,
+                  productId: plan.productId,
                   qtyUnits: 0,
                   reason: "CARTON_OPEN",
                   refType: "carton",
@@ -258,58 +359,32 @@ export async function createSaleOp(
               cartonId = newCarton.id;
             }
           } else {
-            // CARTON sale — check sealed cartons available
             const stockSum = await tx.stockMove.aggregate({
-              where: { productId: product.id },
+              where: { productId: plan.productId },
               _sum: { qtyUnits: true },
             });
             const totalUnits = stockSum._sum.qtyUnits ?? 0;
-
             const allOpened = await tx.carton.aggregate({
-              where: { productId: product.id, state: "OPENED" },
+              where: { productId: plan.productId, state: "OPENED" },
               _sum: { unitsRemaining: true },
             });
             const openedUnits = allOpened._sum.unitsRemaining ?? 0;
-
             const sealedUnits = totalUnits - openedUnits;
-            const requiredUnits = item.qty * product.unitsPerCarton;
+            const requiredUnits = plan.qty * plan.unitsPerCarton;
             if (sealedUnits < requiredUnits) {
               const availableCartons = Math.floor(
-                sealedUnits / product.unitsPerCarton,
+                sealedUnits / plan.unitsPerCarton,
               );
               throw new Error(
                 `${product.name}: only ${availableCartons} sealed carton(s) available`,
               );
             }
           }
-
           total += lineTotal;
-          linePlans.push({
-            productId: product.id,
-            unitsPerCarton: product.unitsPerCarton,
-            saleUnit: item.saleUnit,
-            qty: item.qty,
-            unitPrice,
-            discountAmount: requestedDiscount,
-            discountReason: item.discountReason ?? null,
-            floorOverride,
-            lineTotal,
-            cartonId,
-          });
-          if (requestedDiscount > 0) {
-            discountAudit.push({
-              productId: product.id,
-              sku: product.sku,
-              name: product.name,
-              discountAmount: requestedDiscount,
-              discountReason: item.discountReason ?? null,
-              floorOverride,
-              maxAllowedAtFloor: maxAllowed,
-            });
-          }
+          persisted.push({ plan, discountAmount, lineTotal, cartonId });
         }
 
-        // Create the Sale row
+        // Create the Sale row (with optional coupon link)
         const sale = await tx.sale.create({
           data: {
             channelId: input.channelId,
@@ -321,36 +396,38 @@ export async function createSaleOp(
             source: "IN_PERSON",
             status: "COMPLETE",
             userId,
+            couponId: coupon?.id ?? null,
           },
         });
 
-        // Create sale lines + stock moves
-        for (const plan of linePlans) {
+        // SaleLines + stock_moves
+        for (const p of persisted) {
           await tx.saleLine.create({
             data: {
               saleId: sale.id,
-              productId: plan.productId,
-              saleUnit: plan.saleUnit,
-              qty: plan.qty,
-              unitPrice: plan.unitPrice,
-              discountAmount: plan.discountAmount,
-              discountReason: plan.discountReason,
-              floorOverride: plan.floorOverride,
-              lineTotal: plan.lineTotal,
-              cartonId: plan.cartonId,
+              productId: p.plan.productId,
+              saleUnit: p.plan.saleUnit,
+              qty: p.plan.qty,
+              unitPrice: p.plan.unitPrice,
+              discountAmount: p.discountAmount,
+              discountReason: coupon
+                ? `Coupon ${coupon.code}${coupon.notes ? ` — ${coupon.notes}` : ""}`
+                : null,
+              floorOverride:
+                p.discountAmount > 0 && p.discountAmount > p.plan.maxAllowedAtFloor,
+              lineTotal: p.lineTotal,
+              cartonId: p.cartonId,
             },
           });
-
           const qtyUnitsDelta =
-            plan.saleUnit === "UNIT"
-              ? -plan.qty
-              : -plan.qty * plan.unitsPerCarton;
-
+            p.plan.saleUnit === "UNIT"
+              ? -p.plan.qty
+              : -p.plan.qty * p.plan.unitsPerCarton;
           await tx.stockMove.create({
             data: {
-              productId: plan.productId,
+              productId: p.plan.productId,
               qtyUnits: qtyUnitsDelta,
-              reason: plan.saleUnit === "UNIT" ? "SALE_UNIT" : "SALE_CARTON",
+              reason: p.plan.saleUnit === "UNIT" ? "SALE_UNIT" : "SALE_CARTON",
               refType: "sale",
               refId: sale.id,
               userId,
@@ -358,8 +435,24 @@ export async function createSaleOp(
           });
         }
 
-        const discountTotal = discountAudit.reduce(
-          (a, d) => a + d.discountAmount,
+        // ── Atomically lock the coupon to this sale. The
+        //    redeemedBySaleId @unique index means a second concurrent
+        //    txn trying to use the same code will get a unique-key
+        //    error here and roll back — making the one-time-use
+        //    guarantee a DB constraint, not just app logic.
+        if (coupon) {
+          await tx.coupon.update({
+            where: { id: coupon.id },
+            data: {
+              redeemedAt: new Date(),
+              redeemedBySaleId: sale.id,
+              redeemedByUserId: userId,
+            },
+          });
+        }
+
+        const discountTotal = persisted.reduce(
+          (a, p) => a + p.discountAmount,
           0,
         );
         await tx.auditLog.create({
@@ -367,19 +460,20 @@ export async function createSaleOp(
             tableName: "sales",
             recordId: sale.id,
             action: "INSERT",
-            category: discountAudit.length > 0 ? "SALE_DISCOUNT" : null,
+            category: coupon ? "SALE_DISCOUNT" : null,
             changes: {
               channelId: input.channelId,
               paymentMethod: input.paymentMethod,
               itemCount: input.items.length,
               total,
-              ...(discountAudit.length > 0
+              ...(coupon
                 ? {
+                    couponId: coupon.id,
+                    couponCode: coupon.code,
+                    couponType: coupon.type,
+                    couponValue: coupon.value,
                     discountTotal,
-                    discounts: discountAudit,
-                    floorOverrideApplied: discountAudit.some(
-                      (d) => d.floorOverride,
-                    ),
+                    floorOverrideApplied: coupon.allowFloorOverride,
                   }
                 : {}),
             } as Prisma.InputJsonValue,

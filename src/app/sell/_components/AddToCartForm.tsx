@@ -8,7 +8,6 @@ import { useCart } from "./CartProvider";
 
 export function AddToCartForm({
   product,
-  effectiveMarginBps,
 }: {
   product: {
     id: string;
@@ -21,9 +20,7 @@ export function AddToCartForm({
     cartonPrice: number;
     sealedCartons: number;
     openedUnits: number;
-    costPerCarton: number;
   };
-  effectiveMarginBps: number;
 }) {
   const router = useRouter();
   const t = useTranslations("sell");
@@ -75,12 +72,6 @@ export function AddToCartForm({
       qty,
       unitPrice,
       lineTotal,
-      costPerCarton: product.costPerCarton,
-      unitsPerCarton: product.unitsPerCarton,
-      effectiveMarginBps,
-      discountAmount: 0,
-      discountReason: null,
-      floorOverride: false,
     });
 
     router.push("/sell");

@@ -16,45 +16,30 @@ export type CartItem = {
   saleUnit: "UNIT" | "CARTON";
   qty: number;
   unitPrice: number;
-  /// Final, post-discount RWF for the line. Equals qty × unitPrice
-  /// minus discountAmount.
   lineTotal: number;
-  // ── Discount-related fields carried through the cart so the
-  // CheckoutForm can show floor errors live (cost + margin must travel
-  // with the item, the server re-validates).
-  costPerCarton: number;
-  unitsPerCarton: number;
-  /// Already resolved at add-time (per-product > settings default).
-  effectiveMarginBps: number;
-  discountAmount: number;
-  discountReason: string | null;
-  floorOverride: boolean;
 };
 
 export type Cart = {
   channelId: string;
   items: CartItem[];
+  /// Optional one-time-use coupon code typed at checkout. The actual
+  /// discount math runs on the server via previewCoupon / runSale —
+  /// the client only stores the code so it survives navigation.
+  couponCode: string | null;
 };
 
-// Bump storage version any time CartItem fields change so a tab with a
-// stale cart shape doesn't break on next visit.
-const STORAGE_KEY = "bmsys.cart.v2";
+// Bump storage version whenever cart shape changes so a tab carrying
+// an old shape doesn't break on next render.
+const STORAGE_KEY = "bmsys.cart.v3";
 
 type CartContextValue = {
   cart: Cart | null;
   setChannel: (channelId: string) => void;
   addItem: (item: CartItem) => void;
   removeItem: (index: number) => void;
-  setItemDiscount: (
-    index: number,
-    discountAmount: number,
-    discountReason: string | null,
-    floorOverride: boolean,
-  ) => void;
+  setCouponCode: (code: string | null) => void;
   clear: () => void;
   subtotal: number;
-  discountTotal: number;
-  total: number;
   ready: boolean;
 };
 
@@ -67,7 +52,7 @@ function loadFromStorage(): Cart | null {
     if (!raw) return null;
     const parsed = JSON.parse(raw) as Cart;
     if (!parsed.channelId || !Array.isArray(parsed.items)) return null;
-    return parsed;
+    return { ...parsed, couponCode: parsed.couponCode ?? null };
   } catch {
     return null;
   }
@@ -97,14 +82,11 @@ export function CartProvider({
     if (fromStorage && fromStorage.channelId === currentChannelId) {
       setCart(fromStorage);
     } else if (fromStorage && fromStorage.items.length === 0) {
-      // empty cart, just update channel silently
-      setCart({ channelId: currentChannelId, items: [] });
+      setCart({ channelId: currentChannelId, items: [], couponCode: null });
     } else if (fromStorage) {
-      // channel mismatch with items — keep old cart so user is asked
-      // to either checkout or clear before switching
       setCart(fromStorage);
     } else {
-      setCart({ channelId: currentChannelId, items: [] });
+      setCart({ channelId: currentChannelId, items: [], couponCode: null });
     }
     setReady(true);
   }, [currentChannelId]);
@@ -115,28 +97,20 @@ export function CartProvider({
 
   const setChannel = useCallback((channelId: string) => {
     setCart((prev) => {
-      if (!prev) return { channelId, items: [] };
-      if (prev.items.length > 0 && prev.channelId !== channelId) {
-        // ignore — UI prevents this
-        return prev;
-      }
+      if (!prev) return { channelId, items: [], couponCode: null };
+      if (prev.items.length > 0 && prev.channelId !== channelId) return prev;
       return { ...prev, channelId };
     });
   }, []);
 
   const addItem = useCallback((item: CartItem) => {
     setCart((prev) => {
-      const base = prev ?? { channelId: "", items: [] };
-      // collapse if same product+saleUnit+price AND neither side has a
-      // discount applied (merging a discounted line with a fresh one
-      // would silently spread the discount over more qty)
+      const base = prev ?? { channelId: "", items: [], couponCode: null };
       const existingIdx = base.items.findIndex(
         (i) =>
           i.productId === item.productId &&
           i.saleUnit === item.saleUnit &&
-          i.unitPrice === item.unitPrice &&
-          i.discountAmount === 0 &&
-          item.discountAmount === 0,
+          i.unitPrice === item.unitPrice,
       );
       if (existingIdx >= 0) {
         const next = [...base.items];
@@ -157,54 +131,40 @@ export function CartProvider({
   const removeItem = useCallback((index: number) => {
     setCart((prev) => {
       if (!prev) return prev;
-      return { ...prev, items: prev.items.filter((_, i) => i !== index) };
+      // Removing items invalidates a previously-validated coupon
+      return {
+        ...prev,
+        items: prev.items.filter((_, i) => i !== index),
+        couponCode: null,
+      };
     });
   }, []);
 
-  const setItemDiscount = useCallback(
-    (
-      index: number,
-      discountAmount: number,
-      discountReason: string | null,
-      floorOverride: boolean,
-    ) => {
-      setCart((prev) => {
-        if (!prev) return prev;
-        const next = [...prev.items];
-        const e = next[index];
-        if (!e) return prev;
-        const safeDiscount = Math.max(
-          0,
-          Math.min(e.qty * e.unitPrice, Math.round(discountAmount)),
-        );
-        next[index] = {
-          ...e,
-          discountAmount: safeDiscount,
-          discountReason: safeDiscount > 0 ? discountReason : null,
-          floorOverride: safeDiscount > 0 ? floorOverride : false,
-          lineTotal: e.qty * e.unitPrice - safeDiscount,
-        };
-        return { ...prev, items: next };
-      });
-    },
-    [],
-  );
+  const setCouponCode = useCallback((code: string | null) => {
+    setCart((prev) => {
+      if (!prev) return prev;
+      return {
+        ...prev,
+        couponCode:
+          code && code.trim() !== "" ? code.trim().toUpperCase() : null,
+      };
+    });
+  }, []);
 
   const clear = useCallback(() => {
     setCart((prev) => ({
       channelId: prev?.channelId ?? "",
       items: [],
+      couponCode: null,
     }));
   }, []);
 
-  const { subtotal, discountTotal, total } = useMemo(() => {
+  const subtotal = useMemo(() => {
     let sub = 0;
-    let disc = 0;
     for (const i of cart?.items ?? []) {
       sub += i.qty * i.unitPrice;
-      disc += i.discountAmount;
     }
-    return { subtotal: sub, discountTotal: disc, total: sub - disc };
+    return sub;
   }, [cart]);
 
   const value: CartContextValue = {
@@ -212,11 +172,9 @@ export function CartProvider({
     setChannel,
     addItem,
     removeItem,
-    setItemDiscount,
+    setCouponCode,
     clear,
     subtotal,
-    discountTotal,
-    total,
     ready,
   };
 

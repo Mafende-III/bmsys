@@ -5,8 +5,6 @@ import { iconForKey } from "@/lib/icons";
 import { listAllowedChannels } from "@/lib/permissions";
 import { getActiveChannelId } from "@/lib/sales/actions";
 import { listProductsForChannel } from "@/lib/sales/queries";
-import { resolveMarginBps } from "@/lib/sales/floor";
-import { getSettings } from "@/lib/settings/queries";
 import { AddToCartForm } from "../../_components/AddToCartForm";
 
 export default async function SellProductPage({
@@ -27,16 +25,9 @@ export default async function SellProductPage({
   if (!activeChannelId) return null;
 
   const { id } = await params;
-  const [products, settings] = await Promise.all([
-    listProductsForChannel(activeChannelId),
-    getSettings(),
-  ]);
+  const products = await listProductsForChannel(activeChannelId);
   const product = products.find((p) => p.id === id);
   if (!product) notFound();
-  const effectiveMarginBps = resolveMarginBps(
-    product.minMarginBps,
-    settings.defaultMinMarginBps,
-  );
 
   return (
     <div className="space-y-5">
@@ -76,10 +67,7 @@ export default async function SellProductPage({
         </div>
       </div>
 
-      <AddToCartForm
-        product={product}
-        effectiveMarginBps={effectiveMarginBps}
-      />
+      <AddToCartForm product={product} />
     </div>
   );
 }

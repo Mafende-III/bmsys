@@ -60,6 +60,8 @@
     "lossesSubtitle": "Broken, expired, stolen, samples",
     "stockTake": "Stock take",
     "stockTakeSubtitle": "Count and reconcile shelf vs system",
+    "coupons": "Coupons",
+    "couponsSubtitle": "Pre-approved discount codes the cashier types at checkout",
     "stockCatalog": "Stock & catalog",
     "products": "Products",
     "productsSubtitle": "Drinks, snacks, prices",

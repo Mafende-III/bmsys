@@ -8,7 +8,7 @@ import { useCart } from "./CartProvider";
 
 export function CartHeader({ channelName }: { channelName: string }) {
   const t = useTranslations("sell");
-  const { cart, total, ready } = useCart();
+  const { cart, subtotal, ready } = useCart();
   const itemCount = cart?.items.reduce((s, i) => s + i.qty, 0) ?? 0;
   const hasItems = ready && itemCount > 0;
 
@@ -35,7 +35,7 @@ export function CartHeader({ channelName }: { channelName: string }) {
         <div className="flex items-center gap-2 text-right">
           <div>
             <p className="font-mono text-lg font-semibold tabular-nums">
-              {formatRWF(total)}
+              {formatRWF(subtotal)}
             </p>
             <p className="text-[10px] uppercase tracking-wide text-zinc-300">
               {t("tapToPay")}

@@ -148,6 +148,8 @@ model User {
   loyaltyMovements  LoyaltyMovement[]
   auditLogs         AuditLog[]
   channels          UserChannel[]
+  couponsCreated    Coupon[]           @relation("CouponCreatedBy")
+  couponsRedeemed   Coupon[]           @relation("CouponRedeemedBy")
 }
 
 model Channel {
@@ -214,6 +216,7 @@ model Product {
   saleLines             SaleLine[]
   adjustments           Adjustment[]
   subscriptions         Subscription[]
+  coupons               Coupon[]
 }
 
 /// First-class product category. Holds the shared icon shown in the POS
@@ -369,12 +372,18 @@ model Sale {
   status           SaleStatus    @default(COMPLETE)
   note             String?
   userId           String
+  /// Set when a coupon was redeemed against this sale. The Coupon row
+  /// itself carries redeemedBySaleId pointing back here (with a unique
+  /// constraint), so the relationship is enforced one-to-one.
+  couponId         String?       @unique
   createdAt        DateTime      @default(now())
 
   channel  Channel    @relation(fields: [channelId], references: [id])
   customer Customer?  @relation(fields: [customerId], references: [id])
   user     User       @relation(fields: [userId], references: [id])
+  coupon   Coupon?    @relation("CouponRedemption", fields: [couponId], references: [id])
   lines    SaleLine[]
+
   receipts Receipt[]
 
   @@index([channelId, date])
@@ -403,6 +412,63 @@ model SaleLine {
   sale    Sale     @relation(fields: [saleId], references: [id], onDelete: Cascade)
   product Product  @relation(fields: [productId], references: [id])
   carton  Carton?  @relation(fields: [cartonId], references: [id])
+}
+
+// ========================================================================
+// COUPONS
+// ========================================================================
+
+/// How the coupon's value is interpreted.
+///   FIXED   → value is RWF off the matched line(s)
+///   PERCENT → value is basis points (1000 = 10%) applied to the gross
+enum CouponType {
+  FIXED
+  PERCENT
+}
+
+/// One-time-use discount code created by the owner and redeemed by the
+/// cashier at checkout. Owners share the code with a customer (WhatsApp,
+/// printed slip); the cashier just types it in at /sell/checkout. After
+/// redemption the unique redeemedBySaleId locks the coupon at the DB
+/// level, so a code physically cannot be used twice. The floor check
+/// from createSaleOp is reused at redemption time to guard against stale
+/// coupons (e.g. cost went up after the coupon was issued).
+model Coupon {
+  id                String     @id @default(cuid())
+  /// Human-typeable code shown to the customer. Auto-generated 6-char
+  /// alphanumeric by default but the owner can override at create time.
+  /// Stored uppercase; lookups compare uppercase too.
+  code              String     @unique
+  type              CouponType
+  /// RWF when type=FIXED, basis points when type=PERCENT (1000 = 10%).
+  value             Int
+  /// When set, the coupon only applies to this product. Null = applies
+  /// to the whole cart (FIXED distributes proportionally across lines,
+  /// PERCENT applies independently to each line).
+  productId         String?
+  expiresAt         DateTime
+  /// When true, redemption is allowed even if it breaches the per-line
+  /// min-margin floor (audit-logged on the SaleLine.floorOverride flag).
+  allowFloorOverride Boolean   @default(false)
+  notes             String?
+  /// One-to-one with Sale (enforced by @unique). Once redeemed the
+  /// coupon is permanently locked.
+  redeemedAt        DateTime?
+  redeemedBySaleId  String?    @unique
+  redeemedByUserId  String?
+  /// Allows an owner to revoke a coupon they regret issuing before it
+  /// gets redeemed. Sets revokedAt; redemption checks reject if set.
+  revokedAt         DateTime?
+  createdByUserId   String
+  createdAt         DateTime   @default(now())
+
+  product         Product? @relation(fields: [productId], references: [id])
+  createdByUser   User     @relation("CouponCreatedBy", fields: [createdByUserId], references: [id])
+  redeemedByUser  User?    @relation("CouponRedeemedBy", fields: [redeemedByUserId], references: [id])
+  redemption      Sale?    @relation("CouponRedemption")
+
+  @@index([productId])
+  @@index([expiresAt])
 }
 
 // ========================================================================

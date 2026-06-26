@@ -23,6 +23,7 @@ const fullWipe = () =>
     prisma.userChannel.deleteMany({}),
     prisma.saleLine.deleteMany({}),
     prisma.sale.deleteMany({}),
+    prisma.coupon.deleteMany({}),
     prisma.purchaseLine.deleteMany({}),
     prisma.purchase.deleteMany({}),
     prisma.adjustment.deleteMany({}),

@@ -66,9 +66,15 @@ export const TOURS: TourDefinition[] = [
     steps: [
       {
         element: '[data-tour="checkout-lines"]',
-        title: "Apply discounts per line",
-        body: "Tap \"Apply discount\" on any line to take an amount off — RWF or percent. Add a reason so the audit log remembers why. The shop won't let you sell below the minimum profit margin unless you tick the override.",
+        title: "Review the cart",
+        body: "Double-check what the customer is paying for. Tap × on a line to drop it. The total updates live.",
         side: "bottom",
+      },
+      {
+        element: '[data-tour="checkout-coupon"]',
+        title: "Coupon code",
+        body: "If the owner gave the customer a discount code, type it here and tap Apply. The shop validates it server-side — expired, used, or floor-breaking codes are rejected with a clear message.",
+        side: "top",
       },
     ],
   },

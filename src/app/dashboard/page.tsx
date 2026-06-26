@@ -5,6 +5,7 @@ import {
   BarChart3,
   Banknote,
   ClipboardList,
+  Ticket,
   type LucideIcon,
   Package,
   Settings as SettingsIcon,
@@ -139,6 +140,12 @@ export default async function DashboardPage() {
             Icon={ClipboardList}
             title={t("stockTake")}
             subtitle={t("stockTakeSubtitle")}
+          />
+          <DashCard
+            href="/coupons"
+            Icon={Ticket}
+            title={t("coupons")}
+            subtitle={t("couponsSubtitle")}
           />
         </div>
       </section>
