@@ -8,6 +8,7 @@ import {
   Ticket,
   type LucideIcon,
   Package,
+  PackagePlus,
   ReceiptText,
   Settings as SettingsIcon,
   ShieldCheck,
@@ -194,6 +195,12 @@ export default async function DashboardPage() {
             Icon={ReceiptText}
             title={t("salesHistory")}
             subtitle={t("salesHistorySubtitle")}
+          />
+          <DashCard
+            href="/restock"
+            Icon={PackagePlus}
+            title={t("restock")}
+            subtitle={t("restockSubtitle")}
           />
         </div>
       </section>

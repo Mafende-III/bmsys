@@ -154,6 +154,28 @@ export const TOURS: TourDefinition[] = [
   },
 
   // ------------------------------------------------------------------
+  // Restock plan
+  // ------------------------------------------------------------------
+  {
+    id: "restock-home",
+    match: /^\/restock\/?$/,
+    steps: [
+      {
+        element: '[data-tour="restock-summary"]',
+        title: "Order at a glance",
+        body: "How many products are urgent, how many need an order, and what the whole order would cost — compare that against the cash you have.",
+        side: "bottom",
+      },
+      {
+        element: '[data-tour="restock-table"]',
+        title: "The plan",
+        body: "Sorted by urgency. Sales rate is your real speed over the last two weeks; the suggested order tops you back up to a month of cover, in whole cartons.",
+        side: "top",
+      },
+    ],
+  },
+
+  // ------------------------------------------------------------------
   // Sales history
   // ------------------------------------------------------------------
   {
