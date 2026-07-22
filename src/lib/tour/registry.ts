@@ -135,13 +135,41 @@ export const TOURS: TourDefinition[] = [
       {
         element: '[data-tour="analytics-daily"]',
         title: "Sales by day",
-        body: "Green is the best day, amber is the quietest. Hover any bar to see the exact total.",
+        body: "Dark curve is money in, green curve is profit — the gap between them is what the stock cost you. Hover any day for exact numbers.",
+        side: "top",
+      },
+      {
+        element: '[data-tour="analytics-profit"]',
+        title: "Profit by product",
+        body: "What each product actually earns after cost. Red margins mean you're selling almost at cost — raise the price or drop the line.",
         side: "top",
       },
       {
         element: '[data-tour="analytics-stock"]',
         title: "What needs attention",
         body: "Products running low against their threshold and anything fully out of stock — so you can reorder before you lose a sale.",
+        side: "top",
+      },
+    ],
+  },
+
+  // ------------------------------------------------------------------
+  // Sales history
+  // ------------------------------------------------------------------
+  {
+    id: "sales-history",
+    match: /^\/sales\/?$/,
+    steps: [
+      {
+        element: '[data-tour="sales-filters"]',
+        title: "Filter the sales",
+        body: "Narrow by date range, channel, or payment method. The summary strip below updates to match.",
+        side: "bottom",
+      },
+      {
+        element: '[data-tour="sales-list"]',
+        title: "Every sale, with its profit",
+        body: "Each row shows what the customer paid and what you actually earned. Tap a sale for the line-by-line breakdown including coupons and costs.",
         side: "top",
       },
     ],

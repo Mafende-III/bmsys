@@ -37,7 +37,21 @@ export type ChannelRow = {
 export type DailySalesRow = {
   date: Date;
   total: number;
+  /// Gross profit for the day: Σ(lineTotal − costAtSale × units).
+  profit: number;
   count: number;
+};
+
+export type ProductProfitRow = {
+  productId: string;
+  sku: string;
+  name: string;
+  unitsSold: number;
+  revenue: number;
+  cost: number;
+  profit: number;
+  /// Basis points of revenue (profit/revenue × 10000); 0 when revenue=0.
+  marginBps: number;
 };
 
 export type TopProductRow = {
@@ -164,13 +178,35 @@ export async function getSalesByDay(period: Period): Promise<DailySalesRow[]> {
       date: { gte: period.from, lte: period.to },
       status: "COMPLETE",
     },
-    select: { date: true, total: true },
+    select: {
+      date: true,
+      total: true,
+      lines: {
+        select: {
+          saleUnit: true,
+          qty: true,
+          lineTotal: true,
+          costAtSale: true,
+          product: { select: { costPerCarton: true, unitsPerCarton: true } },
+        },
+      },
+    },
   });
-  const buckets = new Map<string, { total: number; count: number }>();
+  const buckets = new Map<
+    string,
+    { total: number; profit: number; count: number }
+  >();
   for (const s of sales) {
     const k = ymdKey(s.date);
-    const cur = buckets.get(k) ?? { total: 0, count: 0 };
+    const cur = buckets.get(k) ?? { total: 0, profit: 0, count: 0 };
     cur.total += s.total;
+    for (const l of s.lines) {
+      const upc = l.product.unitsPerCarton || 1;
+      const units = l.saleUnit === "CARTON" ? l.qty * upc : l.qty;
+      const costPerUnit =
+        l.costAtSale ?? Math.ceil(l.product.costPerCarton / upc);
+      cur.profit += l.lineTotal - units * costPerUnit;
+    }
     cur.count += 1;
     buckets.set(k, cur);
   }
@@ -179,10 +215,117 @@ export async function getSalesByDay(period: Period): Promise<DailySalesRow[]> {
     const d = new Date(period.from);
     d.setDate(d.getDate() + i);
     const k = ymdKey(d);
-    const v = buckets.get(k) ?? { total: 0, count: 0 };
-    rows.push({ date: d, total: v.total, count: v.count });
+    const v = buckets.get(k) ?? { total: 0, profit: 0, count: 0 };
+    rows.push({ date: d, total: v.total, profit: v.profit, count: v.count });
   }
   return rows;
+}
+
+export type TodayProfitSummary = {
+  revenue: number;
+  profit: number;
+  salesCount: number;
+};
+
+/**
+ * Revenue + gross profit since local midnight. Small enough to run on
+ * every dashboard load; used by the owner "Today" strip.
+ */
+export async function getTodayProfitSummary(): Promise<TodayProfitSummary> {
+  const from = new Date();
+  from.setHours(0, 0, 0, 0);
+  const sales = await prisma.sale.findMany({
+    where: { date: { gte: from }, status: "COMPLETE" },
+    select: {
+      total: true,
+      lines: {
+        select: {
+          saleUnit: true,
+          qty: true,
+          lineTotal: true,
+          costAtSale: true,
+          product: { select: { costPerCarton: true, unitsPerCarton: true } },
+        },
+      },
+    },
+  });
+  let revenue = 0;
+  let profit = 0;
+  for (const s of sales) {
+    revenue += s.total;
+    for (const l of s.lines) {
+      const upc = l.product.unitsPerCarton || 1;
+      const units = l.saleUnit === "CARTON" ? l.qty * upc : l.qty;
+      const costPerUnit =
+        l.costAtSale ?? Math.ceil(l.product.costPerCarton / upc);
+      profit += l.lineTotal - units * costPerUnit;
+    }
+  }
+  return { revenue, profit, salesCount: sales.length };
+}
+
+/**
+ * Per-product profit breakdown for the period, sorted by profit
+ * descending. Uses costAtSale when present (accurate history), falls
+ * back to current product cost for legacy rows. Margin is basis points
+ * of revenue so the UI can render "19.3%" without float drift.
+ */
+export async function getProductProfit(
+  period: Period,
+): Promise<ProductProfitRow[]> {
+  const lines = await prisma.saleLine.findMany({
+    where: {
+      sale: { date: { gte: period.from, lte: period.to }, status: "COMPLETE" },
+    },
+    include: {
+      product: {
+        select: {
+          sku: true,
+          name: true,
+          costPerCarton: true,
+          unitsPerCarton: true,
+        },
+      },
+    },
+  });
+  const byProduct = new Map<
+    string,
+    {
+      sku: string;
+      name: string;
+      unitsSold: number;
+      revenue: number;
+      cost: number;
+    }
+  >();
+  for (const l of lines) {
+    const upc = l.product.unitsPerCarton || 1;
+    const units = l.saleUnit === "CARTON" ? l.qty * upc : l.qty;
+    const costPerUnit =
+      l.costAtSale ?? Math.ceil(l.product.costPerCarton / upc);
+    const cur = byProduct.get(l.productId) ?? {
+      sku: l.product.sku,
+      name: l.product.name,
+      unitsSold: 0,
+      revenue: 0,
+      cost: 0,
+    };
+    cur.unitsSold += units;
+    cur.revenue += l.lineTotal;
+    cur.cost += units * costPerUnit;
+    byProduct.set(l.productId, cur);
+  }
+  return Array.from(byProduct.entries())
+    .map(([productId, v]) => ({
+      productId,
+      ...v,
+      profit: v.revenue - v.cost,
+      marginBps:
+        v.revenue > 0
+          ? Math.round(((v.revenue - v.cost) / v.revenue) * 10000)
+          : 0,
+    }))
+    .sort((a, b) => b.profit - a.profit);
 }
 
 function ymdKey(d: Date): string {

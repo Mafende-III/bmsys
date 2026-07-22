@@ -8,6 +8,7 @@ import {
   Ticket,
   type LucideIcon,
   Package,
+  ReceiptText,
   Settings as SettingsIcon,
   ShieldCheck,
   ShoppingBag,
@@ -21,15 +22,20 @@ import {
 import { getLocale, getTranslations } from "next-intl/server";
 import { signOut } from "@/lib/auth";
 import { requireOwner } from "@/lib/auth-guards";
+import { getTodayProfitSummary } from "@/lib/analytics/queries";
 import { getOpenSession } from "@/lib/cash-sessions/queries";
 import { getSettings } from "@/lib/settings/queries";
+import { formatRWF } from "@/lib/format";
 import type { Locale } from "@/i18n/config";
 import { LanguageToggle } from "../_components/LanguageToggle";
 
 export default async function DashboardPage() {
   const session = await requireOwner();
-  const openTill = await getOpenSession();
-  const { companyName, logoUrl } = await getSettings();
+  const [openTill, { companyName, logoUrl }, today] = await Promise.all([
+    getOpenSession(),
+    getSettings(),
+    getTodayProfitSummary(),
+  ]);
   const t = await getTranslations("dashboard");
   const tc = await getTranslations("common");
   const locale = (await getLocale()) as Locale;
@@ -102,6 +108,42 @@ export default async function DashboardPage() {
         </div>
       </Link>
 
+      {/* Today's numbers */}
+      <Link
+        href="/sales"
+        data-tour="dash-today"
+        className="mt-4 grid grid-cols-3 gap-2 rounded-2xl border border-zinc-200 bg-white p-4 transition hover:border-zinc-300 hover:shadow-sm"
+      >
+        <div>
+          <p className="text-[10px] uppercase tracking-wide text-zinc-500">
+            {t("todaySales")}
+          </p>
+          <p className="mt-0.5 font-mono text-lg font-semibold tabular-nums">
+            {today.salesCount}
+          </p>
+        </div>
+        <div>
+          <p className="text-[10px] uppercase tracking-wide text-zinc-500">
+            {t("todayRevenue")}
+          </p>
+          <p className="mt-0.5 font-mono text-lg font-semibold tabular-nums">
+            {formatRWF(today.revenue)}
+          </p>
+        </div>
+        <div>
+          <p className="text-[10px] uppercase tracking-wide text-zinc-500">
+            {t("todayProfit")}
+          </p>
+          <p
+            className={`mt-0.5 font-mono text-lg font-semibold tabular-nums ${
+              today.profit >= 0 ? "text-green-700" : "text-red-700"
+            }`}
+          >
+            {formatRWF(today.profit)}
+          </p>
+        </div>
+      </Link>
+
       {/* Run the shop */}
       <section className="mt-8" data-tour="dash-run-shop">
         <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-zinc-500">
@@ -146,6 +188,12 @@ export default async function DashboardPage() {
             Icon={Ticket}
             title={t("coupons")}
             subtitle={t("couponsSubtitle")}
+          />
+          <DashCard
+            href="/sales"
+            Icon={ReceiptText}
+            title={t("salesHistory")}
+            subtitle={t("salesHistorySubtitle")}
           />
         </div>
       </section>

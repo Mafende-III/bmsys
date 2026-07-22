@@ -13,6 +13,7 @@ import {
   getChannelBreakdown,
   getExpenseBreakdown,
   getOverviewKPIs,
+  getProductProfit,
   getSalesByDay,
   getStockHealth,
   getTopProducts,
@@ -68,14 +69,16 @@ export default async function AnalyticsPage({
     customTo,
   });
 
-  const [kpis, daily, top, channels, expensesByCat, stock] = await Promise.all([
-    getOverviewKPIs(period),
-    getSalesByDay(period),
-    getTopProducts(period, 5),
-    getChannelBreakdown(period),
-    getExpenseBreakdown(period),
-    getStockHealth(),
-  ]);
+  const [kpis, daily, top, channels, expensesByCat, stock, productProfit] =
+    await Promise.all([
+      getOverviewKPIs(period),
+      getSalesByDay(period),
+      getTopProducts(period, 5),
+      getChannelBreakdown(period),
+      getExpenseBreakdown(period),
+      getStockHealth(),
+      getProductProfit(period),
+    ]);
 
   const t = await getTranslations("analytics");
   const tc = await getTranslations("common");
@@ -96,7 +99,7 @@ export default async function AnalyticsPage({
 
   const maxDay = daily.reduce(
     (m, d) => (d.total > m.total ? d : m),
-    daily[0] ?? { date: new Date(), total: 0, count: 0 },
+    daily[0] ?? { date: new Date(), total: 0, profit: 0, count: 0 },
   );
   const minDay = daily
     .filter((d) => d.total > 0)
@@ -271,6 +274,7 @@ export default async function AnalyticsPage({
                   month: "short",
                 }),
                 total: d.total,
+                profit: d.profit,
                 count: d.count,
               }))}
             />
@@ -311,6 +315,93 @@ export default async function AnalyticsPage({
           )}
         </section>
       </div>
+
+      {/* Profit by product */}
+      <section
+        data-tour="analytics-profit"
+        className="mt-4 overflow-hidden rounded-2xl border border-zinc-200 bg-white"
+      >
+        <div className="p-4 pb-0">
+          <h2 className="text-base font-medium">{t("profitByProduct")}</h2>
+          <p className="mt-0.5 text-xs text-zinc-600">
+            {t("profitByProductHint")}
+          </p>
+        </div>
+        {productProfit.length === 0 ? (
+          <p className="p-4 text-sm text-zinc-500">{t("noData")}</p>
+        ) : (
+          <div className="mt-3 overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-zinc-50 text-xs text-zinc-600">
+                <tr>
+                  <th className="px-4 py-2 text-left font-medium">
+                    {t("profitColProduct")}
+                  </th>
+                  <th className="px-3 py-2 text-right font-medium">
+                    {t("profitColUnits")}
+                  </th>
+                  <th className="px-3 py-2 text-right font-medium">
+                    {t("profitColRevenue")}
+                  </th>
+                  <th className="px-3 py-2 text-right font-medium">
+                    {t("profitColCost")}
+                  </th>
+                  <th className="px-3 py-2 text-right font-medium">
+                    {t("profitColProfit")}
+                  </th>
+                  <th className="px-4 py-2 text-right font-medium">
+                    {t("profitColMargin")}
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-zinc-100">
+                {productProfit.map((p) => {
+                  const marginPct = p.marginBps / 100;
+                  const marginTone =
+                    marginPct >= 15
+                      ? "bg-green-100 text-green-800"
+                      : marginPct >= 5
+                        ? "bg-amber-100 text-amber-800"
+                        : "bg-red-100 text-red-700";
+                  return (
+                    <tr key={p.productId}>
+                      <td className="px-4 py-2.5">
+                        <p className="font-medium text-zinc-800">{p.name}</p>
+                        <p className="font-mono text-[10px] text-zinc-500">
+                          {p.sku}
+                        </p>
+                      </td>
+                      <td className="px-3 py-2.5 text-right font-mono tabular-nums text-zinc-700">
+                        {p.unitsSold}
+                      </td>
+                      <td className="px-3 py-2.5 text-right font-mono tabular-nums text-zinc-700">
+                        {formatRWF(p.revenue)}
+                      </td>
+                      <td className="px-3 py-2.5 text-right font-mono tabular-nums text-zinc-500">
+                        {formatRWF(p.cost)}
+                      </td>
+                      <td
+                        className={`px-3 py-2.5 text-right font-mono font-semibold tabular-nums ${
+                          p.profit >= 0 ? "text-zinc-900" : "text-red-700"
+                        }`}
+                      >
+                        {formatRWF(p.profit)}
+                      </td>
+                      <td className="px-4 py-2.5 text-right">
+                        <span
+                          className={`inline-block rounded-md px-1.5 py-0.5 font-mono text-xs tabular-nums ${marginTone}`}
+                        >
+                          {marginPct.toFixed(1)}%
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </section>
 
       {/* Two-column: stock health + expenses */}
       <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-2">
