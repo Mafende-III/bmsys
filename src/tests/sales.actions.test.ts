@@ -308,6 +308,12 @@ describe("createSaleOp", () => {
     });
     expect(lines).toHaveLength(2);
 
+    // costAtSale snapshot: A cost/unit = ceil(4500/12) = 375, B = ceil(7200/24) = 300
+    const lineA = lines.find((l) => l.productId === productAId);
+    const lineB = lines.find((l) => l.productId === productBId);
+    expect(lineA?.costAtSale).toBe(375);
+    expect(lineB?.costAtSale).toBe(300);
+
     const sumA = await prisma.stockMove.aggregate({
       where: { productId: productAId, reason: { not: "PURCHASE" } },
       _sum: { qtyUnits: true },

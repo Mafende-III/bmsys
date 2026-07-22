@@ -101,10 +101,11 @@ async function sumExpensesInRange(from: Date, to: Date): Promise<number> {
 }
 
 /**
- * Approximates COGS for the period using the current product cost.
- * Pulls every sale line in the window, multiplies qty (converted to
- * units) by the product's costPerCarton / unitsPerCarton. See note
- * at top of file about the v1 approximation.
+ * COGS for the period. Prefers the per-line costAtSale snapshot (which
+ * survives cost changes over time); falls back to current product cost
+ * for any legacy rows the back-fill didn't reach. `units` = physical
+ * bottles sold, which is qty × unitsPerCarton for CARTON lines and qty
+ * itself for UNIT lines.
  */
 async function computeCogsForRange(from: Date, to: Date): Promise<number> {
   const lines = await prisma.saleLine.findMany({
@@ -118,9 +119,10 @@ async function computeCogsForRange(from: Date, to: Date): Promise<number> {
   let cogs = 0;
   for (const l of lines) {
     const upc = l.product.unitsPerCarton || 1;
-    const costPerUnit = l.product.costPerCarton / upc;
     const units = l.saleUnit === "CARTON" ? l.qty * upc : l.qty;
-    cogs += Math.round(units * costPerUnit);
+    const costPerUnit =
+      l.costAtSale ?? Math.ceil(l.product.costPerCarton / upc);
+    cogs += units * costPerUnit;
   }
   return cogs;
 }

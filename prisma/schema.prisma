@@ -406,6 +406,13 @@ model SaleLine {
   /// owner at checkout? Audit-relevant; helps weekly reports flag
   /// margin-breaking discounts.
   floorOverride   Boolean @default(false)
+  /// Cost-per-unit (RWF, integer) at the moment this line was recorded,
+  /// captured so historical profit math survives cost changes. NULL for
+  /// legacy rows (pre-2026-06-28) that were back-filled with current
+  /// cost as an approximation; new rows always populate this field via
+  /// Math.ceil(product.costPerCarton / product.unitsPerCarton). Analytics
+  /// prefers this value and falls back to current product cost when null.
+  costAtSale      Int?
   lineTotal Int
   cartonId  String?
 

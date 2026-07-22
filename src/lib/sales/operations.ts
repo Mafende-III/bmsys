@@ -414,6 +414,14 @@ export async function createSaleOp(
 
         // SaleLines + stock_moves
         for (const p of persisted) {
+          // Snapshot the per-unit cost at the moment of sale. Ceil so
+          // fractional costs (e.g. 15800/12 = 1316.67) never round down
+          // and overstate profit later. Legacy rows are back-filled via
+          // the accompanying migration; analytics falls back to current
+          // product cost when this column is null.
+          const costAtSale = Math.ceil(
+            p.plan.costPerCarton / Math.max(1, p.plan.unitsPerCarton),
+          );
           await tx.saleLine.create({
             data: {
               saleId: sale.id,
@@ -427,6 +435,7 @@ export async function createSaleOp(
                 : null,
               floorOverride:
                 p.discountAmount > 0 && p.discountAmount > p.plan.maxAllowedAtFloor,
+              costAtSale,
               lineTotal: p.lineTotal,
               cartonId: p.cartonId,
             },
