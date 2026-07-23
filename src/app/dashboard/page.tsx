@@ -26,17 +26,21 @@ import { requireOwner } from "@/lib/auth-guards";
 import { getTodayProfitSummary } from "@/lib/analytics/queries";
 import { getOpenSession } from "@/lib/cash-sessions/queries";
 import { getSettings } from "@/lib/settings/queries";
+import { getWorkingCapital } from "@/lib/treasury/queries";
 import { formatRWF } from "@/lib/format";
 import type { Locale } from "@/i18n/config";
 import { LanguageToggle } from "../_components/LanguageToggle";
+import { WorkingCapitalCard } from "./_components/WorkingCapitalCard";
 
 export default async function DashboardPage() {
   const session = await requireOwner();
-  const [openTill, { companyName, logoUrl }, today] = await Promise.all([
-    getOpenSession(),
-    getSettings(),
-    getTodayProfitSummary(),
-  ]);
+  const [openTill, { companyName, logoUrl }, today, capital] =
+    await Promise.all([
+      getOpenSession(),
+      getSettings(),
+      getTodayProfitSummary(),
+      getWorkingCapital(),
+    ]);
   const t = await getTranslations("dashboard");
   const tc = await getTranslations("common");
   const locale = (await getLocale()) as Locale;
@@ -144,6 +148,9 @@ export default async function DashboardPage() {
           </p>
         </div>
       </Link>
+
+      {/* Working capital */}
+      <WorkingCapitalCard capital={capital} />
 
       {/* Run the shop */}
       <section className="mt-8" data-tour="dash-run-shop">

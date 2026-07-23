@@ -119,8 +119,19 @@ export async function closeSessionOp(
             session.openedAt,
             closedAt,
           );
+          // Cash moved to MoMo/Bank mid-session genuinely left the
+          // drawer without being a sale or an expense — subtract it so
+          // an agent deposit doesn't read as a shortfall at close.
+          const transferSums = await tx.cashTransfer.aggregate({
+            where: { createdAt: { gte: session.openedAt, lte: closedAt } },
+            _sum: { amount: true },
+          });
+          const transfersTotal = transferSums._sum.amount ?? 0;
           const expectedCash =
-            session.openingFloat + sums.total - expenseSums.total;
+            session.openingFloat +
+            sums.total -
+            expenseSums.total -
+            transfersTotal;
           const variance = input.closingCount - expectedCash;
 
           const updated = await tx.cashSession.update({
@@ -149,6 +160,7 @@ export async function closeSessionOp(
                 cashSalesTotal: sums.total,
                 cashExpensesCount: expenseSums.count,
                 cashExpensesTotal: expenseSums.total,
+                cashTransfersTotal: transfersTotal,
               } as Prisma.InputJsonValue,
               userId,
             },

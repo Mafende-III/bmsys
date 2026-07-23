@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { PackagePlus } from "lucide-react";
 import { requireOwner } from "@/lib/auth-guards";
+import { prisma } from "@/lib/prisma";
 import { getRestockPlan } from "@/lib/restock/queries";
 import { COVER_TARGET_DAYS, BURN_WINDOW_DAYS } from "@/lib/restock/plan";
 import { RestockTable } from "./_components/RestockTable";
@@ -10,7 +11,13 @@ export const dynamic = "force-dynamic";
 
 export default async function RestockPage() {
   await requireOwner();
-  const plan = await getRestockPlan();
+  const [plan, suppliers] = await Promise.all([
+    getRestockPlan(),
+    prisma.supplier.findMany({
+      orderBy: { name: "asc" },
+      select: { id: true, name: true },
+    }),
+  ]);
   const t = await getTranslations("restock");
   const tc = await getTranslations("common");
 
@@ -40,7 +47,7 @@ export default async function RestockPage() {
           {t("empty")}
         </p>
       ) : (
-        <RestockTable rows={plan.rows} />
+        <RestockTable rows={plan.rows} suppliers={suppliers} />
       )}
 
       <p className="text-center text-xs text-zinc-500">{t("scopeNote")}</p>

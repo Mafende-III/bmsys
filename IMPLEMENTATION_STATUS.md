@@ -31,7 +31,9 @@ The shop can fully operate on bmsys: catalog → receive stock → sell → mana
 | **Discount floor**: per-product `minMarginBps` + Settings default; coupons can't undersell it unless issued with an explicit override | ✅ | product form + `/settings` |
 | **Cost snapshot**: `SaleLine.costAtSale` captured at sale time (back-filled for history) so profit math survives price changes | ✅ | schema + `createSaleOp` |
 | **Profit surfaces**: profit-by-product table + revenue/profit daily chart on analytics, per-sale drill-down with line-level profit, dashboard "Today" strip | ✅ | `/analytics`, `/sales`, `/sales/[id]` |
-| **Restock plan**: 14-day burn rate → days-to-out badges → suggested order to 30-day cover, editable cartons/cost with live totals | ✅ | `/restock` |
+| **Restock plan**: 14-day burn rate → days-to-out badges → suggested order to 30-day cover, editable cartons/cost with live totals, one-tap purchase draft | ✅ | `/restock` |
+| **Working capital**: cash-on-hand (till math) + MoMo/Bank derived from owner checkpoints, total available for restock | ✅ | dashboard + `/settings` |
+| **Cash transfers**: "Move cash" to MoMo/Bank; till close subtracts transfers so agent deposits stop reading as shortages | ✅ | dashboard card |
 | **Expenses**: CASH/MOMO/BANK + supplier ref | ✅ | `/expenses` |
 | **Recurring expenses**: WEEKLY/MONTHLY with manual "run now" | ✅ | `/expenses/recurring` |
 | **Daily summary**: sales/expenses/top products/stock/cash by date | ✅ | `/reports` |
@@ -80,6 +82,7 @@ reports (daily)                  5
 stock-takes                      9
 coupons                          17
 restock plan                     6
+treasury                         7
 ```
 
 ## Branches / PRs ready to merge (in order)

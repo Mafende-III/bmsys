@@ -1,9 +1,11 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { RotateCcw } from "lucide-react";
+import { useMemo, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
+import { FileInput, RotateCcw } from "lucide-react";
 import { useTranslations } from "next-intl";
 import { formatRWF } from "@/lib/format";
+import { savePurchaseDraft } from "@/lib/purchases/actions";
 import type { RestockRow } from "@/lib/restock/queries";
 
 type Draft = {
@@ -11,14 +13,26 @@ type Draft = {
   costRaw: string;
 };
 
+export type SupplierOption = { id: string; name: string };
+
 /**
  * Editable order sheet. The server's suggestion seeds each row; the
  * owner tweaks cartons and cost-per-carton to match supplier reality
  * and the totals recompute live. Nothing is persisted — the final
  * numbers go into the existing purchase flow when the stock arrives.
  */
-export function RestockTable({ rows }: { rows: RestockRow[] }) {
+export function RestockTable({
+  rows,
+  suppliers,
+}: {
+  rows: RestockRow[];
+  suppliers: SupplierOption[];
+}) {
   const t = useTranslations("restock");
+  const router = useRouter();
+  const [supplierId, setSupplierId] = useState("");
+  const [draftError, setDraftError] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
 
   const [drafts, setDrafts] = useState<Record<string, Draft>>(() =>
     Object.fromEntries(
@@ -78,6 +92,42 @@ export function RestockTable({ rows }: { rows: RestockRow[] }) {
     return { products, cost };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rows, drafts]);
+
+  function createDraft() {
+    setDraftError(null);
+    const lines = rows
+      .map((r) => {
+        const n = lineNumbers(r);
+        return {
+          productId: r.productId,
+          qtyCartons: n.cartons,
+          qtyLooseUnits: 0,
+          unitCost: n.cost,
+        };
+      })
+      .filter((l) => l.qtyCartons > 0);
+    if (lines.length === 0) {
+      setDraftError(t("draftErrorNoLines"));
+      return;
+    }
+    if (!supplierId) {
+      setDraftError(t("draftErrorNoSupplier"));
+      return;
+    }
+    startTransition(async () => {
+      const result = await savePurchaseDraft(crypto.randomUUID(), null, {
+        supplierId,
+        date: new Date(),
+        note: t("draftNote"),
+        lines,
+      });
+      if (!result.ok) {
+        setDraftError(result.error);
+        return;
+      }
+      router.push(`/purchases/${result.data.id}`);
+    });
+  }
 
   return (
     <>
@@ -277,6 +327,45 @@ export function RestockTable({ rows }: { rows: RestockRow[] }) {
             )}
           </table>
         </div>
+      </section>
+
+      {/* Send to purchase draft */}
+      <section
+        data-tour="restock-draft"
+        className="rounded-2xl border border-zinc-200 bg-white p-3"
+      >
+        {draftError && (
+          <p className="mb-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+            {draftError}
+          </p>
+        )}
+        <div className="flex flex-wrap items-end gap-2">
+          <label className="block flex-1 text-xs">
+            <span className="text-zinc-600">{t("draftSupplier")}</span>
+            <select
+              value={supplierId}
+              onChange={(e) => setSupplierId(e.target.value)}
+              className="mt-0.5 block w-full rounded-lg border border-zinc-300 px-2 py-2 text-sm"
+            >
+              <option value="">{t("draftPickSupplier")}</option>
+              {suppliers.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name}
+                </option>
+              ))}
+            </select>
+          </label>
+          <button
+            type="button"
+            onClick={createDraft}
+            disabled={isPending || totals.products === 0}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+          >
+            <FileInput className="h-4 w-4" strokeWidth={2} />
+            {isPending ? t("draftCreating") : t("draftCreate")}
+          </button>
+        </div>
+        <p className="mt-2 text-[11px] text-zinc-500">{t("draftHint")}</p>
       </section>
     </>
   );

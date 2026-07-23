@@ -150,6 +150,7 @@ model User {
   channels          UserChannel[]
   couponsCreated    Coupon[]           @relation("CouponCreatedBy")
   couponsRedeemed   Coupon[]           @relation("CouponRedeemedBy")
+  cashTransfers     CashTransfer[]
 }
 
 model Channel {
@@ -724,7 +725,38 @@ model Settings {
   /// "no global floor" — products without a min-margin will accept any
   /// discount that doesn't make the line total go negative.
   defaultMinMarginBps Int @default(0)
+  /// Working-capital checkpoints. The owner reconciles against the
+  /// real MoMo/bank statement and records "the balance right now";
+  /// derived balances = checkpoint + (sales − expenses + transfers in)
+  /// since checkpointAt. Null checkpointAt = pot not initialised yet.
+  momoOpeningBalance  Int       @default(0)
+  momoCheckpointAt    DateTime?
+  bankOpeningBalance  Int       @default(0)
+  bankCheckpointAt    DateTime?
   updatedAt   DateTime @updatedAt
+}
+
+/// Owner moved physical cash out of the till into MoMo (agent deposit)
+/// or the bank. Recording it keeps the till variance honest — the cash
+/// genuinely left the drawer but wasn't a sale or an expense — and
+/// feeds the destination pot's derived balance.
+model CashTransfer {
+  id        String             @id @default(cuid())
+  amount    Int
+  toMethod  CashTransferTarget
+  reference String?
+  note      String?
+  userId    String
+  createdAt DateTime           @default(now())
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@index([createdAt])
+}
+
+enum CashTransferTarget {
+  MOMO
+  BANK
 }
 
 // ========================================================================

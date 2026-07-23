@@ -93,6 +93,12 @@ export const TOURS: TourDefinition[] = [
         side: "bottom",
       },
       {
+        element: '[data-tour="dash-capital"]',
+        title: "Money available",
+        body: "Cash in the drawer plus your MoMo and bank balances — the total you can spend on restock. Use \"Move cash\" when you deposit drawer cash to MoMo so the till stays honest.",
+        side: "bottom",
+      },
+      {
         element: '[data-tour="dash-run-shop"]',
         title: "Run the shop",
         body: "Open and close the till here, log expenses, record losses, and receive new stock from suppliers.",
@@ -170,6 +176,12 @@ export const TOURS: TourDefinition[] = [
         element: '[data-tour="restock-table"]',
         title: "The plan",
         body: "Sorted by urgency. Sales rate is your real speed over the last two weeks; the suggested order tops you back up to a month of cover, in whole cartons.",
+        side: "top",
+      },
+      {
+        element: '[data-tour="restock-draft"]',
+        title: "Send it to purchases",
+        body: "Happy with the sheet? Pick the supplier and create a draft purchase — you'll receive it on the purchase page when the stock arrives.",
         side: "top",
       },
     ],
