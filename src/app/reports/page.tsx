@@ -57,6 +57,12 @@ export default async function ReportsPage({
           </Link>
           <h1 className="mt-1 text-2xl font-semibold">{t("title")}</h1>
           <p className="text-sm text-zinc-600">{dateLabel}</p>
+          <Link
+            href="/reports/register"
+            className="mt-1 inline-block text-sm font-medium text-blue-700 underline hover:no-underline"
+          >
+            {t("registerLink")} →
+          </Link>
         </div>
         <form method="get" className="flex items-end gap-2">
           <Link

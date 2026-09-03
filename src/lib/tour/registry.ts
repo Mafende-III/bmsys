@@ -160,6 +160,34 @@ export const TOURS: TourDefinition[] = [
   },
 
   // ------------------------------------------------------------------
+  // Purchase & sales register (accountant export)
+  // ------------------------------------------------------------------
+  {
+    id: "register-home",
+    match: /^\/reports\/register\/?$/,
+    steps: [
+      {
+        element: '[data-tour="register-filters"]',
+        title: "Pick the period",
+        body: "Defaults to this month. Set any date range — every table and CSV below follows it.",
+        side: "bottom",
+      },
+      {
+        element: '[data-tour="register-summary"]',
+        title: "Product summary",
+        body: "Bought vs sold per product with profit, plus a totals row. \"Download CSV\" gives the accountant an Excel-ready file.",
+        side: "bottom",
+      },
+      {
+        element: '[data-tour="register-sales"]',
+        title: "Line-by-line registers",
+        body: "Every individual sale line (and below it, every received purchase line) with quantities, costs, and amounts — the raw books, no summarising.",
+        side: "top",
+      },
+    ],
+  },
+
+  // ------------------------------------------------------------------
   // Restock plan
   // ------------------------------------------------------------------
   {
