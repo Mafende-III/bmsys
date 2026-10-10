@@ -11,6 +11,9 @@ export default {
        * Register tokens — aliases over the CSS variables declared in
        * src/app/globals.css. See docs/design-handout.md and the
        * tokens artboard on the design canvas for the roles.
+       * NOTE: var()-backed colors do not support opacity modifiers
+       * (bg-ink/45 renders nothing) — use an arbitrary rgba() value
+       * or a wash token instead.
        */
       colors: {
         ink: "var(--ink)",
