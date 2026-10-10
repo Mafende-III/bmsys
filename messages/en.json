@@ -1,4 +1,16 @@
 {
+  "shell": {
+    "money": "Money",
+    "stock": "Stock",
+    "sell": "Sell",
+    "reports": "Reports",
+    "more": "More",
+    "till": "Till",
+    "myDay": "My day",
+    "tillOpen": "Till open",
+    "tillClosed": "Till closed",
+    "profile": "Profile"
+  },
   "common": {
     "save": "Save changes",
     "cancel": "Cancel",

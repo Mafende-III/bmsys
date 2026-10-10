@@ -1,4 +1,16 @@
 {
+  "shell": {
+    "money": "Amafaranga",
+    "stock": "Ibicuruzwa",
+    "sell": "Gurisha",
+    "reports": "Raporo",
+    "more": "Ibindi",
+    "till": "Kasa",
+    "myDay": "Umunsi wanjye",
+    "tillOpen": "Kasa ifunguye",
+    "tillClosed": "Kasa ifunze",
+    "profile": "Umwirondoro"
+  },
   "common": {
     "save": "Bika impinduka",
     "cancel": "Hagarika",

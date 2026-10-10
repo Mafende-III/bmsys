@@ -25,6 +25,12 @@ function readUser(session: Session | null): SessionUser | null {
   };
 }
 
+/** Non-redirecting read, for chrome that must render for everyone. */
+export async function getSessionUser(): Promise<SessionUser | null> {
+  const session = (await auth()) as Session | null;
+  return readUser(session);
+}
+
 export async function requireSeller(): Promise<SessionUser> {
   const session = (await auth()) as Session | null;
   const user = readUser(session);

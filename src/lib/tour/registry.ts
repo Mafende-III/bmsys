@@ -87,6 +87,18 @@ export const TOURS: TourDefinition[] = [
     match: /^\/dashboard\/?$/,
     steps: [
       {
+        element: '[data-tour="shell-tabbar"]',
+        title: "The bottom bar",
+        body: "Your whole shop in five taps: Money, Stock, the round Sell button in the middle, Reports, and More. It stays with you on every screen.",
+        side: "top",
+      },
+      {
+        element: '[data-tour="shell-sell"]',
+        title: "Sell — always one tap",
+        body: "The floating round button starts a sale from anywhere. When a customer walks in, tap it.",
+        side: "top",
+      },
+      {
         element: '[data-tour="dash-sell"]',
         title: "Sell",
         body: "The big button takes you into POS mode for ringing up customers. Tap here whenever a customer walks in.",

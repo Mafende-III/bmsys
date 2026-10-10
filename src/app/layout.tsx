@@ -1,6 +1,9 @@
 import type { Metadata } from "next";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
+import { AppShell } from "@/components/shell/AppShell";
+import { getSessionUser } from "@/lib/auth-guards";
+import { getOpenSession } from "@/lib/cash-sessions/queries";
 import { getSettings } from "@/lib/settings/queries";
 import { TourLauncher } from "./_components/TourLauncher";
 import "./globals.css";
@@ -32,14 +35,26 @@ export default async function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { theme } = await getSettings();
+  const { theme, companyName, logoUrl } = await getSettings();
   const locale = await getLocale();
   const messages = await getMessages();
+  const sessionUser = await getSessionUser();
+  const user = sessionUser
+    ? { name: sessionUser.name ?? "", role: sessionUser.role }
+    : null;
+  const tillOpen = user ? Boolean(await getOpenSession()) : false;
   return (
     <html lang={locale} data-theme={theme}>
       <body className="min-h-screen text-zinc-900 antialiased">
         <NextIntlClientProvider locale={locale} messages={messages}>
-          {children}
+          <AppShell
+            user={user}
+            companyName={companyName}
+            logoUrl={logoUrl}
+            tillOpen={tillOpen}
+          >
+            {children}
+          </AppShell>
           <TourLauncher />
         </NextIntlClientProvider>
       </body>
