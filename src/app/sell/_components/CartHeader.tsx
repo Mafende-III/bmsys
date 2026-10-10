@@ -18,7 +18,7 @@ export function CartHeader({ channelName }: { channelName: string }) {
     <Link
       href="/sell/checkout"
       data-tour="sell-cart-bar"
-      className="fixed bottom-0 left-0 right-0 z-20 mx-auto block max-w-2xl bg-zinc-900 px-4 py-3 text-white shadow-2xl sm:px-6"
+      className="fixed bottom-0 left-0 right-0 z-20 mx-auto block max-w-2xl bg-zinc-900 px-4 pb-[max(12px,env(safe-area-inset-bottom))] pt-3 text-white shadow-2xl sm:px-6"
     >
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">

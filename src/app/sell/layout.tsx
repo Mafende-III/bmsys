@@ -138,7 +138,7 @@ export default async function SellLayout({
     <CartProvider currentChannelId={activeChannelId}>
       <div className="flex min-h-screen flex-col">
         {/* Compact top bar */}
-        <header className="app-header border-b border-zinc-200 bg-white px-4 py-2 sm:px-6">
+        <header className="app-header border-b border-zinc-200 bg-white px-4 py-2 pt-[max(8px,env(safe-area-inset-top))] sm:px-6">
           <div className="mx-auto flex max-w-2xl items-center justify-between gap-3">
             <div className="flex min-w-0 flex-1 items-center gap-2">
               {logoUrl && (

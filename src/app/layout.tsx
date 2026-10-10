@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 import { AppShell } from "@/components/shell/AppShell";
@@ -15,6 +15,18 @@ import "./globals.css";
 // into dynamic rendering is the right call for this single-tenant
 // authenticated app — every request is per-user anyway.
 export const dynamic = "force-dynamic";
+
+// iPhones with rounded displays (and the Dynamic Island) only give
+// the app the full screen when viewport-fit=cover; the shell then
+// pads with env(safe-area-inset-*) so chrome never hides under the
+// island or the home indicator. In a normal browser tab the insets
+// are 0 and this is a no-op.
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
+  themeColor: "#ffffff",
+};
 
 export async function generateMetadata(): Promise<Metadata> {
   const { companyName, logoUrl } = await getSettings();
