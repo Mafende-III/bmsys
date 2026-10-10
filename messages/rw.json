@@ -509,7 +509,8 @@
     "profitColRevenue": "Amafaranga yinjiye",
     "profitColCost": "Igiciro",
     "profitColProfit": "Inyungu",
-    "profitColMargin": "Ijanisha"
+    "profitColMargin": "Ijanisha",
+    "registerLink": "Igitabo (CSV)"
   },
   "restock": {
     "title": "Gahunda yo kongera ububiko",

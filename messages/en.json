@@ -509,7 +509,8 @@
     "profitColRevenue": "Revenue",
     "profitColCost": "Cost",
     "profitColProfit": "Profit",
-    "profitColMargin": "Margin"
+    "profitColMargin": "Margin",
+    "registerLink": "Register (CSV)"
   },
   "restock": {
     "title": "Restock plan",
