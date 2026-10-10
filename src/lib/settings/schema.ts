@@ -8,6 +8,7 @@ import { z } from "zod";
  */
 export const THEME_KEYS = [
   "default",
+  "slx",
   "sky",
   "blue",
   "indigo",
@@ -22,6 +23,7 @@ export type ThemeKey = (typeof THEME_KEYS)[number];
 
 export const THEMES: Record<ThemeKey, { label: string; preview: string }> = {
   default: { label: "Neutral", preview: "#fafafa" },
+  slx: { label: "Register", preview: "#11779e" },
   sky: { label: "Sky", preview: "#7dd3fc" },
   blue: { label: "Blue", preview: "#93c5fd" },
   indigo: { label: "Indigo", preview: "#a5b4fc" },

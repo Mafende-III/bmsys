@@ -91,6 +91,44 @@
   --app-ring: #cbd5e1;
 }
 
+/* SLX Register — the redesign's chrome theme (docs/design-handout.md). */
+[data-theme="slx"] {
+  --app-bg: #f4f8fa;
+  --app-bg-soft: #ffffff;
+  --app-accent: #0d1b2a;
+  --app-accent-soft: #eef7fb;
+  --app-ring: #cbd5e1;
+}
+
+/*
+ * Register tokens (SLX palette → design-handout roles). These are
+ * theme-independent: the redesigned screens reference them through
+ * the Tailwind aliases in tailwind.config.ts (bg-surface, text-ink,
+ * shadow-keycap, rounded-card, …). Keep names in sync with the
+ * tokens artboard on the design canvas.
+ */
+:root {
+  --ink: #0d1b2a;
+  --ink-2: #475569;
+  --ground: #f4f8fa;
+  --surface: #ffffff;
+  --surface-sunk: #eef7fb;
+  --primary: #11779e;
+  --primary-fill: #1fb8e8; /* navy text on it, never white */
+  --accent: #f59e0b;       /* urgency only — one job */
+  --rule-hair: #e2e8f0;
+  --rule: #cbd5e1;
+  --rule-active: #11779e;
+  --success: #15803d;
+  --success-wash: #dcfce7;
+  --warning: #92400e;
+  --warning-wash: #fef3c7;
+  --error: #b91c1c;
+  --error-wash: #fee2e2;
+  --keycap-edge: #c3cfd9;  /* the 3D button's bottom edge */
+  --well: #d7e2e8;         /* pressed keycap's inset well */
+}
+
 html,
 body {
   background: var(--app-bg);
@@ -107,4 +145,12 @@ body {
 
 [data-theme]:not([data-theme="default"]) .app-header {
   background: var(--app-accent-soft);
+}
+
+/* Numbers are always mono + tabular so columns of money line up. */
+@layer utilities {
+  .num {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-variant-numeric: tabular-nums;
+  }
 }
