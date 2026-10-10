@@ -6,8 +6,12 @@ import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import type { Product } from "@prisma/client";
 import {
+  Box,
   ClipboardList,
   ImageIcon,
+  Minus,
+  Package,
+  Plus,
   Settings2,
   Tag,
 } from "lucide-react";
@@ -36,6 +40,80 @@ function skuify(name: string): string {
     .replace(/-+/g, "-")
     .replace(/^[-._]+|[-._]+$/g, "")
     .slice(0, 50);
+}
+
+// ── Shared field styles (module scope so inputs keep focus) ─────────
+const CAPTION =
+  "block text-[11px] font-semibold uppercase tracking-wide text-zinc-500";
+const BIG_TEXT =
+  "mt-1 block w-full rounded-xl border-2 border-zinc-200 bg-white px-3 py-3 text-base focus:border-zinc-900 focus:outline-none";
+const BIG_MONEY =
+  "block w-full rounded-xl border-2 border-zinc-200 bg-white py-3 pl-3 pr-12 text-right font-mono text-lg tabular-nums focus:border-zinc-900 focus:outline-none";
+
+function MoneyField({
+  label,
+  name,
+  value,
+  onChange,
+}: {
+  label: string;
+  name: string;
+  value: number;
+  onChange: (n: number) => void;
+}) {
+  return (
+    <label className="block">
+      <span className={CAPTION}>{label}</span>
+      <div className="relative mt-1">
+        <input
+          type="number"
+          name={name}
+          required
+          min={0}
+          step={1}
+          value={value || ""}
+          placeholder="0"
+          onChange={(e) => onChange(Number(e.target.value || 0))}
+          className={BIG_MONEY}
+        />
+        <span className="pointer-events-none absolute inset-y-0 right-3 flex items-center text-[11px] font-semibold text-zinc-400">
+          RWF
+        </span>
+      </div>
+    </label>
+  );
+}
+
+function ToggleCard({
+  name,
+  defaultChecked,
+  Icon,
+  label,
+  hint,
+}: {
+  name: string;
+  defaultChecked: boolean;
+  Icon: typeof Package;
+  label: string;
+  hint: string;
+}) {
+  return (
+    <label className="flex-1 cursor-pointer">
+      <input
+        type="checkbox"
+        name={name}
+        defaultChecked={defaultChecked}
+        className="peer sr-only"
+      />
+      <div className="flex items-center gap-3 rounded-xl border-2 border-zinc-200 bg-white px-3 py-3 transition peer-checked:border-zinc-900 peer-checked:bg-zinc-900 peer-checked:text-white">
+        <Icon className="h-6 w-6 shrink-0" strokeWidth={1.5} />
+        <div className="min-w-0">
+          <p className="text-sm font-semibold">{label}</p>
+          <p className="text-[11px] opacity-70">{hint}</p>
+        </div>
+      </div>
+    </label>
+  );
 }
 
 type CategoryOption = {
@@ -182,6 +260,13 @@ export function ProductForm({
     return { costPerUnit, unitMargin, unitPct, cartonMargin, cartonPct };
   }, [unitsPerCarton, costPerCarton, unitPrice, cartonPrice]);
 
+  function marginTone(margin: number, pct: number): string {
+    if (costPerCarton <= 0) return "bg-zinc-100 text-zinc-500";
+    if (margin < 0) return "bg-red-100 text-red-700";
+    if (pct < 5) return "bg-amber-100 text-amber-800";
+    return "bg-green-100 text-green-800";
+  }
+
   function handleSubmit(formData: FormData) {
     setError(null);
 
@@ -227,11 +312,7 @@ export function ProductForm({
     });
   }
 
-  const tabs: Array<{
-    key: TabKey;
-    label: string;
-    Icon: typeof Tag;
-  }> = [
+  const tabs: Array<{ key: TabKey; label: string; Icon: typeof Tag }> = [
     { key: "details", label: "Details", Icon: ClipboardList },
     { key: "pricing", label: "Pricing", Icon: Tag },
     { key: "look", label: "Look", Icon: ImageIcon },
@@ -253,7 +334,7 @@ export function ProductForm({
       }}
     >
       {error && (
-        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="rounded-xl border-2 border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {error}
         </div>
       )}
@@ -261,7 +342,7 @@ export function ProductForm({
       {/* Tab bar */}
       <div
         data-tour="product-tabs"
-        className="grid grid-cols-4 gap-1 rounded-lg bg-zinc-100 p-1"
+        className="grid grid-cols-4 gap-1 rounded-xl bg-zinc-100 p-1"
       >
         {tabs.map(({ key, label, Icon }) => (
           <button
@@ -269,9 +350,9 @@ export function ProductForm({
             type="button"
             onClick={() => setTab(key)}
             aria-selected={tab === key}
-            className={`flex flex-col items-center gap-0.5 rounded-md px-2 py-2 text-xs font-medium transition sm:flex-row sm:justify-center sm:gap-1.5 ${
+            className={`flex flex-col items-center gap-0.5 rounded-lg px-2 py-2 text-xs font-semibold transition sm:flex-row sm:justify-center sm:gap-1.5 ${
               tab === key
-                ? "bg-white text-zinc-900 shadow-sm ring-1 ring-inset ring-zinc-200"
+                ? "bg-zinc-900 text-white shadow-sm"
                 : "text-zinc-500 hover:text-zinc-800"
             }`}
           >
@@ -283,13 +364,27 @@ export function ProductForm({
 
       {/* ── Details ─────────────────────────────────────────────────── */}
       <div className={panel("details")}>
+        <label className="block">
+          <span className={CAPTION}>Name</span>
+          <input
+            type="text"
+            name="name"
+            required
+            autoFocus={mode.kind === "create"}
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="e.g. Inyange Water 500ML"
+            className={BIG_TEXT}
+          />
+        </label>
+
         <label className="block" data-tour="product-sku">
-          <span className="text-sm font-medium">Product code</span>
+          <span className={CAPTION}>Product code</span>
           {mode.kind === "edit" ? (
             <input
               value={mode.product.sku}
               disabled
-              className="mt-1 block w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-500"
+              className="mt-1 block w-full rounded-xl border-2 border-zinc-200 bg-zinc-50 px-3 py-3 font-mono text-sm text-zinc-500"
             />
           ) : (
             <input
@@ -301,35 +396,23 @@ export function ProductForm({
                 skuTouched.current = true;
                 setSku(e.target.value);
               }}
-              placeholder="e.g. WATER-500ML"
-              className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:ring-1 focus:ring-zinc-900"
+              placeholder="Auto-filled from the name"
+              className="mt-1 block w-full rounded-xl border-2 border-zinc-200 bg-white px-3 py-3 font-mono text-sm uppercase tracking-wide focus:border-zinc-900 focus:outline-none"
             />
           )}
           <span className="mt-1 block text-xs text-zinc-500">
             {mode.kind === "create"
-              ? "Auto-filled from the name. Override if you want. Cannot be changed later."
-              : "A short unique code (e.g. WATER-500ML). Cannot be changed later."}
+              ? "Fills itself from the name — change it only if you want. Locked after creation."
+              : "Locked after creation."}
           </span>
         </label>
 
         <label className="block">
-          <span className="text-sm font-medium">Name</span>
-          <input
-            type="text"
-            name="name"
-            required
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:ring-1 focus:ring-zinc-900"
-          />
-        </label>
-
-        <label className="block">
-          <span className="text-sm font-medium">Category</span>
+          <span className={CAPTION}>Category</span>
           <select
             value={categoryId}
             onChange={(e) => setCategoryId(e.target.value)}
-            className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+            className="mt-1 block w-full rounded-xl border-2 border-zinc-200 bg-white px-3 py-3 text-base focus:border-zinc-900 focus:outline-none"
           >
             <option value="">— Uncategorised —</option>
             {categories.map((c) => (
@@ -352,125 +435,112 @@ export function ProductForm({
 
       {/* ── Pricing ─────────────────────────────────────────────────── */}
       <div className={panel("pricing")}>
-        <div className="grid grid-cols-2 gap-3">
-          <label className="block">
-            <span className="text-sm font-medium">Units per carton</span>
+        {/* Units per carton — stepper */}
+        <div>
+          <span className={CAPTION}>Units per carton</span>
+          <div className="mt-1 flex items-center gap-2">
+            <button
+              type="button"
+              aria-label="Fewer units per carton"
+              onClick={() => setUnitsPerCarton(Math.max(1, unitsPerCarton - 1))}
+              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border-2 border-zinc-200 bg-white text-zinc-700 active:scale-95"
+            >
+              <Minus className="h-5 w-5" strokeWidth={2} />
+            </button>
             <input
               type="number"
               name="unitsPerCarton"
               required
               min={1}
               step={1}
-              value={unitsPerCarton}
-              onChange={(e) => setUnitsPerCarton(Number(e.target.value || 0))}
-              className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm tabular-nums focus:border-zinc-900 focus:ring-1 focus:ring-zinc-900"
+              value={unitsPerCarton || ""}
+              onChange={(e) =>
+                setUnitsPerCarton(Math.max(0, Number(e.target.value || 0)))
+              }
+              className="block h-12 w-full rounded-xl border-2 border-zinc-200 bg-white text-center font-mono text-xl font-semibold tabular-nums focus:border-zinc-900 focus:outline-none"
             />
-          </label>
-          <label className="block">
-            <span className="text-sm font-medium">Cost per carton (RWF)</span>
-            <input
-              type="number"
-              name="costPerCarton"
-              required
-              min={0}
-              step={1}
-              value={costPerCarton}
-              onChange={(e) => setCostPerCarton(Number(e.target.value || 0))}
-              className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm tabular-nums focus:border-zinc-900 focus:ring-1 focus:ring-zinc-900"
-            />
-          </label>
+            <button
+              type="button"
+              aria-label="More units per carton"
+              onClick={() => setUnitsPerCarton(unitsPerCarton + 1)}
+              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border-2 border-zinc-200 bg-white text-zinc-700 active:scale-95"
+            >
+              <Plus className="h-5 w-5" strokeWidth={2} />
+            </button>
+          </div>
+          <span className="mt-1 block text-xs text-zinc-500">
+            How many pieces come in one sealed carton. Use 1 for items sold
+            alone (e.g. 18.9L bottles).
+          </span>
         </div>
 
-        <div className="grid grid-cols-2 gap-3">
-          <label className="block">
-            <span className="text-sm font-medium">
-              Sell price — single (RWF)
-            </span>
-            <input
-              type="number"
-              name="unitPrice"
-              required
-              min={0}
-              step={1}
-              value={unitPrice}
-              onChange={(e) => setUnitPrice(Number(e.target.value || 0))}
-              className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm tabular-nums focus:border-zinc-900 focus:ring-1 focus:ring-zinc-900"
-            />
-          </label>
-          <label className="block">
-            <span className="text-sm font-medium">
-              Sell price — whole carton (RWF)
-            </span>
-            <input
-              type="number"
-              name="cartonPrice"
-              required
-              min={0}
-              step={1}
-              value={cartonPrice}
-              onChange={(e) => setCartonPrice(Number(e.target.value || 0))}
-              className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm tabular-nums focus:border-zinc-900 focus:ring-1 focus:ring-zinc-900"
-            />
-          </label>
+        <MoneyField
+          label="You buy a carton at"
+          name="costPerCarton"
+          value={costPerCarton}
+          onChange={setCostPerCarton}
+        />
+
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          <MoneyField
+            label="You sell a single at"
+            name="unitPrice"
+            value={unitPrice}
+            onChange={setUnitPrice}
+          />
+          <MoneyField
+            label="You sell a whole carton at"
+            name="cartonPrice"
+            value={cartonPrice}
+            onChange={setCartonPrice}
+          />
         </div>
 
+        {/* Live margin chips */}
         {margins && (
-          <div className="rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm">
-            <p className="font-medium text-zinc-800">Margin preview</p>
-            <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-zinc-700">
-              <dt>Cost per unit</dt>
-              <dd className="text-right font-mono tabular-nums">
-                {formatRWF(margins.costPerUnit)}
-              </dd>
-              <dt>Single margin</dt>
-              <dd
-                className={`text-right font-mono tabular-nums ${margins.unitMargin < 0 ? "text-red-700" : "text-green-700"}`}
-              >
-                {formatRWF(margins.unitMargin)} (
-                {margins.unitPct >= 0 ? "+" : ""}
-                {margins.unitPct}%)
-              </dd>
-              <dt>Carton margin</dt>
-              <dd
-                className={`text-right font-mono tabular-nums ${margins.cartonMargin < 0 ? "text-red-700" : "text-green-700"}`}
-              >
-                {formatRWF(margins.cartonMargin)} (
-                {margins.cartonPct >= 0 ? "+" : ""}
-                {margins.cartonPct}%)
-              </dd>
-            </dl>
+          <div className="flex flex-wrap items-center gap-2 rounded-xl border-2 border-zinc-100 bg-zinc-50 px-3 py-2.5">
+            <span className={CAPTION}>Profit</span>
+            <span
+              className={`inline-flex items-center rounded-full px-2.5 py-1 font-mono text-xs font-semibold tabular-nums ${marginTone(margins.unitMargin, margins.unitPct)}`}
+            >
+              single {margins.unitMargin >= 0 ? "+" : ""}
+              {formatRWF(margins.unitMargin)} ({margins.unitPct >= 0 ? "+" : ""}
+              {margins.unitPct}%)
+            </span>
+            <span
+              className={`inline-flex items-center rounded-full px-2.5 py-1 font-mono text-xs font-semibold tabular-nums ${marginTone(margins.cartonMargin, margins.cartonPct)}`}
+            >
+              carton {margins.cartonMargin >= 0 ? "+" : ""}
+              {formatRWF(margins.cartonMargin)} (
+              {margins.cartonPct >= 0 ? "+" : ""}
+              {margins.cartonPct}%)
+            </span>
+            <span className="ml-auto font-mono text-[11px] tabular-nums text-zinc-500">
+              cost/piece {formatRWF(margins.costPerUnit)}
+            </span>
           </div>
         )}
 
-        <fieldset
-          data-tour="product-sellable"
-          className="rounded-lg border border-zinc-200 px-4 py-3"
-        >
-          <legend className="px-1 text-sm font-medium">
-            How you sell this
-          </legend>
-          <p className="px-1 text-xs text-zinc-500">Tick at least one.</p>
-          <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:gap-6">
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                name="sellableAsUnit"
-                defaultChecked={initial.sellableAsUnit}
-                className="h-4 w-4 rounded border-zinc-300"
-              />
-              Sell singles
-            </label>
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                name="sellableAsCarton"
-                defaultChecked={initial.sellableAsCarton}
-                className="h-4 w-4 rounded border-zinc-300"
-              />
-              Sell whole cartons
-            </label>
+        {/* Sell-as tap cards */}
+        <div data-tour="product-sellable">
+          <span className={CAPTION}>How you sell it</span>
+          <div className="mt-1 flex flex-col gap-2 sm:flex-row">
+            <ToggleCard
+              name="sellableAsUnit"
+              defaultChecked={initial.sellableAsUnit}
+              Icon={Box}
+              label="Singles"
+              hint="One piece at a time"
+            />
+            <ToggleCard
+              name="sellableAsCarton"
+              defaultChecked={initial.sellableAsCarton}
+              Icon={Package}
+              label="Whole cartons"
+              hint="Sealed carton at once"
+            />
           </div>
-        </fieldset>
+        </div>
       </div>
 
       {/* ── Look ────────────────────────────────────────────────────── */}
@@ -488,13 +558,13 @@ export function ProductForm({
           />
         )}
         {!editingId && (
-          <p className="rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs text-zinc-600">
+          <p className="rounded-xl border-2 border-zinc-100 bg-zinc-50 px-3 py-2 text-xs text-zinc-600">
             You can upload a photo after the product is created.
           </p>
         )}
 
         <div data-tour="product-icon">
-          <span className="text-sm font-medium">Icon override</span>
+          <span className={CAPTION}>Icon override</span>
           <p className="mt-0.5 text-xs text-zinc-500">
             Leave empty to use the category icon.
           </p>
@@ -517,7 +587,7 @@ export function ProductForm({
                 onChange={(e) => setIconEmoji(e.target.value)}
                 placeholder={selectedCategory?.iconEmoji ?? "📦"}
                 maxLength={10}
-                className="block w-20 rounded-lg border border-zinc-300 px-2 py-1 text-center text-xl"
+                className="block w-20 rounded-xl border-2 border-zinc-200 px-2 py-1 text-center text-xl"
                 aria-label="Emoji fallback"
               />
               <span className="text-zinc-500">
@@ -527,8 +597,8 @@ export function ProductForm({
           </details>
         </div>
 
-        <div className="flex items-center gap-3 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm">
-          <span className="text-zinc-600">POS preview:</span>
+        <div className="flex items-center gap-3 rounded-xl border-2 border-zinc-100 bg-zinc-50 px-3 py-2.5 text-sm">
+          <span className={CAPTION}>POS preview</span>
           {EffectiveIcon ? (
             <EffectiveIcon className="h-7 w-7 text-zinc-800" strokeWidth={1.5} />
           ) : (
@@ -542,33 +612,29 @@ export function ProductForm({
       <div className={panel("advanced")}>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <label className="block">
-            <span className="text-sm font-medium">
-              Low-stock threshold (units)
-            </span>
+            <span className={CAPTION}>Low-stock alert at (units)</span>
             <input
               type="number"
               name="lowStockThresholdUnits"
               min={0}
               step={1}
               defaultValue={initial.lowStockThresholdUnits}
-              className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm tabular-nums"
+              className={`${BIG_TEXT} font-mono tabular-nums`}
             />
           </label>
           <label className="block">
-            <span className="text-sm font-medium">Loyalty points per unit</span>
+            <span className={CAPTION}>Loyalty points per unit</span>
             <input
               type="number"
               name="loyaltyPointsPerUnit"
               min={0}
               step={1}
               defaultValue={initial.loyaltyPointsPerUnit}
-              className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm tabular-nums"
+              className={`${BIG_TEXT} font-mono tabular-nums`}
             />
           </label>
           <label className="block sm:col-span-2">
-            <span className="text-sm font-medium">
-              Minimum profit margin (%)
-            </span>
+            <span className={CAPTION}>Minimum profit margin (%)</span>
             <input
               type="number"
               name="minMarginPct"
@@ -579,12 +645,11 @@ export function ProductForm({
                 initial.minMarginBps > 0 ? initial.minMarginBps / 100 : ""
               }
               placeholder="e.g. 30"
-              className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm tabular-nums"
+              className={`${BIG_TEXT} font-mono tabular-nums`}
             />
             <span className="mt-1 block text-xs text-zinc-500">
-              The floor for ad-hoc discounts. Discounts can never drop the
-              price below cost + this margin. Leave blank to use the shop-wide
-              default.
+              The floor for coupons and discounts — the price can never drop
+              below cost + this margin. Blank uses the shop-wide default.
             </span>
           </label>
         </div>
@@ -593,14 +658,14 @@ export function ProductForm({
       <div className="flex gap-2 pt-2">
         <Link
           href="/products"
-          className="flex-1 rounded-lg border border-zinc-300 bg-white px-4 py-2 text-center text-sm font-medium hover:bg-zinc-50"
+          className="flex-1 rounded-xl border-2 border-zinc-200 bg-white px-4 py-3 text-center text-sm font-semibold hover:bg-zinc-50"
         >
           Cancel
         </Link>
         <button
           type="submit"
           disabled={isPending}
-          className="flex-1 rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-60"
+          className="flex-1 rounded-xl bg-zinc-900 px-4 py-3 text-sm font-semibold text-white hover:bg-zinc-800 disabled:opacity-60"
         >
           {isPending
             ? "Saving..."
