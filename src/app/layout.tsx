@@ -33,12 +33,16 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: `${companyName} — Sales & stock`,
     description: "Shop management",
-    icons: logoUrl
-      ? {
-          icon: [{ url: logoUrl }],
-          apple: [{ url: logoUrl }],
-        }
-      : undefined,
+    icons: {
+      icon: logoUrl ? [{ url: logoUrl }] : [{ url: "/icons/icon-192.png" }],
+      // Static file: iOS ignores dynamic routes for home-screen icons.
+      apple: [{ url: "/icons/apple-touch-icon.png" }],
+    },
+    appleWebApp: {
+      capable: true,
+      statusBarStyle: "default",
+      title: companyName,
+    },
   };
 }
 
