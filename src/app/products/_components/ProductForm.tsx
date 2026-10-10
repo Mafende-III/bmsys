@@ -5,6 +5,12 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import type { Product } from "@prisma/client";
+import {
+  ClipboardList,
+  ImageIcon,
+  Settings2,
+  Tag,
+} from "lucide-react";
 import { formatRWF } from "@/lib/format";
 import {
   createProduct,
@@ -97,6 +103,24 @@ function initialFromMode(mode: Mode): Initial {
   };
 }
 
+type TabKey = "details" | "pricing" | "look" | "advanced";
+
+/// Which tab each named input lives on — used to jump to the right
+/// tab when the browser flags a hidden invalid field on submit.
+const FIELD_TAB: Record<string, TabKey> = {
+  sku: "details",
+  name: "details",
+  unitsPerCarton: "pricing",
+  costPerCarton: "pricing",
+  unitPrice: "pricing",
+  cartonPrice: "pricing",
+  sellableAsUnit: "pricing",
+  sellableAsCarton: "pricing",
+  lowStockThresholdUnits: "advanced",
+  loyaltyPointsPerUnit: "advanced",
+  minMarginPct: "advanced",
+};
+
 export function ProductForm({
   mode,
   categories,
@@ -113,6 +137,7 @@ export function ProductForm({
   const router = useRouter();
   const initial = initialFromMode(mode);
 
+  const [tab, setTab] = useState<TabKey>("details");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
   const [idempotencyKey, setIdempotencyKey] = useState(() =>
@@ -143,8 +168,7 @@ export function ProductForm({
   const selectedCategory = categories.find((c) => c.id === categoryId);
   const effectiveIconKey = iconKey ?? selectedCategory?.iconKey ?? null;
   const EffectiveIcon = effectiveIconKey ? iconForKey(effectiveIconKey) : null;
-  const effectiveEmoji =
-    iconEmoji || selectedCategory?.iconEmoji || "📦";
+  const effectiveEmoji = iconEmoji || selectedCategory?.iconEmoji || "📦";
 
   const margins = useMemo(() => {
     if (unitsPerCarton <= 0) return null;
@@ -203,256 +227,320 @@ export function ProductForm({
     });
   }
 
+  const tabs: Array<{
+    key: TabKey;
+    label: string;
+    Icon: typeof Tag;
+  }> = [
+    { key: "details", label: "Details", Icon: ClipboardList },
+    { key: "pricing", label: "Pricing", Icon: Tag },
+    { key: "look", label: "Look", Icon: ImageIcon },
+    { key: "advanced", label: "Advanced", Icon: Settings2 },
+  ];
+
+  const panel = (key: TabKey) => (tab === key ? "space-y-4" : "hidden");
+
   return (
-    <form action={handleSubmit} className="space-y-4">
+    <form
+      action={handleSubmit}
+      className="space-y-4"
+      onInvalidCapture={(e) => {
+        // A required field inside a hidden tab can't be focused by the
+        // browser — jump to its tab so the native message can show.
+        const nm = (e.target as HTMLInputElement).name;
+        const target = FIELD_TAB[nm];
+        if (target && target !== tab) setTab(target);
+      }}
+    >
       {error && (
         <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
           {error}
         </div>
       )}
 
-      <label className="block" data-tour="product-sku">
-        <span className="text-sm font-medium">Product code</span>
-        {mode.kind === "edit" ? (
-          <input
-            value={mode.product.sku}
-            disabled
-            className="mt-1 block w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-500"
-          />
-        ) : (
-          <input
-            type="text"
-            name="sku"
-            required
-            value={sku}
-            onChange={(e) => {
-              skuTouched.current = true;
-              setSku(e.target.value);
-            }}
-            placeholder="e.g. WATER-500ML"
-            className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:ring-1 focus:ring-zinc-900"
-          />
-        )}
-        <span className="mt-1 block text-xs text-zinc-500">
-          {mode.kind === "create"
-            ? "Auto-filled from the name. Override if you want. Letters, digits, dashes, dots, underscores only. Cannot be changed later."
-            : "A short unique code (e.g. WATER-500ML). Cannot be changed later."}
-        </span>
-      </label>
+      {/* Tab bar */}
+      <div
+        data-tour="product-tabs"
+        className="grid grid-cols-4 gap-1 rounded-lg bg-zinc-100 p-1"
+      >
+        {tabs.map(({ key, label, Icon }) => (
+          <button
+            key={key}
+            type="button"
+            onClick={() => setTab(key)}
+            aria-selected={tab === key}
+            className={`flex flex-col items-center gap-0.5 rounded-md px-2 py-2 text-xs font-medium transition sm:flex-row sm:justify-center sm:gap-1.5 ${
+              tab === key
+                ? "bg-white text-zinc-900 shadow-sm ring-1 ring-inset ring-zinc-200"
+                : "text-zinc-500 hover:text-zinc-800"
+            }`}
+          >
+            <Icon className="h-4 w-4" strokeWidth={2} />
+            {label}
+          </button>
+        ))}
+      </div>
 
-      <label className="block">
-        <span className="text-sm font-medium">Name</span>
-        <input
-          type="text"
-          name="name"
-          required
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-          className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:ring-1 focus:ring-zinc-900"
-        />
-      </label>
-
-      <label className="block">
-        <span className="text-sm font-medium">Category</span>
-        <select
-          value={categoryId}
-          onChange={(e) => setCategoryId(e.target.value)}
-          className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
-        >
-          <option value="">— Uncategorised —</option>
-          {categories.map((c) => (
-            <option key={c.id} value={c.id}>
-              {c.iconEmoji} {c.name}
-            </option>
-          ))}
-        </select>
-        {categories.length === 0 && (
-          <span className="mt-1 block text-xs text-amber-700">
-            No categories yet.{" "}
-            <a href="/categories/new" className="underline">
-              Add one
-            </a>
-            .
-          </span>
-        )}
-      </label>
-
-      {editingId && (
-        <IconImageUpload
-          initialUrl={initialImageUrl}
-          upload={(formData) => uploadProductIcon(editingId, formData)}
-          remove={() => removeProductIcon(editingId)}
-          label={tForm("imageLabel")}
-          hint={tForm("imageHint")}
-          uploadCta={tForm("imageUpload")}
-          replaceCta={tForm("imageReplace")}
-          removeCta={tForm("imageRemove")}
-        />
-      )}
-
-      <div data-tour="product-icon">
-        <span className="text-sm font-medium">Icon override</span>
-        <p className="mt-0.5 text-xs text-zinc-500">
-          Leave empty to use the category icon.
-        </p>
-        <div className="mt-1">
-          <IconPicker
-            value={iconKey}
-            onChange={setIconKey}
-            allowClear
-            clearLabel="Use category icon"
-          />
-        </div>
-        <details className="mt-2 text-xs text-zinc-600">
-          <summary className="cursor-pointer">Emoji fallback (optional)</summary>
-          <div className="mt-2 flex items-center gap-2">
+      {/* ── Details ─────────────────────────────────────────────────── */}
+      <div className={panel("details")}>
+        <label className="block" data-tour="product-sku">
+          <span className="text-sm font-medium">Product code</span>
+          {mode.kind === "edit" ? (
+            <input
+              value={mode.product.sku}
+              disabled
+              className="mt-1 block w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-500"
+            />
+          ) : (
             <input
               type="text"
-              value={iconEmoji}
-              onChange={(e) => setIconEmoji(e.target.value)}
-              placeholder={selectedCategory?.iconEmoji ?? "📦"}
-              maxLength={10}
-              className="block w-20 rounded-lg border border-zinc-300 px-2 py-1 text-center text-xl"
-              aria-label="Emoji fallback"
+              name="sku"
+              required
+              value={sku}
+              onChange={(e) => {
+                skuTouched.current = true;
+                setSku(e.target.value);
+              }}
+              placeholder="e.g. WATER-500ML"
+              className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:ring-1 focus:ring-zinc-900"
             />
-            <span className="text-zinc-500">
-              Shown if a device can&apos;t render the icon above.
+          )}
+          <span className="mt-1 block text-xs text-zinc-500">
+            {mode.kind === "create"
+              ? "Auto-filled from the name. Override if you want. Cannot be changed later."
+              : "A short unique code (e.g. WATER-500ML). Cannot be changed later."}
+          </span>
+        </label>
+
+        <label className="block">
+          <span className="text-sm font-medium">Name</span>
+          <input
+            type="text"
+            name="name"
+            required
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:ring-1 focus:ring-zinc-900"
+          />
+        </label>
+
+        <label className="block">
+          <span className="text-sm font-medium">Category</span>
+          <select
+            value={categoryId}
+            onChange={(e) => setCategoryId(e.target.value)}
+            className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+          >
+            <option value="">— Uncategorised —</option>
+            {categories.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.iconEmoji} {c.name}
+              </option>
+            ))}
+          </select>
+          {categories.length === 0 && (
+            <span className="mt-1 block text-xs text-amber-700">
+              No categories yet.{" "}
+              <a href="/categories/new" className="underline">
+                Add one
+              </a>
+              .
             </span>
+          )}
+        </label>
+      </div>
+
+      {/* ── Pricing ─────────────────────────────────────────────────── */}
+      <div className={panel("pricing")}>
+        <div className="grid grid-cols-2 gap-3">
+          <label className="block">
+            <span className="text-sm font-medium">Units per carton</span>
+            <input
+              type="number"
+              name="unitsPerCarton"
+              required
+              min={1}
+              step={1}
+              value={unitsPerCarton}
+              onChange={(e) => setUnitsPerCarton(Number(e.target.value || 0))}
+              className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm tabular-nums focus:border-zinc-900 focus:ring-1 focus:ring-zinc-900"
+            />
+          </label>
+          <label className="block">
+            <span className="text-sm font-medium">Cost per carton (RWF)</span>
+            <input
+              type="number"
+              name="costPerCarton"
+              required
+              min={0}
+              step={1}
+              value={costPerCarton}
+              onChange={(e) => setCostPerCarton(Number(e.target.value || 0))}
+              className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm tabular-nums focus:border-zinc-900 focus:ring-1 focus:ring-zinc-900"
+            />
+          </label>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <label className="block">
+            <span className="text-sm font-medium">
+              Sell price — single (RWF)
+            </span>
+            <input
+              type="number"
+              name="unitPrice"
+              required
+              min={0}
+              step={1}
+              value={unitPrice}
+              onChange={(e) => setUnitPrice(Number(e.target.value || 0))}
+              className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm tabular-nums focus:border-zinc-900 focus:ring-1 focus:ring-zinc-900"
+            />
+          </label>
+          <label className="block">
+            <span className="text-sm font-medium">
+              Sell price — whole carton (RWF)
+            </span>
+            <input
+              type="number"
+              name="cartonPrice"
+              required
+              min={0}
+              step={1}
+              value={cartonPrice}
+              onChange={(e) => setCartonPrice(Number(e.target.value || 0))}
+              className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm tabular-nums focus:border-zinc-900 focus:ring-1 focus:ring-zinc-900"
+            />
+          </label>
+        </div>
+
+        {margins && (
+          <div className="rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm">
+            <p className="font-medium text-zinc-800">Margin preview</p>
+            <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-zinc-700">
+              <dt>Cost per unit</dt>
+              <dd className="text-right font-mono tabular-nums">
+                {formatRWF(margins.costPerUnit)}
+              </dd>
+              <dt>Single margin</dt>
+              <dd
+                className={`text-right font-mono tabular-nums ${margins.unitMargin < 0 ? "text-red-700" : "text-green-700"}`}
+              >
+                {formatRWF(margins.unitMargin)} (
+                {margins.unitPct >= 0 ? "+" : ""}
+                {margins.unitPct}%)
+              </dd>
+              <dt>Carton margin</dt>
+              <dd
+                className={`text-right font-mono tabular-nums ${margins.cartonMargin < 0 ? "text-red-700" : "text-green-700"}`}
+              >
+                {formatRWF(margins.cartonMargin)} (
+                {margins.cartonPct >= 0 ? "+" : ""}
+                {margins.cartonPct}%)
+              </dd>
+            </dl>
           </div>
-        </details>
-      </div>
-
-      <div className="flex items-center gap-3 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm">
-        <span className="text-zinc-600">POS preview:</span>
-        {EffectiveIcon ? (
-          <EffectiveIcon
-            className="h-7 w-7 text-zinc-800"
-            strokeWidth={1.5}
-          />
-        ) : (
-          <span className="text-2xl">{effectiveEmoji}</span>
         )}
-        <span className="text-zinc-800">{initial.name || "(name)"}</span>
+
+        <fieldset
+          data-tour="product-sellable"
+          className="rounded-lg border border-zinc-200 px-4 py-3"
+        >
+          <legend className="px-1 text-sm font-medium">
+            How you sell this
+          </legend>
+          <p className="px-1 text-xs text-zinc-500">Tick at least one.</p>
+          <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:gap-6">
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                name="sellableAsUnit"
+                defaultChecked={initial.sellableAsUnit}
+                className="h-4 w-4 rounded border-zinc-300"
+              />
+              Sell singles
+            </label>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                name="sellableAsCarton"
+                defaultChecked={initial.sellableAsCarton}
+                className="h-4 w-4 rounded border-zinc-300"
+              />
+              Sell whole cartons
+            </label>
+          </div>
+        </fieldset>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        <label className="block">
-          <span className="text-sm font-medium">Units per carton</span>
-          <input
-            type="number"
-            name="unitsPerCarton"
-            required
-            min={1}
-            step={1}
-            value={unitsPerCarton}
-            onChange={(e) => setUnitsPerCarton(Number(e.target.value || 0))}
-            className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:ring-1 focus:ring-zinc-900"
+      {/* ── Look ────────────────────────────────────────────────────── */}
+      <div className={panel("look")}>
+        {editingId && (
+          <IconImageUpload
+            initialUrl={initialImageUrl}
+            upload={(formData) => uploadProductIcon(editingId, formData)}
+            remove={() => removeProductIcon(editingId)}
+            label={tForm("imageLabel")}
+            hint={tForm("imageHint")}
+            uploadCta={tForm("imageUpload")}
+            replaceCta={tForm("imageReplace")}
+            removeCta={tForm("imageRemove")}
           />
-        </label>
-        <label className="block">
-          <span className="text-sm font-medium">Cost per carton (RWF)</span>
-          <input
-            type="number"
-            name="costPerCarton"
-            required
-            min={0}
-            step={1}
-            value={costPerCarton}
-            onChange={(e) => setCostPerCarton(Number(e.target.value || 0))}
-            className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:ring-1 focus:ring-zinc-900"
-          />
-        </label>
-      </div>
+        )}
+        {!editingId && (
+          <p className="rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs text-zinc-600">
+            You can upload a photo after the product is created.
+          </p>
+        )}
 
-      <div className="grid grid-cols-2 gap-3">
-        <label className="block">
-          <span className="text-sm font-medium">Unit price (RWF)</span>
-          <input
-            type="number"
-            name="unitPrice"
-            required
-            min={0}
-            step={1}
-            value={unitPrice}
-            onChange={(e) => setUnitPrice(Number(e.target.value || 0))}
-            className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:ring-1 focus:ring-zinc-900"
-          />
-        </label>
-        <label className="block">
-          <span className="text-sm font-medium">Carton price (RWF)</span>
-          <input
-            type="number"
-            name="cartonPrice"
-            required
-            min={0}
-            step={1}
-            value={cartonPrice}
-            onChange={(e) => setCartonPrice(Number(e.target.value || 0))}
-            className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:ring-1 focus:ring-zinc-900"
-          />
-        </label>
-      </div>
-
-      {margins && (
-        <div className="rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm">
-          <p className="font-medium text-zinc-800">Margin preview</p>
-          <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-zinc-700">
-            <dt>Cost per unit</dt>
-            <dd className="text-right font-mono">
-              {formatRWF(margins.costPerUnit)}
-            </dd>
-            <dt>Unit margin</dt>
-            <dd
-              className={`text-right font-mono ${margins.unitMargin < 0 ? "text-red-700" : "text-green-700"}`}
-            >
-              {formatRWF(margins.unitMargin)} ({margins.unitPct >= 0 ? "+" : ""}
-              {margins.unitPct}%)
-            </dd>
-            <dt>Carton margin</dt>
-            <dd
-              className={`text-right font-mono ${margins.cartonMargin < 0 ? "text-red-700" : "text-green-700"}`}
-            >
-              {formatRWF(margins.cartonMargin)} (
-              {margins.cartonPct >= 0 ? "+" : ""}
-              {margins.cartonPct}%)
-            </dd>
-          </dl>
-        </div>
-      )}
-
-      <fieldset
-        data-tour="product-sellable"
-        className="rounded-lg border border-zinc-200 px-4 py-3"
-      >
-        <legend className="px-1 text-sm font-medium">How you sell this</legend>
-        <p className="px-1 text-xs text-zinc-500">Tick at least one.</p>
-        <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:gap-6">
-          <label className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              name="sellableAsUnit"
-              defaultChecked={initial.sellableAsUnit}
-              className="h-4 w-4 rounded border-zinc-300"
+        <div data-tour="product-icon">
+          <span className="text-sm font-medium">Icon override</span>
+          <p className="mt-0.5 text-xs text-zinc-500">
+            Leave empty to use the category icon.
+          </p>
+          <div className="mt-1">
+            <IconPicker
+              value={iconKey}
+              onChange={setIconKey}
+              allowClear
+              clearLabel="Use category icon"
             />
-            Sell singles
-          </label>
-          <label className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              name="sellableAsCarton"
-              defaultChecked={initial.sellableAsCarton}
-              className="h-4 w-4 rounded border-zinc-300"
-            />
-            Sell whole cartons
-          </label>
+          </div>
+          <details className="mt-2 text-xs text-zinc-600">
+            <summary className="cursor-pointer">
+              Emoji fallback (optional)
+            </summary>
+            <div className="mt-2 flex items-center gap-2">
+              <input
+                type="text"
+                value={iconEmoji}
+                onChange={(e) => setIconEmoji(e.target.value)}
+                placeholder={selectedCategory?.iconEmoji ?? "📦"}
+                maxLength={10}
+                className="block w-20 rounded-lg border border-zinc-300 px-2 py-1 text-center text-xl"
+                aria-label="Emoji fallback"
+              />
+              <span className="text-zinc-500">
+                Shown if a device can&apos;t render the icon above.
+              </span>
+            </div>
+          </details>
         </div>
-      </fieldset>
 
-      <details className="rounded-lg border border-zinc-200 px-4 py-2">
-        <summary className="cursor-pointer text-sm font-medium">
-          Advanced
-        </summary>
-        <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div className="flex items-center gap-3 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm">
+          <span className="text-zinc-600">POS preview:</span>
+          {EffectiveIcon ? (
+            <EffectiveIcon className="h-7 w-7 text-zinc-800" strokeWidth={1.5} />
+          ) : (
+            <span className="text-2xl">{effectiveEmoji}</span>
+          )}
+          <span className="text-zinc-800">{name || "(name)"}</span>
+        </div>
+      </div>
+
+      {/* ── Advanced ────────────────────────────────────────────────── */}
+      <div className={panel("advanced")}>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <label className="block">
             <span className="text-sm font-medium">
               Low-stock threshold (units)
@@ -463,7 +551,7 @@ export function ProductForm({
               min={0}
               step={1}
               defaultValue={initial.lowStockThresholdUnits}
-              className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+              className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm tabular-nums"
             />
           </label>
           <label className="block">
@@ -474,7 +562,7 @@ export function ProductForm({
               min={0}
               step={1}
               defaultValue={initial.loyaltyPointsPerUnit}
-              className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+              className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm tabular-nums"
             />
           </label>
           <label className="block sm:col-span-2">
@@ -491,7 +579,7 @@ export function ProductForm({
                 initial.minMarginBps > 0 ? initial.minMarginBps / 100 : ""
               }
               placeholder="e.g. 30"
-              className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+              className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm tabular-nums"
             />
             <span className="mt-1 block text-xs text-zinc-500">
               The floor for ad-hoc discounts. Discounts can never drop the
@@ -500,7 +588,7 @@ export function ProductForm({
             </span>
           </label>
         </div>
-      </details>
+      </div>
 
       <div className="flex gap-2 pt-2">
         <Link

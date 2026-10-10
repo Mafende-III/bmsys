@@ -111,11 +111,11 @@ export function PricingMatrix({
       <div className="rounded-lg border border-zinc-200 bg-white p-4 text-sm">
         <p className="font-medium text-zinc-800">Defaults (no override)</p>
         <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-zinc-700">
-          <dt>Unit price</dt>
+          <dt>Sell price — single</dt>
           <dd className="text-right font-mono">
             {formatRWF(product.unitPrice)}
           </dd>
-          <dt>Carton price</dt>
+          <dt>Sell price — carton</dt>
           <dd className="text-right font-mono">
             {formatRWF(product.cartonPrice)}
           </dd>
@@ -131,7 +131,7 @@ export function PricingMatrix({
           <thead className="bg-zinc-50 text-left text-xs font-medium uppercase text-zinc-600">
             <tr>
               <th className="px-3 py-2">Channel</th>
-              <th className="px-3 py-2">Unit price override</th>
+              <th className="px-3 py-2">Single price override</th>
               <th className="px-3 py-2">Carton price override</th>
               <th className="px-3 py-2 text-right">Effective unit</th>
               <th className="px-3 py-2 text-right">Effective carton</th>
