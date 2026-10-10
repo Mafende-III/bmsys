@@ -46,9 +46,9 @@ function skuify(name: string): string {
 const CAPTION =
   "block text-[11px] font-semibold uppercase tracking-wide text-zinc-500";
 const BIG_TEXT =
-  "mt-1 block w-full rounded-xl border-2 border-zinc-200 bg-white px-3 py-3 text-base focus:border-zinc-900 focus:outline-none";
+  "mt-1 block w-full rounded-lg border border-zinc-300 bg-white px-3 py-2.5 text-base focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900";
 const BIG_MONEY =
-  "block w-full rounded-xl border-2 border-zinc-200 bg-white py-3 pl-3 pr-12 text-right font-mono text-lg tabular-nums focus:border-zinc-900 focus:outline-none";
+  "block w-full rounded-lg border border-zinc-300 bg-white py-2.5 pl-3 pr-12 text-right font-mono text-base tabular-nums focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900";
 
 function MoneyField({
   label,
@@ -105,12 +105,13 @@ function ToggleCard({
         defaultChecked={defaultChecked}
         className="peer sr-only"
       />
-      <div className="flex items-center gap-3 rounded-xl border-2 border-zinc-200 bg-white px-3 py-3 transition peer-checked:border-zinc-900 peer-checked:bg-zinc-900 peer-checked:text-white">
-        <Icon className="h-6 w-6 shrink-0" strokeWidth={1.5} />
-        <div className="min-w-0">
-          <p className="text-sm font-semibold">{label}</p>
-          <p className="text-[11px] opacity-70">{hint}</p>
+      <div className="flex items-center gap-2.5 rounded-lg border border-zinc-300 bg-white px-3 py-2 text-zinc-500 transition peer-checked:border-zinc-900 peer-checked:bg-zinc-50 peer-checked:text-zinc-900 peer-checked:[&_.tick]:opacity-100">
+        <Icon className="h-5 w-5 shrink-0" strokeWidth={1.5} />
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-medium">{label}</p>
+          <p className="text-[11px] text-zinc-500">{hint}</p>
         </div>
+        <span className="tick text-base font-semibold opacity-0">✓</span>
       </div>
     </label>
   );
@@ -435,61 +436,64 @@ export function ProductForm({
 
       {/* ── Pricing ─────────────────────────────────────────────────── */}
       <div className={panel("pricing")}>
-        {/* Units per carton — stepper */}
-        <div>
-          <span className={CAPTION}>Units per carton</span>
-          <div className="mt-1 flex items-center gap-2">
-            <button
-              type="button"
-              aria-label="Fewer units per carton"
-              onClick={() => setUnitsPerCarton(Math.max(1, unitsPerCarton - 1))}
-              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border-2 border-zinc-200 bg-white text-zinc-700 active:scale-95"
-            >
-              <Minus className="h-5 w-5" strokeWidth={2} />
-            </button>
-            <input
-              type="number"
-              name="unitsPerCarton"
-              required
-              min={1}
-              step={1}
-              value={unitsPerCarton || ""}
-              onChange={(e) =>
-                setUnitsPerCarton(Math.max(0, Number(e.target.value || 0)))
-              }
-              className="block h-12 w-full rounded-xl border-2 border-zinc-200 bg-white text-center font-mono text-xl font-semibold tabular-nums focus:border-zinc-900 focus:outline-none"
-            />
-            <button
-              type="button"
-              aria-label="More units per carton"
-              onClick={() => setUnitsPerCarton(unitsPerCarton + 1)}
-              className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border-2 border-zinc-200 bg-white text-zinc-700 active:scale-95"
-            >
-              <Plus className="h-5 w-5" strokeWidth={2} />
-            </button>
+        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+          {/* Units per carton — compact stepper */}
+          <div>
+            <span className={CAPTION}>Units per carton</span>
+            <div className="mt-1 flex items-center gap-1.5">
+              <button
+                type="button"
+                aria-label="Fewer units per carton"
+                onClick={() =>
+                  setUnitsPerCarton(Math.max(1, unitsPerCarton - 1))
+                }
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-zinc-300 bg-white text-zinc-600 hover:bg-zinc-50 active:scale-95"
+              >
+                <Minus className="h-4 w-4" strokeWidth={2} />
+              </button>
+              <input
+                type="number"
+                name="unitsPerCarton"
+                required
+                min={1}
+                step={1}
+                value={unitsPerCarton || ""}
+                onChange={(e) =>
+                  setUnitsPerCarton(Math.max(0, Number(e.target.value || 0)))
+                }
+                className="block h-11 w-full rounded-lg border border-zinc-300 bg-white text-center font-mono text-base font-semibold tabular-nums focus:border-zinc-900 focus:outline-none focus:ring-1 focus:ring-zinc-900"
+              />
+              <button
+                type="button"
+                aria-label="More units per carton"
+                onClick={() => setUnitsPerCarton(unitsPerCarton + 1)}
+                className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-zinc-300 bg-white text-zinc-600 hover:bg-zinc-50 active:scale-95"
+              >
+                <Plus className="h-4 w-4" strokeWidth={2} />
+              </button>
+            </div>
+            <span className="mt-1 block text-xs text-zinc-500">
+              Use 1 for items sold alone (e.g. 18.9L bottles).
+            </span>
           </div>
-          <span className="mt-1 block text-xs text-zinc-500">
-            How many pieces come in one sealed carton. Use 1 for items sold
-            alone (e.g. 18.9L bottles).
-          </span>
+
+          <MoneyField
+            label="You buy a carton at"
+            name="costPerCarton"
+            value={costPerCarton}
+            onChange={setCostPerCarton}
+          />
         </div>
 
-        <MoneyField
-          label="You buy a carton at"
-          name="costPerCarton"
-          value={costPerCarton}
-          onChange={setCostPerCarton}
-        />
-
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div className="grid grid-cols-2 gap-3">
           <MoneyField
-            label="You sell a single at"
+            label="Sell a single at"
             name="unitPrice"
             value={unitPrice}
             onChange={setUnitPrice}
           />
           <MoneyField
-            label="You sell a whole carton at"
+            label="Sell a carton at"
             name="cartonPrice"
             value={cartonPrice}
             onChange={setCartonPrice}
