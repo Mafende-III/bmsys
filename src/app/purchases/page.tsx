@@ -1,8 +1,11 @@
 import Link from "next/link";
+import { Check, Clock, X } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { requireOwner } from "@/lib/auth-guards";
 import { formatRWF } from "@/lib/format";
 import { listPurchases, type PurchaseStatus } from "@/lib/purchases/queries";
+import { Card, CaptionLabel, StatusPill, type StatusTone } from "@/components/ui";
+import { cn } from "@/lib/cn";
 
 type SearchParams = { status?: string };
 
@@ -12,11 +15,19 @@ const validStatus = (s: string | undefined): PurchaseStatus => {
   return "all";
 };
 
-const statusBadge: Record<string, string> = {
-  DRAFT: "bg-amber-100 text-amber-800",
-  RECEIVED: "bg-green-100 text-green-800",
-  CANCELLED: "bg-zinc-100 text-zinc-600",
+const STATUS_TONE: Record<string, StatusTone> = {
+  DRAFT: "warning",
+  RECEIVED: "success",
+  CANCELLED: "neutral",
 };
+
+function StatusIcon({ status }: { status: string }) {
+  if (status === "RECEIVED")
+    return <Check className="h-3 w-3" strokeWidth={3} />;
+  if (status === "DRAFT")
+    return <Clock className="h-3 w-3" strokeWidth={2.6} />;
+  return <X className="h-3 w-3" strokeWidth={3} />;
+}
 
 export default async function PurchasesPage({
   searchParams,
@@ -29,139 +40,90 @@ export default async function PurchasesPage({
   const status = validStatus(params.status);
   const purchases = await listPurchases({ status });
   const t = await getTranslations("purchases");
-  const tc = await getTranslations("common");
+
+  const statusLabel: Record<string, string> = {
+    DRAFT: t("statusDraft"),
+    RECEIVED: t("statusReceived"),
+    CANCELLED: t("statusCancelled"),
+  };
+
+  const filters: Array<[PurchaseStatus, string]> = [
+    ["all", t("filterAll")],
+    ["DRAFT", t("statusDraft")],
+    ["RECEIVED", t("statusReceived")],
+    ["CANCELLED", t("statusCancelled")],
+  ];
 
   return (
-    <main className="mx-auto max-w-4xl p-4 sm:p-6">
-      <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <Link
-            href="/dashboard"
-            className="text-sm text-zinc-600 hover:underline"
-          >
-            ← {tc("dashboard")}
-          </Link>
-          <h1 className="mt-1 text-2xl font-semibold">{t("title")}</h1>
-          <p className="text-sm text-zinc-600">{t("subtitle")}</p>
+    <main className="mx-auto max-w-2xl space-y-3 p-4">
+      <header className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="text-xl font-bold text-ink">{t("title")}</h1>
+          <p className="text-[13px] text-ink-2">{t("subtitle")}</p>
         </div>
         <Link
           href="/purchases/new"
-          className="self-start rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 sm:self-auto"
+          className="flex h-11 shrink-0 items-center rounded-full bg-fab px-4 text-sm font-bold text-white shadow-fab active:translate-y-[2px]"
         >
           {t("new")}
         </Link>
       </header>
 
-      <form method="get" className="mt-4 flex gap-2">
-        <label className="block">
-          <span className="text-xs font-medium text-zinc-700">Status</span>
-          <select
-            name="status"
-            defaultValue={status}
-            className="mt-1 block rounded-lg border border-zinc-300 px-3 py-2 text-sm"
-          >
-            <option value="all">All</option>
-            <option value="DRAFT">Draft</option>
-            <option value="RECEIVED">Received</option>
-            <option value="CANCELLED">Cancelled</option>
-          </select>
-        </label>
-        <button
-          type="submit"
-          className="self-end rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-medium hover:bg-zinc-50"
-        >
-          Filter
-        </button>
-      </form>
-
-      <div className="mt-4 hidden overflow-hidden rounded-2xl border border-zinc-200 bg-white sm:block">
-        <table className="w-full text-sm">
-          <thead className="bg-zinc-50 text-left text-xs font-medium uppercase text-zinc-600">
-            <tr>
-              <th className="px-3 py-2">Date</th>
-              <th className="px-3 py-2">Supplier</th>
-              <th className="px-3 py-2 text-right">Lines</th>
-              <th className="px-3 py-2 text-right">Total</th>
-              <th className="px-3 py-2">Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {purchases.map((p) => (
-              <tr
-                key={p.id}
-                className="border-t border-zinc-200 hover:bg-zinc-50"
-              >
-                <td className="px-3 py-2 text-xs text-zinc-700">
-                  <Link
-                    href={`/purchases/${p.id}`}
-                    className="hover:underline"
-                  >
-                    {new Date(p.date).toLocaleDateString()}
-                  </Link>
-                </td>
-                <td className="px-3 py-2">{p.supplier.name}</td>
-                <td className="px-3 py-2 text-right tabular-nums">
-                  {p._count.lines}
-                </td>
-                <td className="px-3 py-2 text-right font-mono tabular-nums">
-                  {formatRWF(p.totalCost)}
-                </td>
-                <td className="px-3 py-2">
-                  <span
-                    className={`rounded-full px-2 py-0.5 text-xs uppercase ${statusBadge[p.status] ?? ""}`}
-                  >
-                    {p.status}
-                  </span>
-                </td>
-              </tr>
-            ))}
-            {purchases.length === 0 && (
-              <tr>
-                <td colSpan={5} className="px-3 py-6 text-center text-zinc-500">
-                  Nothing matches. Try clearing the filters, or log a new purchase above.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-
-      <div className="mt-4 space-y-2 sm:hidden">
-        {purchases.map((p) => (
+      <div className="flex flex-wrap gap-2">
+        {filters.map(([value, label]) => (
           <Link
-            key={p.id}
-            href={`/purchases/${p.id}`}
-            className="block rounded-2xl border border-zinc-200 bg-white p-3"
+            key={value}
+            href={value === "all" ? "/purchases" : `/purchases?status=${value}`}
+            className={cn(
+              "rounded-full px-4 py-2 text-[13px]",
+              status === value
+                ? "bg-ink font-bold text-white"
+                : "bg-surface font-semibold text-ink-2 ring-1 ring-inset ring-rule",
+            )}
           >
-            <div className="flex items-start justify-between gap-2">
-              <div className="min-w-0">
-                <p className="truncate font-medium">{p.supplier.name}</p>
-                <p className="text-xs text-zinc-500">
-                  {new Date(p.date).toLocaleDateString()}
-                </p>
-              </div>
-              <span
-                className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] uppercase ${statusBadge[p.status] ?? ""}`}
-              >
-                {p.status}
-              </span>
-            </div>
-            <div className="mt-2 flex items-center justify-between text-xs text-zinc-700">
-              <span>
-                {p._count.lines} line{p._count.lines === 1 ? "" : "s"}
-              </span>
-              <span className="font-mono tabular-nums">
-                {formatRWF(p.totalCost)}
-              </span>
-            </div>
+            {label}
           </Link>
         ))}
-        {purchases.length === 0 && (
-          <p className="rounded-2xl border border-zinc-200 bg-white p-6 text-center text-sm text-zinc-500">
-            No purchases match.
-          </p>
-        )}
       </div>
+
+      {purchases.length === 0 ? (
+        <Card className="p-6 text-center text-sm text-ink-2">
+          {t("empty")}
+        </Card>
+      ) : (
+        <div className="space-y-2.5">
+          {purchases.map((p) => (
+            <Link key={p.id} href={`/purchases/${p.id}`} className="block">
+              <Card className="p-3.5 transition-shadow hover:ring-rule">
+                <div className="flex items-start justify-between gap-2">
+                  <div className="min-w-0">
+                    <p className="truncate text-[15px] font-bold text-ink">
+                      {p.supplier.name}
+                    </p>
+                    <p className="num mt-0.5 text-xs text-ink-2">
+                      {new Date(p.date).toLocaleDateString()} ·{" "}
+                      {t("lineCount", { count: p._count.lines })}
+                    </p>
+                  </div>
+                  <StatusPill
+                    tone={STATUS_TONE[p.status] ?? "neutral"}
+                    icon={<StatusIcon status={p.status} />}
+                    className="shrink-0"
+                  >
+                    {statusLabel[p.status] ?? p.status}
+                  </StatusPill>
+                </div>
+                <div className="mt-2.5 flex items-baseline justify-between border-t border-rule-hair pt-2.5">
+                  <CaptionLabel>{t("headerTotal")}</CaptionLabel>
+                  <span className="num text-base font-bold text-ink">
+                    {formatRWF(p.totalCost)}
+                  </span>
+                </div>
+              </Card>
+            </Link>
+          ))}
+        </div>
+      )}
     </main>
   );
 }

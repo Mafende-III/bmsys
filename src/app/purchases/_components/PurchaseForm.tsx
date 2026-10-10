@@ -3,12 +3,20 @@
 import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Check, Download, Plus, X } from "lucide-react";
+import { useTranslations } from "next-intl";
+import { CaptionLabel, Card, MoneyField } from "@/components/ui";
+import { cn } from "@/lib/cn";
 import { formatRWF } from "@/lib/format";
 import {
   cancelPurchase,
   receivePurchase,
   savePurchaseDraft,
 } from "@/lib/purchases/actions";
+import {
+  QuickCreateProductSheet,
+  type CreatedProduct,
+} from "./QuickCreateProductSheet";
 
 type ProductOption = {
   id: string;
@@ -55,6 +63,9 @@ function parsePositiveInt(v: string): number {
   return Number.isFinite(n) && n >= 0 ? Math.floor(n) : 0;
 }
 
+const FIELD =
+  "mt-1.5 block h-11 w-full rounded-panel border border-rule bg-surface px-3 text-sm text-ink focus:border-rule-active focus:outline-none focus:ring-1 focus:ring-rule-active disabled:bg-ground disabled:text-ink-2";
+
 export function PurchaseForm({
   mode,
   suppliers,
@@ -65,6 +76,7 @@ export function PurchaseForm({
   products: ProductOption[];
 }) {
   const router = useRouter();
+  const t = useTranslations("purchases.form");
   const readOnly = mode.kind === "edit" && mode.status !== "DRAFT";
 
   const initial =
@@ -90,6 +102,12 @@ export function PurchaseForm({
   const [date, setDate] = useState(initial.date);
   const [note, setNote] = useState(initial.note);
   const [lines, setLines] = useState<LineState[]>(initial.lines);
+  // Products created inline land here so selects know them before
+  // the server props refresh.
+  const [productList, setProductList] = useState<ProductOption[]>(products);
+  const [newIds, setNewIds] = useState<Set<string>>(new Set());
+  const [sheetOpen, setSheetOpen] = useState(false);
+  const [createdNote, setCreatedNote] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [savedNote, setSavedNote] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -101,9 +119,9 @@ export function PurchaseForm({
     setLines((prev) => [
       ...prev,
       {
-        productId: products[0]?.id ?? "",
+        productId: productList[0]?.id ?? "",
         qtyCartons: "1",
-        unitCost: products[0] ? String(products[0].costPerCarton) : "0",
+        unitCost: productList[0] ? String(productList[0].costPerCarton) : "0",
       },
     ]);
   }
@@ -119,11 +137,27 @@ export function PurchaseForm({
   }
 
   function onProductPick(i: number, productId: string) {
-    const p = products.find((p) => p.id === productId);
+    const p = productList.find((p) => p.id === productId);
     updateLine(i, {
       productId,
       unitCost: p ? String(p.costPerCarton) : "0",
     });
+  }
+
+  function onCreated(p: CreatedProduct) {
+    setProductList((prev) => [...prev, p]);
+    setNewIds((prev) => new Set(prev).add(p.id));
+    setLines((prev) => [
+      ...prev,
+      {
+        productId: p.id,
+        qtyCartons: "1",
+        unitCost: String(p.costPerCarton),
+      },
+    ]);
+    setSheetOpen(false);
+    setCreatedNote(t("qcCreated", { name: p.name }));
+    router.refresh();
   }
 
   const total = useMemo(() => {
@@ -162,7 +196,7 @@ export function PurchaseForm({
       if (mode.kind === "create") {
         router.push(`/purchases/${result.data.id}`);
       } else {
-        setSavedNote("Saved.");
+        setSavedNote(t("saved"));
         setSaveKey(crypto.randomUUID());
         router.refresh();
       }
@@ -191,9 +225,7 @@ export function PurchaseForm({
         setReceiveKey(crypto.randomUUID());
         return;
       }
-      setSavedNote(
-        `Received. ${result.data.movesCreated} stock move${result.data.movesCreated === 1 ? "" : "s"} written.`,
-      );
+      setSavedNote(t("receivedNote"));
       setReceiveKey(crypto.randomUUID());
       setSaveKey(crypto.randomUUID());
       router.refresh();
@@ -205,8 +237,8 @@ export function PurchaseForm({
     if (
       !confirm(
         mode.status === "RECEIVED"
-          ? "This will reverse the stock that was received. Continue?"
-          : "Cancel this draft purchase?",
+          ? t("confirmCancelReceived")
+          : t("confirmCancelDraft"),
       )
     )
       return;
@@ -219,41 +251,42 @@ export function PurchaseForm({
         setCancelKey(crypto.randomUUID());
         return;
       }
-      setSavedNote(
-        result.data.reversingMoves > 0
-          ? `Cancelled. ${result.data.reversingMoves} reversing stock move${result.data.reversingMoves === 1 ? "" : "s"} written.`
-          : "Cancelled.",
-      );
+      setSavedNote(t("cancelledNote"));
       setCancelKey(crypto.randomUUID());
       router.refresh();
     });
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {error && (
-        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="rounded-panel bg-error-wash px-3.5 py-2.5 text-sm font-semibold text-error">
           {error}
         </div>
       )}
       {savedNote && (
-        <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
+        <div className="flex items-center gap-2 rounded-panel bg-success-wash px-3.5 py-2.5 text-sm font-semibold text-success">
+          <Check className="h-4 w-4 shrink-0" strokeWidth={2.6} />
           {savedNote}
         </div>
       )}
+      {createdNote && (
+        <div className="flex items-center gap-2 rounded-panel bg-success-wash px-3.5 py-2.5 text-sm font-semibold text-success">
+          <Check className="h-4 w-4 shrink-0" strokeWidth={2.6} />
+          {createdNote}
+        </div>
+      )}
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+      <div className="grid grid-cols-2 gap-3">
         <label className="block">
-          <span className="text-sm font-medium">Supplier</span>
+          <CaptionLabel>{t("supplier")}</CaptionLabel>
           <select
             value={supplierId}
             onChange={(e) => setSupplierId(e.target.value)}
             disabled={readOnly}
-            className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm disabled:bg-zinc-50 disabled:text-zinc-500"
+            className={FIELD}
           >
-            {suppliers.length === 0 && (
-              <option value="">(no suppliers yet)</option>
-            )}
+            {suppliers.length === 0 && <option value="">—</option>}
             {suppliers.map((s) => (
               <option key={s.id} value={s.id}>
                 {s.name}
@@ -263,162 +296,174 @@ export function PurchaseForm({
         </label>
 
         <label className="block">
-          <span className="text-sm font-medium">Date</span>
+          <CaptionLabel>{t("date")}</CaptionLabel>
           <input
             type="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
             disabled={readOnly}
-            className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm disabled:bg-zinc-50 disabled:text-zinc-500"
+            className={FIELD}
           />
         </label>
       </div>
 
       <label className="block">
-        <span className="text-sm font-medium">Note (optional)</span>
+        <CaptionLabel>{t("noteOptional")}</CaptionLabel>
         <input
           type="text"
           value={note}
           onChange={(e) => setNote(e.target.value)}
           disabled={readOnly}
-          placeholder="Reference number, delivery driver, etc."
-          className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm disabled:bg-zinc-50 disabled:text-zinc-500"
+          placeholder={t("notePlaceholder")}
+          className={FIELD}
         />
       </label>
 
-      <section className="rounded-2xl border border-zinc-200 bg-white p-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-sm font-medium">Lines</h2>
-          {!readOnly && (
-            <button
-              type="button"
-              onClick={addLine}
-              disabled={products.length === 0}
-              className="rounded-lg border border-zinc-300 bg-white px-3 py-1 text-xs font-medium hover:bg-zinc-50 disabled:opacity-50"
-            >
-              + Add line
-            </button>
-          )}
-        </div>
+      <section>
+        <CaptionLabel className="mb-2 px-0.5">{t("lines")}</CaptionLabel>
 
         {lines.length === 0 ? (
-          <p className="mt-3 text-xs text-zinc-500">No lines yet.</p>
+          <p className="rounded-panel bg-ground px-3.5 py-3 text-[13px] text-ink-2">
+            {t("noLines")}
+          </p>
         ) : (
-          <div className="mt-3 space-y-2">
+          <div className="space-y-2.5">
             {lines.map((l, i) => {
-              const product = products.find((p) => p.id === l.productId);
+              const product = productList.find((p) => p.id === l.productId);
               const cartons = parsePositiveInt(l.qtyCartons);
               const unitCost = parsePositiveInt(l.unitCost);
               const lineTotal = cartons * unitCost;
-              const units =
-                cartons * (product?.unitsPerCarton ?? 0);
+              const units = cartons * (product?.unitsPerCarton ?? 0);
               return (
-                <div
-                  key={i}
-                  className="rounded-lg border border-zinc-200 p-2"
-                >
-                  <div className="grid grid-cols-12 gap-2">
+                <Card key={i} className="p-3">
+                  <div className="flex gap-2">
                     <select
                       value={l.productId}
                       onChange={(e) => onProductPick(i, e.target.value)}
                       disabled={readOnly}
-                      className="col-span-12 rounded-lg border border-zinc-300 px-2 py-1.5 text-sm disabled:bg-zinc-50 sm:col-span-5"
+                      className={cn(FIELD, "mt-0 flex-1 font-semibold")}
                     >
-                      {products.map((p) => (
+                      {productList.map((p) => (
                         <option key={p.id} value={p.id}>
                           {p.name} ({p.sku})
                         </option>
                       ))}
                     </select>
-                    <label className="col-span-4 sm:col-span-2">
-                      <span className="text-[10px] uppercase text-zinc-500">
-                        Cartons
-                      </span>
+                    {!readOnly && (
+                      <button
+                        type="button"
+                        onClick={() => removeLine(i)}
+                        aria-label={t("remove")}
+                        className="flex h-11 w-11 shrink-0 items-center justify-center rounded-panel bg-ground text-ink-2"
+                      >
+                        <X className="h-4 w-4" strokeWidth={2.2} />
+                      </button>
+                    )}
+                  </div>
+                  <div className="mt-2.5 grid grid-cols-3 gap-2.5">
+                    <label className="block">
+                      <CaptionLabel>{t("cartons")}</CaptionLabel>
                       <input
                         type="number"
                         min={0}
                         step={1}
+                        inputMode="numeric"
                         value={l.qtyCartons}
                         onChange={(e) =>
                           updateLine(i, { qtyCartons: e.target.value })
                         }
                         disabled={readOnly}
-                        className="mt-0.5 block w-full rounded-lg border border-zinc-300 px-2 py-1.5 text-sm disabled:bg-zinc-50"
+                        className={cn(
+                          FIELD,
+                          "num text-right text-base font-semibold",
+                        )}
                       />
                     </label>
-                    <label className="col-span-4 sm:col-span-2">
-                      <span className="text-[10px] uppercase text-zinc-500">
-                        Cost/carton
-                      </span>
-                      <input
-                        type="number"
-                        min={0}
-                        step={1}
-                        value={l.unitCost}
-                        onChange={(e) =>
-                          updateLine(i, { unitCost: e.target.value })
-                        }
-                        disabled={readOnly}
-                        className="mt-0.5 block w-full rounded-lg border border-zinc-300 px-2 py-1.5 text-sm disabled:bg-zinc-50"
-                      />
-                    </label>
-                    <div className="col-span-4 flex items-end justify-between sm:col-span-3">
-                      <div className="text-xs text-zinc-700">
-                        <p className="text-[10px] uppercase text-zinc-500">
-                          Total
-                        </p>
-                        <p className="font-mono tabular-nums">
-                          {formatRWF(lineTotal)}
-                        </p>
-                      </div>
-                      {!readOnly && (
-                        <button
-                          type="button"
-                          onClick={() => removeLine(i)}
-                          className="text-xs text-red-600 hover:underline"
-                          aria-label="Remove line"
-                        >
-                          Remove
-                        </button>
-                      )}
+                    <MoneyField
+                      label={t("costPerCarton")}
+                      value={l.unitCost}
+                      onChange={(e) =>
+                        updateLine(i, { unitCost: e.target.value })
+                      }
+                      disabled={readOnly}
+                      inputClassName="mt-1.5"
+                    />
+                    <div>
+                      <CaptionLabel>{t("lineTotal")}</CaptionLabel>
+                      <p className="num mt-1.5 flex h-11 items-center justify-end text-base font-bold text-ink">
+                        {formatRWF(lineTotal)}
+                      </p>
                     </div>
                   </div>
                   {product && cartons > 0 && (
-                    <p className="mt-1 text-[10px] text-zinc-500">
-                      = {units} units @ {product.unitsPerCarton}/carton
+                    <p className="mt-1.5 flex items-center gap-2 text-[11px] text-ink-2">
+                      {newIds.has(l.productId) && (
+                        <span className="rounded-full bg-success-wash px-2 py-0.5 text-[10px] font-bold tracking-wide text-success">
+                          NEW
+                        </span>
+                      )}
+                      {t("unitsHint", {
+                        units,
+                        per: product.unitsPerCarton,
+                      })}
                     </p>
                   )}
-                </div>
+                </Card>
               );
             })}
           </div>
         )}
 
-        <div className="mt-3 flex items-center justify-between border-t border-zinc-200 pt-2 text-sm">
-          <span className="font-medium">Total</span>
-          <span className="font-mono tabular-nums">{formatRWF(total)}</span>
+        {!readOnly && (
+          <div className="mt-2.5 flex gap-2.5">
+            <button
+              type="button"
+              onClick={addLine}
+              disabled={productList.length === 0}
+              className="flex h-12 flex-1 items-center justify-center gap-2 rounded-[14px] bg-keycap text-sm font-bold text-ink shadow-keycap active:bg-none active:bg-well active:shadow-well disabled:opacity-50"
+            >
+              <Plus className="h-4 w-4" strokeWidth={2.6} />
+              {t("addLine")}
+            </button>
+            <button
+              type="button"
+              onClick={() => setSheetOpen(true)}
+              data-tour="purchase-quick-create"
+              className="flex h-12 flex-1 items-center justify-center gap-2 rounded-[14px] border-[1.5px] border-dashed border-primary bg-surface-sunk text-sm font-bold text-primary active:translate-y-[1px]"
+            >
+              <Plus className="h-4 w-4" strokeWidth={2.6} />
+              {t("newProduct")}
+            </button>
+          </div>
+        )}
+
+        <div className="mt-3 flex items-baseline justify-between border-t border-rule-hair px-0.5 pt-3">
+          <CaptionLabel>{t("total")}</CaptionLabel>
+          <span className="num text-xl font-bold text-ink">
+            {formatRWF(total)}
+          </span>
         </div>
       </section>
 
-      <div className="flex flex-wrap gap-2 pt-2">
+      <div className="flex flex-wrap gap-2.5 pt-1">
         <Link
           href="/purchases"
-          className="flex-1 rounded-lg border border-zinc-300 bg-white px-4 py-2 text-center text-sm font-medium hover:bg-zinc-50"
+          className="flex h-12 items-center rounded-full bg-surface px-5 text-sm font-semibold text-ink-2 ring-1 ring-inset ring-rule"
         >
-          Back to list
+          {t("back")}
         </Link>
         {!readOnly && (
           <button
             type="button"
             onClick={handleSave}
             disabled={isPending}
-            className="flex-1 rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-medium hover:bg-zinc-50 disabled:opacity-60"
+            className="h-12 flex-1 rounded-full bg-surface text-sm font-bold text-ink ring-1 ring-inset ring-rule disabled:opacity-60"
           >
             {isPending
-              ? "Saving..."
+              ? t("saving")
               : mode.kind === "create"
-                ? "Save draft"
-                : "Save changes"}
+                ? t("saveDraft")
+                : t("saveChanges")}
           </button>
         )}
         {mode.kind === "edit" && mode.status === "DRAFT" && (
@@ -426,9 +471,11 @@ export function PurchaseForm({
             type="button"
             onClick={handleReceive}
             disabled={isPending || lines.length === 0}
-            className="flex-1 rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-60"
+            data-tour="purchase-receive"
+            className="flex h-12 flex-1 items-center justify-center gap-2 rounded-full bg-fab text-sm font-bold text-white shadow-fab active:translate-y-[2px] disabled:opacity-60"
           >
-            {isPending ? "Working..." : "Receive"}
+            <Download className="h-4 w-4" strokeWidth={2.4} />
+            {isPending ? t("working") : t("receiveAll")}
           </button>
         )}
         {mode.kind === "edit" && mode.status !== "CANCELLED" && (
@@ -436,12 +483,18 @@ export function PurchaseForm({
             type="button"
             onClick={handleCancel}
             disabled={isPending}
-            className="rounded-lg border border-red-300 bg-white px-4 py-2 text-sm text-red-700 hover:bg-red-50 disabled:opacity-60"
+            className="h-12 rounded-full bg-surface px-5 text-sm font-bold text-error ring-1 ring-inset ring-rule disabled:opacity-60"
           >
-            Cancel purchase
+            {t("cancelPurchase")}
           </button>
         )}
       </div>
+
+      <QuickCreateProductSheet
+        open={sheetOpen}
+        onClose={() => setSheetOpen(false)}
+        onCreated={onCreated}
+      />
     </div>
   );
 }

@@ -1,15 +1,17 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
+import { Check, Clock, X } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 import { requireOwner } from "@/lib/auth-guards";
 import { formatRWF } from "@/lib/format";
 import { prisma } from "@/lib/prisma";
 import { getPurchaseWithLines } from "@/lib/purchases/queries";
+import { StatusPill, type StatusTone } from "@/components/ui";
 import { PurchaseForm } from "../_components/PurchaseForm";
 
-const statusBadge: Record<string, string> = {
-  DRAFT: "bg-amber-100 text-amber-800",
-  RECEIVED: "bg-green-100 text-green-800",
-  CANCELLED: "bg-zinc-100 text-zinc-600",
+const STATUS_TONE: Record<string, StatusTone> = {
+  DRAFT: "warning",
+  RECEIVED: "success",
+  CANCELLED: "neutral",
 };
 
 export default async function PurchaseDetailPage({
@@ -41,29 +43,40 @@ export default async function PurchaseDetailPage({
     }),
   ]);
 
+  const t = await getTranslations("purchases");
+  const statusLabel: Record<string, string> = {
+    DRAFT: t("statusDraft"),
+    RECEIVED: t("statusReceived"),
+    CANCELLED: t("statusCancelled"),
+  };
+
   return (
-    <main className="mx-auto max-w-3xl p-4 sm:p-6">
-      <header className="mb-4 flex items-start justify-between gap-2">
+    <main className="mx-auto max-w-2xl space-y-3 p-4">
+      <header className="flex items-start justify-between gap-2">
         <div className="min-w-0">
-          <Link
-            href="/purchases"
-            className="text-sm text-zinc-600 hover:underline"
-          >
-            ← Purchases
-          </Link>
-          <h1 className="mt-1 truncate text-2xl font-semibold">
+          <h1 className="truncate text-xl font-bold text-ink">
             {purchase.supplier.name}
           </h1>
-          <p className="text-sm text-zinc-600">
-            {new Date(purchase.date).toLocaleDateString()} · created by{" "}
+          <p className="num text-[13px] text-ink-2">
+            {new Date(purchase.date).toLocaleDateString()} ·{" "}
             {purchase.user.name} · {formatRWF(purchase.totalCost)}
           </p>
         </div>
-        <span
-          className={`shrink-0 rounded-full px-3 py-1 text-xs font-medium uppercase ${statusBadge[purchase.status] ?? ""}`}
+        <StatusPill
+          tone={STATUS_TONE[purchase.status] ?? "neutral"}
+          icon={
+            purchase.status === "RECEIVED" ? (
+              <Check className="h-3 w-3" strokeWidth={3} />
+            ) : purchase.status === "DRAFT" ? (
+              <Clock className="h-3 w-3" strokeWidth={2.6} />
+            ) : (
+              <X className="h-3 w-3" strokeWidth={3} />
+            )
+          }
+          className="shrink-0"
         >
-          {purchase.status}
-        </span>
+          {statusLabel[purchase.status] ?? purchase.status}
+        </StatusPill>
       </header>
 
       <PurchaseForm

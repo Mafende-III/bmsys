@@ -126,6 +126,28 @@ export const TOURS: TourDefinition[] = [
   },
 
   // ------------------------------------------------------------------
+  // Receive stock
+  // ------------------------------------------------------------------
+  {
+    id: "purchase-form",
+    match: /^\/purchases\/[^/]+$/,
+    steps: [
+      {
+        element: '[data-tour="purchase-quick-create"]',
+        title: "Missing product?",
+        body: "Create it right here — three quick steps: name, carton size and buy cost, sell prices. It lands straight into this order, no leaving the screen.",
+        side: "top",
+      },
+      {
+        element: '[data-tour="purchase-receive"]',
+        title: "Receive all",
+        body: "When the stock arrives, tap here. The cartons are written into the stock ledger that same moment — no second step.",
+        side: "top",
+      },
+    ],
+  },
+
+  // ------------------------------------------------------------------
   // Analytics
   // ------------------------------------------------------------------
   {

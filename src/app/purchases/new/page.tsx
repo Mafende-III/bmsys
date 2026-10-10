@@ -25,33 +25,19 @@ export default async function NewPurchasePage() {
   ]);
 
   return (
-    <main className="mx-auto max-w-3xl p-4 sm:p-6">
-      <header className="mb-4">
-        <Link
-          href="/purchases"
-          className="text-sm text-zinc-600 hover:underline"
-        >
-          ← Purchases
-        </Link>
-        <h1 className="mt-1 text-2xl font-semibold">New purchase</h1>
-        <p className="text-sm text-zinc-600">
+    <main className="mx-auto max-w-2xl space-y-3 p-4">
+      <header>
+        <h1 className="text-xl font-bold text-ink">Receive stock</h1>
+        <p className="text-[13px] text-ink-2">
           Draft a purchase, then receive it to add stock to the ledger.
         </p>
       </header>
 
       {suppliers.length === 0 ? (
-        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
+        <div className="rounded-sheet bg-warning-wash p-4 text-sm font-semibold text-warning">
           You need at least one supplier before drafting a purchase.{" "}
           <Link href="/suppliers/new" className="underline">
             Add a supplier
-          </Link>
-          .
-        </div>
-      ) : products.length === 0 ? (
-        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-amber-800">
-          You need at least one active product.{" "}
-          <Link href="/products/new" className="underline">
-            Add a product
           </Link>
           .
         </div>
