@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Check, Clock, Search, X } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { requireOwner } from "@/lib/auth-guards";
 import { formatRWF } from "@/lib/format";
@@ -6,12 +7,22 @@ import {
   getCategoriesForPicker,
   getProductsWithStock,
 } from "@/lib/products/queries";
+import { getRestockPlan } from "@/lib/restock/queries";
+import { Card, StatusPill } from "@/components/ui";
+import { cn } from "@/lib/cn";
 
 type SearchParams = {
   search?: string;
   categoryId?: string;
   active?: string;
+  stock?: string;
 };
+
+type StockState =
+  | { kind: "archived" }
+  | { kind: "out" }
+  | { kind: "low"; days: number | null }
+  | { kind: "ok" };
 
 export default async function ProductsPage({
   searchParams,
@@ -29,210 +40,221 @@ export default async function ProductsPage({
       : params.active === "false"
         ? false
         : true;
+  const stockFilter =
+    params.stock === "low" || params.stock === "out" ? params.stock : "all";
 
-  const [products, categories] = await Promise.all([
+  const [products, categories, restock] = await Promise.all([
     getProductsWithStock({ search, categoryId, active: activeFilter }),
     getCategoriesForPicker(),
+    getRestockPlan(),
   ]);
   const t = await getTranslations("products");
-  const tc = await getTranslations("common");
+
+  // Urgency per product from the same burn-rate math as /restock.
+  const urgency = new Map(
+    restock.rows.map((r) => [r.productId, r] as const),
+  );
+
+  function stateOf(p: (typeof products)[number]): StockState {
+    if (!p.active) return { kind: "archived" };
+    const u = urgency.get(p.id);
+    if (p.totalUnits <= 0 || u?.urgency === "OUT") return { kind: "out" };
+    if (u?.urgency === "CRITICAL" || u?.urgency === "LOW")
+      return { kind: "low", days: u.daysToOut };
+    return { kind: "ok" };
+  }
+
+  const states = new Map(products.map((p) => [p.id, stateOf(p)] as const));
+  const lowCount = [...states.values()].filter((s) => s.kind === "low").length;
+  const outCount = [...states.values()].filter((s) => s.kind === "out").length;
+
+  const visible = products.filter((p) => {
+    const s = states.get(p.id);
+    if (stockFilter === "low") return s?.kind === "low";
+    if (stockFilter === "out") return s?.kind === "out";
+    return true;
+  });
+
+  // Chip links keep the other filters in the query string.
+  const chipHref = (stock: "all" | "low" | "out") => {
+    const q = new URLSearchParams();
+    if (search) q.set("search", search);
+    if (categoryId) q.set("categoryId", categoryId);
+    if (params.active) q.set("active", params.active);
+    if (stock !== "all") q.set("stock", stock);
+    const s = q.toString();
+    return s ? `/products?${s}` : "/products";
+  };
+
+  const chips: Array<["all" | "low" | "out", string, number | null]> = [
+    ["all", t("filterAll"), null],
+    ["low", t("filterLow"), lowCount],
+    ["out", t("filterOut"), outCount],
+  ];
 
   return (
-    <main className="mx-auto max-w-5xl p-4 sm:p-6">
-      <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <Link
-            href="/dashboard"
-            className="text-sm text-zinc-600 hover:underline"
-          >
-            ← {tc("dashboard")}
-          </Link>
-          <h1 className="mt-1 text-2xl font-semibold">{t("title")}</h1>
-          <p className="text-sm text-zinc-600">
+    <main className="mx-auto max-w-2xl space-y-3 p-4">
+      <header className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="text-xl font-bold text-ink">{t("title")}</h1>
+          <p className="text-[13px] text-ink-2">
             {t("count", { count: products.length })}
           </p>
         </div>
         <Link
           href="/products/new"
           data-tour="products-new"
-          className="self-start rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 sm:self-auto"
+          className="flex h-11 shrink-0 items-center rounded-full bg-fab px-4 text-sm font-bold text-white shadow-fab active:translate-y-[2px]"
         >
           {t("new")}
         </Link>
       </header>
 
-      <form
-        method="get"
-        className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-end"
-      >
-        <label className="block flex-1">
-          <span className="text-xs font-medium text-zinc-700">Search</span>
+      <form method="get" className="space-y-2.5">
+        <div className="relative">
+          <Search
+            className="pointer-events-none absolute left-4 top-3.5 h-[18px] w-[18px] text-ink-2"
+            strokeWidth={2.2}
+          />
           <input
             type="search"
             name="search"
             defaultValue={search ?? ""}
-            placeholder="Name or code"
-            className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+            placeholder={t("searchPlaceholder")}
+            className="block h-12 w-full rounded-[14px] border border-rule bg-surface pl-11 pr-4 text-[15px] text-ink focus:border-rule-active focus:outline-none focus:ring-1 focus:ring-rule-active"
           />
-        </label>
-        <label className="block sm:w-52">
-          <span className="text-xs font-medium text-zinc-700">Category</span>
+        </div>
+        <div className="flex gap-2">
           <select
             name="categoryId"
             defaultValue={categoryId ?? ""}
-            className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+            className="h-10 flex-1 rounded-panel border border-rule bg-surface px-2.5 text-[13px] text-ink-2"
           >
-            <option value="">All</option>
+            <option value="">{t("allCategories")}</option>
             {categories.map((c) => (
               <option key={c.id} value={c.id}>
                 {c.iconEmoji} {c.name}
               </option>
             ))}
           </select>
-        </label>
-        <label className="block sm:w-32">
-          <span className="text-xs font-medium text-zinc-700">Status</span>
           <select
             name="active"
             defaultValue={params.active ?? "true"}
-            className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+            className="h-10 w-32 rounded-panel border border-rule bg-surface px-2.5 text-[13px] text-ink-2"
           >
-            <option value="true">Active</option>
-            <option value="false">Archived</option>
-            <option value="all">All</option>
+            <option value="true">{t("filterActive")}</option>
+            <option value="false">{t("filterArchived")}</option>
+            <option value="all">{t("filterAll")}</option>
           </select>
-        </label>
-        <button
-          type="submit"
-          className="rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-medium hover:bg-zinc-50"
-        >
-          Filter
-        </button>
+          <button
+            type="submit"
+            className="h-10 rounded-full bg-surface px-4 text-[13px] font-bold text-primary ring-1 ring-inset ring-rule"
+          >
+            {t("apply")}
+          </button>
+        </div>
       </form>
 
-      {/* Desktop table */}
-      <div className="mt-4 hidden overflow-hidden rounded-2xl border border-zinc-200 bg-white sm:block">
-        <table className="w-full text-sm">
-          <thead className="bg-zinc-50 text-left text-xs font-medium uppercase text-zinc-600">
-            <tr>
-              <th className="px-3 py-2">Code</th>
-              <th className="px-3 py-2">Name</th>
-              <th className="px-3 py-2">Category</th>
-              <th className="px-3 py-2 text-right">Unit</th>
-              <th className="px-3 py-2 text-right">Carton</th>
-              <th className="px-3 py-2 text-right">Sealed</th>
-              <th className="px-3 py-2 text-right">Open units</th>
-              <th className="px-3 py-2 text-right">Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {products.map((p) => (
-              <tr
-                key={p.id}
-                className="border-t border-zinc-200 hover:bg-zinc-50"
-              >
-                <td className="px-3 py-2 font-mono text-xs">
-                  <Link
-                    href={`/products/${p.id}`}
-                    className="text-zinc-900 hover:underline"
-                  >
-                    {p.sku}
-                  </Link>
-                </td>
-                <td className="px-3 py-2">
-                  <span className="mr-1">
-                    {p.iconEmoji ?? p.categoryIconEmoji ?? "📦"}
-                  </span>
-                  {p.name}
-                </td>
-                <td className="px-3 py-2 text-zinc-600">
-                  {p.categoryName ?? "—"}
-                </td>
-                <td className="px-3 py-2 text-right">
-                  {formatRWF(p.unitPrice)}
-                </td>
-                <td className="px-3 py-2 text-right">
-                  {formatRWF(p.cartonPrice)}
-                </td>
-                <td className="px-3 py-2 text-right tabular-nums">
-                  {p.sealedCartons}
-                </td>
-                <td className="px-3 py-2 text-right tabular-nums">
-                  {p.openedUnits}
-                </td>
-                <td className="px-3 py-2 text-right">
-                  {p.active ? (
-                    <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs text-green-800">
-                      Active
-                    </span>
-                  ) : (
-                    <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs text-zinc-700">
-                      Archived
-                    </span>
-                  )}
-                </td>
-              </tr>
-            ))}
-            {products.length === 0 && (
-              <tr>
-                <td colSpan={8} className="px-3 py-6 text-center text-zinc-500">
-                  Nothing matches. Try clearing the filters, or tap{" "}
-                  <strong>+ New product</strong>.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Mobile cards */}
-      <div className="mt-4 space-y-2 sm:hidden">
-        {products.map((p) => (
+      <div className="flex gap-2">
+        {chips.map(([value, label, count]) => (
           <Link
-            key={p.id}
-            href={`/products/${p.id}`}
-            className="block rounded-2xl border border-zinc-200 bg-white p-3"
+            key={value}
+            href={chipHref(value)}
+            className={cn(
+              "rounded-full px-4 py-2 text-[13px]",
+              stockFilter === value
+                ? "bg-ink font-bold text-white"
+                : cn(
+                    "bg-surface font-semibold ring-1 ring-inset ring-rule",
+                    value === "low"
+                      ? "text-warning"
+                      : value === "out"
+                        ? "text-error"
+                        : "text-ink-2",
+                  ),
+            )}
           >
-            <div className="flex items-start justify-between gap-2">
-              <div className="min-w-0">
-                <p className="truncate font-medium">
-                  <span className="mr-1">
-                    {p.iconEmoji ?? p.categoryIconEmoji ?? "📦"}
-                  </span>
-                  {p.name}
-                </p>
-                <p className="font-mono text-xs text-zinc-500">{p.sku}</p>
-              </div>
-              {p.active ? (
-                <span className="shrink-0 rounded-full bg-green-100 px-2 py-0.5 text-xs text-green-800">
-                  Active
-                </span>
-              ) : (
-                <span className="shrink-0 rounded-full bg-zinc-100 px-2 py-0.5 text-xs text-zinc-700">
-                  Archived
-                </span>
-              )}
-            </div>
-            <dl className="mt-2 grid grid-cols-2 gap-y-1 text-xs text-zinc-700">
-              <dt>Category</dt>
-              <dd className="text-right">{p.categoryName ?? "—"}</dd>
-              <dt>Unit</dt>
-              <dd className="text-right">{formatRWF(p.unitPrice)}</dd>
-              <dt>Carton</dt>
-              <dd className="text-right">{formatRWF(p.cartonPrice)}</dd>
-              <dt>Sealed cartons</dt>
-              <dd className="text-right tabular-nums">{p.sealedCartons}</dd>
-              <dt>Open units</dt>
-              <dd className="text-right tabular-nums">{p.openedUnits}</dd>
-            </dl>
+            {label}
+            {count != null && count > 0 ? (
+              <span className="num"> · {count}</span>
+            ) : null}
           </Link>
         ))}
-        {products.length === 0 && (
-          <p className="rounded-2xl border border-zinc-200 bg-white p-6 text-center text-sm text-zinc-500">
-            No products match these filters.
-          </p>
-        )}
       </div>
+
+      {visible.length === 0 ? (
+        <Card className="p-6 text-center text-sm text-ink-2">
+          {t("emptyFiltered")}
+        </Card>
+      ) : (
+        <Card className="px-3.5 py-1">
+          {visible.map((p, i) => {
+            const s = states.get(p.id) ?? { kind: "ok" as const };
+            return (
+              <Link
+                key={p.id}
+                href={`/products/${p.id}`}
+                className={cn(
+                  "flex items-center gap-3 py-3",
+                  i > 0 && "border-t border-rule-hair",
+                )}
+              >
+                <span
+                  className={cn(
+                    "flex h-11 w-11 shrink-0 items-center justify-center rounded-sheet text-xl",
+                    s.kind === "out" ? "bg-error-wash" : "bg-surface-sunk",
+                  )}
+                >
+                  {p.iconEmoji ?? p.categoryIconEmoji ?? "📦"}
+                </span>
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-[15px] font-bold text-ink">
+                    {p.name}
+                  </span>
+                  <span className="num block text-xs text-ink-2">
+                    {formatRWF(p.unitPrice)} ·{" "}
+                    {t("stockLine", {
+                      sealed: p.sealedCartons,
+                      loose: p.openedUnits,
+                    })}
+                  </span>
+                </span>
+                {s.kind === "archived" ? (
+                  <StatusPill tone="neutral" className="shrink-0">
+                    {t("archived")}
+                  </StatusPill>
+                ) : s.kind === "out" ? (
+                  <StatusPill
+                    tone="error"
+                    className="shrink-0"
+                    icon={<X className="h-3 w-3" strokeWidth={3} />}
+                  >
+                    {t("out")}
+                  </StatusPill>
+                ) : s.kind === "low" ? (
+                  <StatusPill
+                    tone="warning"
+                    className="shrink-0"
+                    icon={<Clock className="h-3 w-3" strokeWidth={2.6} />}
+                  >
+                    {s.days != null
+                      ? t("daysLeft", { days: s.days })
+                      : t("lowNoRate")}
+                  </StatusPill>
+                ) : (
+                  <StatusPill
+                    tone="success"
+                    className="shrink-0"
+                    icon={<Check className="h-3 w-3" strokeWidth={3} />}
+                  >
+                    {t("inStock")}
+                  </StatusPill>
+                )}
+              </Link>
+            );
+          })}
+        </Card>
+      )}
     </main>
   );
 }

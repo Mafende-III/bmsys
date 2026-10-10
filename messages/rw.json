@@ -208,7 +208,20 @@
       "imageUpload": "Shyiraho ifoto",
       "imageReplace": "Hindura ifoto",
       "imageRemove": "Vanaho"
-    }
+    },
+    "filterAll": "Byose",
+    "filterLow": "Bike",
+    "filterOut": "Byashize",
+    "inStock": "Birahari",
+    "daysLeft": "{days, plural, =1 {umunsi #} other {iminsi #}}",
+    "out": "Byashize",
+    "lowNoRate": "Bike",
+    "archived": "Byabitswe",
+    "stockLine": "karito {sealed} · ibice {loose}",
+    "filterArchived": "Byabitswe",
+    "apply": "Shungura",
+    "allCategories": "Ibyiciro byose",
+    "filterActive": "Birakora"
   },
   "categories": {
     "title": "Amatsinda",

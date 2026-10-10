@@ -208,7 +208,20 @@
       "imageUpload": "Upload photo",
       "imageReplace": "Replace photo",
       "imageRemove": "Remove"
-    }
+    },
+    "filterAll": "All",
+    "filterLow": "Low",
+    "filterOut": "Out",
+    "inStock": "In stock",
+    "daysLeft": "{days, plural, =1 {# day} other {# days}}",
+    "out": "Out",
+    "lowNoRate": "Low",
+    "archived": "Archived",
+    "stockLine": "{sealed} ctn · {loose} loose",
+    "filterArchived": "Archived",
+    "apply": "Apply",
+    "allCategories": "All categories",
+    "filterActive": "Active"
   },
   "categories": {
     "title": "Categories",
