@@ -1,23 +1,13 @@
 import Link from "next/link";
 import {
   AlertTriangle,
-  ArrowRight,
-  BarChart3,
   Banknote,
   ClipboardList,
-  Ticket,
-  type LucideIcon,
+  LogOut,
   Package,
   PackagePlus,
   ReceiptText,
-  Settings as SettingsIcon,
-  ShieldCheck,
-  ShoppingBag,
-  TrendingUp,
-  Store,
-  Tag,
-  Truck,
-  Users,
+  Ticket,
   Wallet,
 } from "lucide-react";
 import { getLocale, getTranslations } from "next-intl/server";
@@ -25,299 +15,184 @@ import { signOut } from "@/lib/auth";
 import { requireOwner } from "@/lib/auth-guards";
 import { getTodayProfitSummary } from "@/lib/analytics/queries";
 import { getOpenSession } from "@/lib/cash-sessions/queries";
-import { getSettings } from "@/lib/settings/queries";
+import { getRestockPlan } from "@/lib/restock/queries";
 import { getWorkingCapital } from "@/lib/treasury/queries";
 import { formatRWF } from "@/lib/format";
+import { CaptionLabel, Card, KeycapTile } from "@/components/ui";
 import type { Locale } from "@/i18n/config";
 import { LanguageToggle } from "../_components/LanguageToggle";
 import { WorkingCapitalCard } from "./_components/WorkingCapitalCard";
 
+/**
+ * The Money tab's home. Sell lives in the shell's floating button,
+ * Stock/Reports/More live in the tab bar — this screen is today's
+ * trade, the money position, what needs attention, and the shop
+ * actions. Catalog/system links stay as a demoted chip row until
+ * the More tab gets its own screen.
+ */
 export default async function DashboardPage() {
   const session = await requireOwner();
-  const [openTill, { companyName, logoUrl }, today, capital] =
-    await Promise.all([
-      getOpenSession(),
-      getSettings(),
-      getTodayProfitSummary(),
-      getWorkingCapital(),
-    ]);
+  const [openTill, today, capital, restock] = await Promise.all([
+    getOpenSession(),
+    getTodayProfitSummary(),
+    getWorkingCapital(),
+    getRestockPlan(),
+  ]);
   const t = await getTranslations("dashboard");
   const tc = await getTranslations("common");
+  const ts = await getTranslations("shell");
   const locale = (await getLocale()) as Locale;
 
+  const alert = restock.urgentCount > 0 ? restock.orderRows[0] : undefined;
+
   return (
-    <main className="mx-auto max-w-5xl p-4 sm:p-6">
-      <header className="flex items-start justify-between gap-3">
-        <div className="flex min-w-0 items-center gap-3">
-          {logoUrl && (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
-              src={logoUrl}
-              alt=""
-              className="h-12 w-12 shrink-0 rounded-lg object-contain"
-            />
-          )}
-          <div className="min-w-0">
-            <p className="truncate text-xs font-medium uppercase tracking-wide text-zinc-500">
-              {companyName}
-            </p>
-            <h1 className="text-2xl font-semibold sm:text-3xl">
-              {t("hello", { name: session.name?.split(" ")[0] ?? "owner" })}
-            </h1>
-            <p className="text-sm text-zinc-600">
-              {openTill
-                ? t("tillOpen", { count: openTill.cashSalesCount })
-                : t("tillClosed")}
-            </p>
-          </div>
+    <main className="mx-auto max-w-2xl space-y-3 p-4">
+      {/* Greeting + the controls the shell doesn't carry yet */}
+      <div className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="truncate text-xl font-bold text-ink">
+            {t("hello", { name: session.name?.split(" ")[0] ?? "owner" })}
+          </h1>
+          <p className="text-[13px] text-ink-2">
+            {openTill
+              ? t("tillOpen", { count: openTill.cashSalesCount })
+              : t("tillClosed")}
+          </p>
         </div>
-        <div className="flex flex-col items-end gap-2">
+        <div className="flex shrink-0 items-center gap-2">
           <LanguageToggle current={locale} />
-          <div className="flex gap-2">
-            <Link
-              href="/profile"
-              className="whitespace-nowrap rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm hover:bg-zinc-100"
-            >
-              {tc("profile")}
-            </Link>
-            <form
-              action={async () => {
-                "use server";
-                await signOut({ redirectTo: "/login" });
-              }}
-            >
-              <button
-                type="submit"
-                className="whitespace-nowrap rounded-lg border border-zinc-300 px-3 py-1.5 text-sm hover:bg-zinc-100"
-              >
-                {tc("signOut")}
-              </button>
-            </form>
-          </div>
-        </div>
-      </header>
-
-      {/* Primary: Sell */}
-      <Link
-        href="/sell"
-        data-tour="dash-sell"
-        className="mt-6 block rounded-3xl border-2 border-zinc-900 bg-zinc-900 p-6 text-white shadow-lg transition hover:shadow-xl"
-      >
-        <div className="flex items-center gap-4">
-          <Store className="h-12 w-12 shrink-0" strokeWidth={1.5} />
-          <div className="flex-1">
-            <h2 className="text-2xl font-semibold">{t("sell")}</h2>
-            <p className="mt-1 text-sm text-zinc-300">{t("sellSubtitle")}</p>
-          </div>
-          <ArrowRight className="h-6 w-6 shrink-0" strokeWidth={2} />
-        </div>
-      </Link>
-
-      {/* Today's numbers */}
-      <Link
-        href="/sales"
-        data-tour="dash-today"
-        className="mt-4 grid grid-cols-3 gap-2 rounded-2xl border border-zinc-200 bg-white p-4 transition hover:border-zinc-300 hover:shadow-sm"
-      >
-        <div>
-          <p className="text-[10px] uppercase tracking-wide text-zinc-500">
-            {t("todaySales")}
-          </p>
-          <p className="mt-0.5 font-mono text-lg font-semibold tabular-nums">
-            {today.salesCount}
-          </p>
-        </div>
-        <div>
-          <p className="text-[10px] uppercase tracking-wide text-zinc-500">
-            {t("todayRevenue")}
-          </p>
-          <p className="mt-0.5 font-mono text-lg font-semibold tabular-nums">
-            {formatRWF(today.revenue)}
-          </p>
-        </div>
-        <div>
-          <p className="text-[10px] uppercase tracking-wide text-zinc-500">
-            {t("todayProfit")}
-          </p>
-          <p
-            className={`mt-0.5 font-mono text-lg font-semibold tabular-nums ${
-              today.profit >= 0 ? "text-green-700" : "text-red-700"
-            }`}
+          <form
+            action={async () => {
+              "use server";
+              await signOut({ redirectTo: "/login" });
+            }}
           >
-            {formatRWF(today.profit)}
-          </p>
+            <button
+              type="submit"
+              aria-label={tc("signOut")}
+              className="flex h-10 w-10 items-center justify-center rounded-keycap bg-keycap text-ink-2 shadow-keycap active:bg-none active:bg-well active:shadow-well"
+            >
+              <LogOut className="h-[18px] w-[18px]" strokeWidth={2} />
+            </button>
+          </form>
         </div>
+      </div>
+
+      {/* Today */}
+      <Link href="/sales" data-tour="dash-today" className="block">
+        <Card className="p-4 transition-shadow hover:ring-rule">
+          <div className="flex items-center justify-between">
+            <CaptionLabel>{t("todaySales")}</CaptionLabel>
+            <span className="num text-[11px] text-ink-2">
+              {today.salesCount}
+            </span>
+          </div>
+          <div className="mt-2.5 grid grid-cols-2 gap-3">
+            <div>
+              <p className="text-[11px] text-ink-2">{t("todayRevenue")}</p>
+              <p className="num mt-0.5 text-lg font-bold text-ink">
+                {formatRWF(today.revenue)}
+              </p>
+            </div>
+            <div className="border-l border-rule-hair pl-3.5">
+              <p className="text-[11px] text-success">{t("todayProfit")}</p>
+              <p
+                className={`num mt-0.5 text-lg font-bold ${
+                  today.profit >= 0 ? "text-success" : "text-error"
+                }`}
+              >
+                {formatRWF(today.profit)}
+              </p>
+            </div>
+          </div>
+        </Card>
       </Link>
 
-      {/* Working capital */}
+      {/* Money available + move cash */}
       <WorkingCapitalCard capital={capital} />
 
-      {/* Run the shop */}
-      <section className="mt-8" data-tour="dash-run-shop">
-        <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-zinc-500">
-          {t("runShop")}
-        </h3>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          <DashCard
-            href="/cash-sessions"
-            Icon={Banknote}
-            title={openTill ? t("cashOpen") : t("cashClosed")}
-            subtitle={
-              openTill ? t("cashSubtitleOpen") : t("cashSubtitleClosed")
-            }
-            tone={openTill ? "active" : "neutral"}
+      {/* Needs attention */}
+      {alert ? (
+        <Link
+          href="/restock"
+          data-tour="dash-alert"
+          className="flex items-center gap-2.5 rounded-sheet bg-warning-wash px-3.5 py-3"
+        >
+          <AlertTriangle
+            className="h-[18px] w-[18px] shrink-0 text-warning"
+            strokeWidth={2.2}
           />
-          <DashCard
-            href="/purchases"
-            Icon={Package}
-            title={t("receiveStock")}
-            subtitle={t("receiveStockSubtitle")}
-          />
-          <DashCard
-            href="/expenses"
-            Icon={Wallet}
-            title={t("expenses")}
-            subtitle={t("expensesSubtitle")}
-          />
-          <DashCard
-            href="/adjustments"
-            Icon={AlertTriangle}
-            title={t("losses")}
-            subtitle={t("lossesSubtitle")}
-          />
-          <DashCard
-            href="/stock-take"
-            Icon={ClipboardList}
-            title={t("stockTake")}
-            subtitle={t("stockTakeSubtitle")}
-          />
-          <DashCard
-            href="/coupons"
-            Icon={Ticket}
-            title={t("coupons")}
-            subtitle={t("couponsSubtitle")}
-          />
-          <DashCard
-            href="/sales"
-            Icon={ReceiptText}
-            title={t("salesHistory")}
-            subtitle={t("salesHistorySubtitle")}
-          />
-          <DashCard
-            href="/restock"
-            Icon={PackagePlus}
-            title={t("restock")}
-            subtitle={t("restockSubtitle")}
-          />
+          <span className="flex-1 text-[13px] font-semibold text-warning">
+            {alert.urgency === "OUT" || alert.daysToOut == null
+              ? t("alertOut", { name: alert.name })
+              : t("alertDaysLeft", {
+                  name: alert.name,
+                  days: alert.daysToOut,
+                })}
+          </span>
+          <span className="shrink-0 text-[13px] font-bold text-warning">
+            {t("restock")} →
+          </span>
+        </Link>
+      ) : null}
+
+      {/* Shop actions */}
+      <section data-tour="dash-actions" className="pt-1">
+        <CaptionLabel className="mb-2.5 px-0.5">{t("runShop")}</CaptionLabel>
+        <div className="grid grid-cols-3 gap-2.5">
+          <KeycapTile href="/cash-sessions" label={ts("till")}>
+            <Banknote className="h-6 w-6" strokeWidth={2} />
+          </KeycapTile>
+          <KeycapTile href="/purchases" label={t("receiveStock")}>
+            <Package className="h-6 w-6" strokeWidth={2} />
+          </KeycapTile>
+          <KeycapTile href="/restock" label={t("restock")}>
+            <PackagePlus className="h-6 w-6" strokeWidth={2} />
+          </KeycapTile>
+          <KeycapTile href="/stock-take" label={t("stockTake")}>
+            <ClipboardList className="h-6 w-6" strokeWidth={2} />
+          </KeycapTile>
+          <KeycapTile href="/expenses" label={t("expenses")}>
+            <Wallet className="h-6 w-6" strokeWidth={2} />
+          </KeycapTile>
+          <KeycapTile href="/coupons" label={t("coupons")}>
+            <Ticket className="h-6 w-6" strokeWidth={2} />
+          </KeycapTile>
+          <KeycapTile href="/adjustments" label={t("losses")}>
+            <AlertTriangle className="h-6 w-6" strokeWidth={2} />
+          </KeycapTile>
+          <KeycapTile href="/sales" label={t("salesHistory")}>
+            <ReceiptText className="h-6 w-6" strokeWidth={2} />
+          </KeycapTile>
         </div>
       </section>
 
-      {/* Stock & catalog */}
-      <section className="mt-8" data-tour="dash-catalog">
-        <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-zinc-500">
-          {t("stockCatalog")}
-        </h3>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <DashCard
-            href="/products"
-            Icon={ShoppingBag}
-            title={t("products")}
-            subtitle={t("productsSubtitle")}
-          />
-          <DashCard
-            href="/categories"
-            Icon={Tag}
-            title={t("categories")}
-            subtitle={t("categoriesSubtitle")}
-          />
-          <DashCard
-            href="/suppliers"
-            Icon={Truck}
-            title={t("suppliers")}
-            subtitle={t("suppliersSubtitle")}
-          />
-        </div>
-      </section>
-
-      {/* Reports & users */}
-      <section className="mt-8" data-tour="dash-reports">
-        <h3 className="mb-3 text-xs font-semibold uppercase tracking-wide text-zinc-500">
-          {t("reportsUsers")}
-        </h3>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
-          <DashCard
-            href="/analytics"
-            Icon={TrendingUp}
-            title={t("analytics")}
-            subtitle={t("analyticsSubtitle")}
-            tone="active"
-          />
-          <DashCard
-            href="/reports"
-            Icon={BarChart3}
-            title={t("dailySummary")}
-            subtitle={t("dailySummarySubtitle")}
-          />
-          <DashCard
-            href="/users"
-            Icon={Users}
-            title={t("users")}
-            subtitle={t("usersSubtitle")}
-          />
-          <DashCard
-            href="/channels"
-            Icon={Tag}
-            title={t("channels")}
-            subtitle={t("channelsSubtitle")}
-          />
-          <DashCard
-            href="/audit"
-            Icon={ShieldCheck}
-            title={t("audit")}
-            subtitle={t("auditSubtitle")}
-          />
-          <DashCard
-            href="/settings"
-            Icon={SettingsIcon}
-            title={t("systemConfig")}
-            subtitle={t("systemConfigSubtitle")}
-          />
+      {/* Catalog & setup — demoted until the More tab exists */}
+      <section data-tour="dash-setup" className="pb-2 pt-1">
+        <CaptionLabel className="mb-2.5 px-0.5">{t("setup")}</CaptionLabel>
+        <div className="flex flex-wrap gap-2">
+          {(
+            [
+              ["/products", t("products")],
+              ["/categories", t("categories")],
+              ["/suppliers", t("suppliers")],
+              ["/reports", t("dailySummary")],
+              ["/users", t("users")],
+              ["/channels", t("channels")],
+              ["/audit", t("audit")],
+              ["/settings", t("systemConfig")],
+            ] as const
+          ).map(([href, label]) => (
+            <Link
+              key={href}
+              href={href}
+              className="rounded-full bg-surface px-3.5 py-2 text-[13px] font-semibold text-ink-2 ring-1 ring-inset ring-rule"
+            >
+              {label}
+            </Link>
+          ))}
         </div>
       </section>
     </main>
-  );
-}
-
-function DashCard({
-  href,
-  Icon,
-  title,
-  subtitle,
-  tone,
-}: {
-  href: string;
-  Icon: LucideIcon;
-  title: string;
-  subtitle: string;
-  tone?: "neutral" | "active";
-}) {
-  const tint =
-    tone === "active"
-      ? "border-green-200 bg-green-50 hover:border-green-300"
-      : "border-zinc-200 bg-white hover:border-zinc-300";
-  const iconTint =
-    tone === "active" ? "text-green-700" : "text-zinc-700";
-  return (
-    <Link
-      href={href}
-      className={`flex items-center gap-4 rounded-2xl border p-4 transition hover:shadow-sm ${tint}`}
-    >
-      <Icon className={`h-7 w-7 shrink-0 ${iconTint}`} strokeWidth={1.5} />
-      <div className="flex-1 min-w-0">
-        <h4 className="text-base font-medium">{title}</h4>
-        <p className="mt-0.5 text-xs text-zinc-600">{subtitle}</p>
-      </div>
-      <ArrowRight className="h-4 w-4 shrink-0 text-zinc-400" strokeWidth={2} />
-    </Link>
   );
 }

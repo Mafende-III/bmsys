@@ -5,9 +5,31 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowRightLeft, Banknote, Landmark, Smartphone } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { Card, CaptionLabel, MoneyField } from "@/components/ui";
+import { cn } from "@/lib/cn";
 import { formatRWF } from "@/lib/format";
 import { recordCashTransfer } from "@/lib/treasury/actions";
 import type { WorkingCapital } from "@/lib/treasury/queries";
+
+function MoneyRow({
+  icon,
+  label,
+  children,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="flex items-center justify-between border-b border-rule-hair py-2.5">
+      <span className="flex items-center gap-2.5 text-sm font-semibold text-ink">
+        <span className="text-primary">{icon}</span>
+        {label}
+      </span>
+      {children}
+    </div>
+  );
+}
 
 export function WorkingCapitalCard({ capital }: { capital: WorkingCapital }) {
   const t = useTranslations("treasury");
@@ -39,146 +61,130 @@ export function WorkingCapitalCard({ capital }: { capital: WorkingCapital }) {
   }
 
   return (
-    <section
-      data-tour="dash-capital"
-      className="mt-4 rounded-2xl border border-zinc-200 bg-white p-4"
-    >
-      <div className="flex items-start justify-between gap-2">
-        <div>
-          <h3 className="text-sm font-semibold text-zinc-800">
-            {t("title")}
-          </h3>
-          <p className="text-xs text-zinc-500">{t("subtitle")}</p>
-        </div>
+    <Card data-tour="dash-capital" className="p-4">
+      <div className="flex items-center justify-between gap-2">
+        <CaptionLabel>{t("title")}</CaptionLabel>
         <button
           type="button"
           onClick={() => setOpen((v) => !v)}
-          className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-zinc-300 bg-white px-2.5 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-50"
+          className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-surface px-3.5 py-2 text-xs font-bold text-primary ring-1 ring-inset ring-rule"
         >
-          <ArrowRightLeft className="h-3.5 w-3.5" strokeWidth={2} />
+          <ArrowRightLeft className="h-3.5 w-3.5" strokeWidth={2.2} />
           {t("moveCash")}
         </button>
       </div>
 
-      <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
-        <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-3">
-          <p className="flex items-center gap-1 text-[10px] uppercase tracking-wide text-zinc-500">
-            <Banknote className="h-3 w-3" strokeWidth={2} />
-            {t("cash")}
-          </p>
-          <p className="mt-0.5 font-mono text-base font-semibold tabular-nums">
+      <div className="mt-1">
+        <MoneyRow
+          icon={<Banknote className="h-[18px] w-[18px]" strokeWidth={2} />}
+          label={t("cash")}
+        >
+          <span className="num text-[15px] font-semibold text-ink">
             {formatRWF(capital.cashOnHand)}
-          </p>
-          <p className="text-[10px] text-zinc-500">
-            {capital.tillOpen ? t("tillOpen") : t("tillClosed")}
-          </p>
-        </div>
-        <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-3">
-          <p className="flex items-center gap-1 text-[10px] uppercase tracking-wide text-zinc-500">
-            <Smartphone className="h-3 w-3" strokeWidth={2} />
-            {t("momo")}
-          </p>
+          </span>
+        </MoneyRow>
+        <MoneyRow
+          icon={<Smartphone className="h-[18px] w-[18px]" strokeWidth={2} />}
+          label={t("momo")}
+        >
           {capital.momo.initialised ? (
-            <p className="mt-0.5 font-mono text-base font-semibold tabular-nums">
+            <span className="num text-[15px] font-semibold text-ink">
               {formatRWF(capital.momo.balance)}
-            </p>
+            </span>
           ) : (
             <Link
               href="/settings"
-              className="mt-0.5 block text-xs text-blue-700 underline hover:no-underline"
+              className="text-[13px] font-bold text-primary"
             >
               {t("setBalance")}
             </Link>
           )}
-        </div>
-        <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-3">
-          <p className="flex items-center gap-1 text-[10px] uppercase tracking-wide text-zinc-500">
-            <Landmark className="h-3 w-3" strokeWidth={2} />
-            {t("bank")}
-          </p>
+        </MoneyRow>
+        <MoneyRow
+          icon={<Landmark className="h-[18px] w-[18px]" strokeWidth={2} />}
+          label={t("bank")}
+        >
           {capital.bank.initialised ? (
-            <p className="mt-0.5 font-mono text-base font-semibold tabular-nums">
+            <span className="num text-[15px] font-semibold text-ink">
               {formatRWF(capital.bank.balance)}
-            </p>
+            </span>
           ) : (
             <Link
               href="/settings"
-              className="mt-0.5 block text-xs text-blue-700 underline hover:no-underline"
+              className="text-[13px] font-bold text-primary"
             >
               {t("setBalance")}
             </Link>
           )}
-        </div>
-        <div className="rounded-xl border-2 border-zinc-900 bg-zinc-900 p-3 text-white">
-          <p className="text-[10px] uppercase tracking-wide text-zinc-400">
-            {t("total")}
-          </p>
-          <p className="mt-0.5 font-mono text-base font-semibold tabular-nums">
+        </MoneyRow>
+        <div className="flex items-baseline justify-between pt-3">
+          <CaptionLabel>{t("total")}</CaptionLabel>
+          <span className="num text-xl font-bold text-ink">
             {formatRWF(capital.totalAvailable)}
-          </p>
-          <p className="text-[10px] text-zinc-400">{t("totalHint")}</p>
+          </span>
         </div>
       </div>
 
       {open && (
-        <div className="mt-3 space-y-2 rounded-xl border border-zinc-200 bg-zinc-50 p-3">
+        <div className="mt-3 space-y-3 rounded-sheet bg-ground p-3">
           {error && (
-            <p className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+            <p className="rounded-panel bg-error-wash px-3 py-2 text-xs font-semibold text-error">
               {error}
             </p>
           )}
-          <div className="flex flex-wrap items-end gap-2">
-            <label className="block text-xs">
-              <span className="text-zinc-600">{t("transferAmount")}</span>
-              <input
-                type="number"
-                inputMode="numeric"
-                min={1}
-                step={100}
-                value={amount}
-                onChange={(e) => setAmount(e.target.value)}
-                placeholder="e.g. 50000"
-                className="mt-0.5 block w-32 rounded-lg border border-zinc-300 px-2 py-1.5 font-mono text-sm tabular-nums"
-              />
-            </label>
-            <div className="flex overflow-hidden rounded-lg border border-zinc-300">
-              {(["MOMO", "BANK"] as const).map((m) => (
-                <button
-                  key={m}
-                  type="button"
-                  onClick={() => setToMethod(m)}
-                  className={`px-3 py-1.5 text-xs font-medium ${
-                    toMethod === m
-                      ? "bg-zinc-900 text-white"
-                      : "bg-white text-zinc-700"
-                  }`}
-                >
-                  {m === "MOMO" ? t("momo") : t("bank")}
-                </button>
-              ))}
+          <div className="grid grid-cols-2 gap-3">
+            <MoneyField
+              label={t("transferAmount")}
+              min={1}
+              step={100}
+              value={amount}
+              onChange={(e) => setAmount(e.target.value)}
+              placeholder="50000"
+            />
+            <div>
+              <CaptionLabel className="mb-1.5">{t("momo")} / {t("bank")}</CaptionLabel>
+              <div className="flex gap-2">
+                {(["MOMO", "BANK"] as const).map((m) => (
+                  <button
+                    key={m}
+                    type="button"
+                    onClick={() => setToMethod(m)}
+                    className={cn(
+                      "h-11 flex-1 rounded-panel text-[13px] font-bold",
+                      toMethod === m
+                        ? "bg-ink text-white"
+                        : "bg-surface text-ink-2 ring-1 ring-inset ring-rule",
+                    )}
+                  >
+                    {m === "MOMO" ? t("momo") : t("bank")}
+                  </button>
+                ))}
+              </div>
             </div>
-            <label className="block flex-1 text-xs">
-              <span className="text-zinc-600">{t("transferReference")}</span>
-              <input
-                type="text"
-                value={reference}
-                onChange={(e) => setReference(e.target.value)}
-                placeholder={t("transferReferencePlaceholder")}
-                className="mt-0.5 block w-full rounded-lg border border-zinc-300 px-2 py-1.5 text-sm"
-              />
-            </label>
-            <button
-              type="button"
-              onClick={submit}
-              disabled={isPending || !amount}
-              className="rounded-lg bg-zinc-900 px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50"
-            >
-              {isPending ? t("transferSaving") : t("transferSave")}
-            </button>
           </div>
-          <p className="text-[10px] text-zinc-500">{t("transferHint")}</p>
+          <label className="block">
+            <CaptionLabel className="mb-1.5">
+              {t("transferReference")}
+            </CaptionLabel>
+            <input
+              type="text"
+              value={reference}
+              onChange={(e) => setReference(e.target.value)}
+              placeholder={t("transferReferencePlaceholder")}
+              className="block h-11 w-full rounded-panel border border-rule bg-surface px-3 text-sm text-ink focus:border-rule-active focus:outline-none focus:ring-1 focus:ring-rule-active"
+            />
+          </label>
+          <button
+            type="button"
+            onClick={submit}
+            disabled={isPending || !amount}
+            className="h-11 w-full rounded-full bg-fab text-sm font-bold text-white shadow-fab active:translate-y-[2px] disabled:opacity-50"
+          >
+            {isPending ? t("transferSaving") : t("transferSave")}
+          </button>
+          <p className="text-[11px] text-ink-2">{t("transferHint")}</p>
         </div>
       )}
-    </section>
+    </Card>
   );
 }
