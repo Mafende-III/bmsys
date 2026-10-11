@@ -2,10 +2,16 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
+import { Card, CaptionLabel, MoneyField } from "@/components/ui";
 import { openCashSession } from "@/lib/cash-sessions/actions";
+
+const FIELD =
+  "mt-1.5 block h-11 w-full rounded-panel border border-rule bg-surface px-3 text-sm text-ink focus:border-rule-active focus:outline-none focus:ring-1 focus:ring-rule-active";
 
 export function OpenSessionForm() {
   const router = useRouter();
+  const t = useTranslations("cash");
   const [openingFloat, setOpeningFloat] = useState(0);
   const [note, setNote] = useState("");
   const [error, setError] = useState<string | null>(null);
@@ -31,39 +37,32 @@ export function OpenSessionForm() {
   }
 
   return (
-    <div className="rounded-2xl border border-zinc-200 bg-white p-4">
-      <h2 className="text-lg font-medium">Open till</h2>
-      <p className="mt-1 text-sm text-zinc-600">
-        Count the cash in the till and enter it as the opening float.
-      </p>
+    <Card className="p-4">
+      <p className="text-[15px] font-bold text-ink">{t("openTillBtn")}</p>
+      <p className="mt-0.5 text-[13px] text-ink-2">{t("openHint")}</p>
 
       {error && (
-        <div className="mt-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="mt-3 rounded-panel bg-error-wash px-3.5 py-2.5 text-sm font-semibold text-error">
           {error}
         </div>
       )}
 
-      <div className="mt-4 space-y-3">
-        <label className="block">
-          <span className="text-sm font-medium">Opening float (RWF)</span>
-          <input
-            type="number"
-            min={0}
-            step={1}
-            value={openingFloat}
-            onChange={(e) => setOpeningFloat(Number(e.target.value || 0))}
-            className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:ring-1 focus:ring-zinc-900"
-          />
-        </label>
+      <div className="mt-3.5 space-y-3">
+        <MoneyField
+          label={t("form.openingFloat")}
+          value={openingFloat}
+          onChange={(e) => setOpeningFloat(Number(e.target.value || 0))}
+          inputClassName="mt-1.5"
+        />
 
         <label className="block">
-          <span className="text-sm font-medium">Note (optional)</span>
+          <CaptionLabel>{t("form.noteOptional")}</CaptionLabel>
           <input
             type="text"
             value={note}
             onChange={(e) => setNote(e.target.value)}
-            placeholder="e.g. morning shift"
-            className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+            placeholder={t("openNotePlaceholder")}
+            className={FIELD}
           />
         </label>
 
@@ -71,11 +70,11 @@ export function OpenSessionForm() {
           type="button"
           onClick={handleSubmit}
           disabled={isPending}
-          className="w-full rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-60"
+          className="h-12 w-full rounded-full bg-fab px-4 text-sm font-bold text-white shadow-fab active:translate-y-[2px] disabled:opacity-60"
         >
-          {isPending ? "Opening..." : "Open till"}
+          {isPending ? t("form.opening") : t("openTillBtn")}
         </button>
       </div>
-    </div>
+    </Card>
   );
 }

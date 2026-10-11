@@ -1,10 +1,37 @@
 import Link from "next/link";
+import { AlertTriangle, Check, Clock } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { requireSeller } from "@/lib/auth-guards";
 import { describeVariance } from "@/lib/copy";
 import { formatRWF } from "@/lib/format";
 import { getOpenSession, listSessions } from "@/lib/cash-sessions/queries";
+import { Card, CaptionLabel, StatusPill } from "@/components/ui";
+import { cn } from "@/lib/cn";
 import { OpenSessionForm } from "./_components/OpenSessionForm";
+
+function VariancePill({ variance }: { variance: number }) {
+  const v = describeVariance(variance);
+  const tone =
+    v.tone === "balanced" ? "success" : v.tone === "over" ? "warning" : "error";
+  return (
+    <StatusPill
+      tone={tone}
+      icon={
+        v.tone === "balanced" ? (
+          <Check className="h-3 w-3" strokeWidth={3} />
+        ) : (
+          <AlertTriangle className="h-3 w-3" strokeWidth={2.6} />
+        )
+      }
+      className="shrink-0"
+    >
+      {v.label}
+      {variance !== 0 && (
+        <span className="num">{formatRWF(Math.abs(variance))}</span>
+      )}
+    </StatusPill>
+  );
+}
 
 export default async function CashSessionsPage() {
   await requireSeller();
@@ -17,145 +44,108 @@ export default async function CashSessionsPage() {
   const tc = await getTranslations("common");
 
   return (
-    <main className="mx-auto max-w-3xl p-4 sm:p-6">
-      <header className="mb-4">
-        <Link
-          href="/dashboard"
-          className="text-sm text-zinc-600 hover:underline"
-        >
-          ← {tc("dashboard")}
-        </Link>
-        <h1 className="mt-1 text-2xl font-semibold">{t("title")}</h1>
-        <p className="text-sm text-zinc-600">{t("subtitle")}</p>
+    <main className="mx-auto max-w-2xl space-y-3 p-4">
+      <header>
+        <h1 className="text-xl font-bold text-ink">{t("title")}</h1>
+        <p className="text-[13px] text-ink-2">{t("subtitle")}</p>
       </header>
 
       {open ? (
-        <section className="mb-6 rounded-2xl border border-green-200 bg-green-50 p-4">
-          <p className="text-xs uppercase tracking-wide text-green-700">
-            Open
-          </p>
-          <p className="mt-1 text-lg font-medium text-green-900">
-            Till open since {new Date(open.openedAt).toLocaleString()}
-          </p>
-          <dl className="mt-3 grid grid-cols-2 gap-y-1 text-sm text-green-900">
-            <dt>Opening float</dt>
-            <dd className="text-right font-mono tabular-nums">
-              {formatRWF(open.openingFloat)}
-            </dd>
-            <dt>
-              Cash sales so far ({open.cashSalesCount}{" "}
-              {open.cashSalesCount === 1 ? "sale" : "sales"})
-            </dt>
-            <dd className="text-right font-mono tabular-nums">
-              {formatRWF(open.cashSalesTotal)}
-            </dd>
+        <Card className="p-4">
+          <div className="flex items-start justify-between gap-2">
+            <p className="text-[15px] font-bold text-ink">
+              {t("openSince", {
+                when: new Date(open.openedAt).toLocaleString(),
+              })}
+            </p>
+            <StatusPill
+              tone="success"
+              icon={<Clock className="h-3 w-3" strokeWidth={2.6} />}
+              className="shrink-0"
+            >
+              {tc("open")}
+            </StatusPill>
+          </div>
+          <dl className="mt-3 space-y-2 border-t border-rule-hair pt-3">
+            <div className="flex items-baseline justify-between gap-3">
+              <dt>
+                <CaptionLabel>{t("openingFloat")}</CaptionLabel>
+              </dt>
+              <dd className="num text-[15px] font-bold text-ink">
+                {formatRWF(open.openingFloat)}
+              </dd>
+            </div>
+            <div className="flex items-baseline justify-between gap-3">
+              <dt>
+                <CaptionLabel>
+                  {t("cashSalesSoFar", { count: open.cashSalesCount })}
+                </CaptionLabel>
+              </dt>
+              <dd className="num text-[15px] font-bold text-ink">
+                {formatRWF(open.cashSalesTotal)}
+              </dd>
+            </div>
           </dl>
           <Link
             href={`/cash-sessions/${open.id}`}
-            className="mt-4 inline-block rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800"
+            className="mt-3.5 flex h-12 items-center justify-center rounded-full bg-fab px-4 text-sm font-bold text-white shadow-fab active:translate-y-[2px]"
           >
-            View / close →
+            {t("viewOrClose")}
           </Link>
-        </section>
+        </Card>
       ) : (
-        <section className="mb-6">
-          <OpenSessionForm />
-        </section>
+        <OpenSessionForm />
       )}
 
-      <section>
-        <h2 className="text-lg font-medium">History</h2>
-        <div className="mt-2 overflow-x-auto rounded-2xl border border-zinc-200 bg-white">
-          <table className="w-full text-sm">
-            <thead className="bg-zinc-50 text-left text-xs font-medium uppercase text-zinc-600">
-              <tr>
-                <th className="px-3 py-2">Opened</th>
-                <th className="px-3 py-2">Closed</th>
-                <th className="px-3 py-2 text-right">Float</th>
-                <th className="px-3 py-2 text-right">Counted</th>
-                <th className="px-3 py-2 text-right">Variance</th>
-              </tr>
-            </thead>
-            <tbody>
-              {history.map((s) => (
-                <tr key={s.id} className="border-t border-zinc-200 hover:bg-zinc-50">
-                  <td className="px-3 py-2 text-xs">
-                    <Link
-                      href={`/cash-sessions/${s.id}`}
-                      className="text-zinc-900 hover:underline"
-                    >
-                      {new Date(s.openedAt).toLocaleString()}
-                    </Link>
-                    <p className="text-[10px] text-zinc-500">
-                      by {s.openedBy.name}
-                    </p>
-                  </td>
-                  <td className="px-3 py-2 text-xs">
-                    {s.closedAt ? (
-                      <>
-                        {new Date(s.closedAt).toLocaleString()}
-                        <p className="text-[10px] text-zinc-500">
-                          by {s.closedBy?.name ?? "—"}
-                        </p>
-                      </>
-                    ) : (
-                      <span className="rounded-full bg-green-100 px-2 py-0.5 text-[10px] uppercase text-green-800">
-                        Open
-                      </span>
-                    )}
-                  </td>
-                  <td className="px-3 py-2 text-right font-mono text-xs tabular-nums">
-                    {formatRWF(s.openingFloat)}
-                  </td>
-                  <td className="px-3 py-2 text-right font-mono text-xs tabular-nums">
+      <section className="space-y-2">
+        <CaptionLabel className="px-0.5">{t("history")}</CaptionLabel>
+        {history.length === 0 ? (
+          <Card className="p-6 text-center text-sm text-ink-2">
+            {t("empty")}
+          </Card>
+        ) : (
+          <Card className="px-3.5 py-1">
+            {history.map((s, i) => (
+              <Link
+                key={s.id}
+                href={`/cash-sessions/${s.id}`}
+                className={cn(
+                  "flex items-center gap-3 py-3",
+                  i > 0 && "border-t border-rule-hair",
+                )}
+              >
+                <div className="min-w-0 flex-1">
+                  <p className="num truncate text-[13px] font-bold text-ink">
+                    {new Date(s.openedAt).toLocaleString()}
+                  </p>
+                  <p className="mt-0.5 truncate text-xs text-ink-2">
+                    {t("byName", { name: s.openedBy.name })}
+                    {s.closedAt
+                      ? ` · ${t("headerClosed")} ${new Date(s.closedAt).toLocaleTimeString()}`
+                      : ""}
+                  </p>
+                  <p className="num mt-0.5 text-[11px] text-ink-2">
+                    {t("headerFloat")} {formatRWF(s.openingFloat)}
                     {s.closingCount !== null
-                      ? formatRWF(s.closingCount)
-                      : "—"}
-                  </td>
-                  <td
-                    className={`px-3 py-2 text-right text-xs ${
-                      s.variance == null
-                        ? ""
-                        : s.variance === 0
-                          ? "text-green-700"
-                          : s.variance > 0
-                            ? "text-amber-700"
-                            : "text-red-700"
-                    }`}
+                      ? ` → ${t("headerCounted")} ${formatRWF(s.closingCount)}`
+                      : ""}
+                  </p>
+                </div>
+                {s.variance == null ? (
+                  <StatusPill
+                    tone="success"
+                    icon={<Clock className="h-3 w-3" strokeWidth={2.6} />}
+                    className="shrink-0"
                   >
-                    {s.variance == null ? (
-                      "—"
-                    ) : (
-                      <span title={describeVariance(s.variance).sentence}>
-                        <span className="font-medium">
-                          {describeVariance(s.variance).label}
-                        </span>
-                        {s.variance !== 0 && (
-                          <>
-                            {" "}
-                            <span className="font-mono tabular-nums">
-                              {formatRWF(Math.abs(s.variance))}
-                            </span>
-                          </>
-                        )}
-                      </span>
-                    )}
-                  </td>
-                </tr>
-              ))}
-              {history.length === 0 && (
-                <tr>
-                  <td
-                    colSpan={5}
-                    className="px-3 py-6 text-center text-zinc-500"
-                  >
-                    No till activity here yet.
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
+                    {tc("open")}
+                  </StatusPill>
+                ) : (
+                  <VariancePill variance={s.variance} />
+                )}
+              </Link>
+            ))}
+          </Card>
+        )}
       </section>
     </main>
   );

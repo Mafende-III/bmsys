@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Banknote, ChevronRight, Landmark, Repeat, Smartphone } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { requireOwner } from "@/lib/auth-guards";
 import { formatRWF } from "@/lib/format";
@@ -6,12 +7,20 @@ import {
   listExpenseCategories,
   listExpenses,
 } from "@/lib/expenses/queries";
+import { Card, StatusPill, type StatusTone } from "@/components/ui";
+import { cn } from "@/lib/cn";
 
-const methodBadge: Record<string, string> = {
-  CASH: "bg-amber-100 text-amber-800",
-  MOMO: "bg-indigo-100 text-indigo-800",
-  BANK: "bg-zinc-100 text-zinc-800",
+const METHOD_TONE: Record<string, StatusTone> = {
+  CASH: "warning",
+  MOMO: "info",
+  BANK: "neutral",
 };
+
+function MethodIcon({ method }: { method: string }) {
+  if (method === "CASH") return <Banknote className="h-3 w-3" strokeWidth={2.4} />;
+  if (method === "MOMO") return <Smartphone className="h-3 w-3" strokeWidth={2.4} />;
+  return <Landmark className="h-3 w-3" strokeWidth={2.4} />;
+}
 
 export default async function ExpensesPage({
   searchParams,
@@ -37,123 +46,117 @@ export default async function ExpensesPage({
   const totalShown = expenses.reduce((s, e) => s + e.amount, 0);
   const t = await getTranslations("expenses");
   const tc = await getTranslations("common");
+  const tt = await getTranslations("treasury");
+
+  const methodLabel: Record<string, string> = {
+    CASH: tt("cash"),
+    MOMO: tt("momo"),
+    BANK: tt("bank"),
+  };
 
   return (
-    <main className="mx-auto max-w-5xl p-4 sm:p-6">
-      <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <Link
-            href="/dashboard"
-            className="text-sm text-zinc-600 hover:underline"
-          >
-            ← {tc("dashboard")}
-          </Link>
-          <h1 className="mt-1 text-2xl font-semibold">{t("title")}</h1>
-          <p className="text-sm text-zinc-600">
-            {expenses.length} · {formatRWF(totalShown)}
+    <main className="mx-auto max-w-2xl space-y-3 p-4">
+      <header className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="text-xl font-bold text-ink">{t("title")}</h1>
+          <p className="num text-[13px] text-ink-2">
+            {t("count", {
+              count: expenses.length,
+              total: formatRWF(totalShown),
+            })}
           </p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <Link
-            href="/expenses/recurring"
-            className="rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-medium hover:bg-zinc-50"
-          >
-            {t("recurring.title")} →
-          </Link>
-          <Link
-            href="/expenses/new"
-            className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800"
-          >
-            {t("new")}
-          </Link>
-        </div>
+        <Link
+          href="/expenses/new"
+          className="flex h-11 shrink-0 items-center rounded-full bg-fab px-4 text-sm font-bold text-white shadow-fab active:translate-y-[2px]"
+        >
+          {t("new")}
+        </Link>
       </header>
 
-      <form method="get" className="mt-4 flex gap-2">
-        <label className="block">
-          <span className="text-xs font-medium text-zinc-700">Category</span>
-          <select
-            name="categoryId"
-            defaultValue={categoryId ?? ""}
-            className="mt-1 block rounded-lg border border-zinc-300 px-3 py-2 text-sm"
-          >
-            <option value="">All</option>
-            {categories.map((c) => (
-              <option key={c.id} value={c.id}>
-                {c.name}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="block">
-          <span className="text-xs font-medium text-zinc-700">Method</span>
-          <select
-            name="paymentMethod"
-            defaultValue={paymentMethod === "all" ? "" : paymentMethod}
-            className="mt-1 block rounded-lg border border-zinc-300 px-3 py-2 text-sm"
-          >
-            <option value="">All</option>
-            <option value="CASH">Cash</option>
-            <option value="MOMO">MoMo</option>
-            <option value="BANK">Bank</option>
-          </select>
-        </label>
+      <form method="get" className="flex gap-2">
+        <select
+          name="categoryId"
+          defaultValue={categoryId ?? ""}
+          aria-label={t("headerCategory")}
+          className="h-10 min-w-0 flex-1 rounded-panel border border-rule bg-surface px-2.5 text-[13px] text-ink-2"
+        >
+          <option value="">{tc("all")}</option>
+          {categories.map((c) => (
+            <option key={c.id} value={c.id}>
+              {c.name}
+            </option>
+          ))}
+        </select>
+        <select
+          name="paymentMethod"
+          defaultValue={paymentMethod === "all" ? "" : paymentMethod}
+          aria-label={t("form.method")}
+          className="h-10 w-28 rounded-panel border border-rule bg-surface px-2.5 text-[13px] text-ink-2"
+        >
+          <option value="">{tc("all")}</option>
+          <option value="CASH">{tt("cash")}</option>
+          <option value="MOMO">{tt("momo")}</option>
+          <option value="BANK">{tt("bank")}</option>
+        </select>
         <button
           type="submit"
-          className="self-end rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-medium hover:bg-zinc-50"
+          className="h-10 shrink-0 rounded-full bg-surface px-4 text-[13px] font-bold text-primary ring-1 ring-inset ring-rule"
         >
-          Filter
+          {tc("filter")}
         </button>
       </form>
 
-      <div className="mt-4 overflow-x-auto rounded-2xl border border-zinc-200 bg-white">
-        <table className="w-full text-sm">
-          <thead className="bg-zinc-50 text-left text-xs font-medium uppercase text-zinc-600">
-            <tr>
-              <th className="px-3 py-2">Date</th>
-              <th className="px-3 py-2">Category</th>
-              <th className="px-3 py-2">Description</th>
-              <th className="px-3 py-2">Method</th>
-              <th className="px-3 py-2 text-right">Amount</th>
-            </tr>
-          </thead>
-          <tbody>
-            {expenses.map((e) => (
-              <tr key={e.id} className="border-t border-zinc-200 hover:bg-zinc-50">
-                <td className="px-3 py-2 text-xs text-zinc-700">
-                  {new Date(e.date).toLocaleDateString()}
-                </td>
-                <td className="px-3 py-2 text-xs">{e.category.name}</td>
-                <td className="px-3 py-2">
+      <Link href="/expenses/recurring" className="block">
+        <Card className="flex items-center gap-3 p-3.5 transition-shadow hover:ring-rule">
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-sheet bg-surface-sunk text-primary">
+            <Repeat className="h-5 w-5" strokeWidth={2.2} />
+          </span>
+          <span className="min-w-0 flex-1 text-[15px] font-bold text-ink">
+            {t("recurring.title")}
+          </span>
+          <ChevronRight className="h-4 w-4 shrink-0 text-ink-2" strokeWidth={2.4} />
+        </Card>
+      </Link>
+
+      {expenses.length === 0 ? (
+        <Card className="p-6 text-center text-sm text-ink-2">
+          {t("empty")}
+        </Card>
+      ) : (
+        <Card className="px-3.5 py-1">
+          {expenses.map((e, i) => (
+            <div
+              key={e.id}
+              className={cn(
+                "flex items-center gap-3 py-3",
+                i > 0 && "border-t border-rule-hair",
+              )}
+            >
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-[15px] font-bold text-ink">
                   {e.description}
-                  {e.supplier && (
-                    <p className="text-[10px] text-zinc-500">
-                      {e.supplier.name}
-                    </p>
-                  )}
-                </td>
-                <td className="px-3 py-2">
-                  <span
-                    className={`rounded-full px-2 py-0.5 text-[10px] uppercase ${methodBadge[e.paymentMethod] ?? ""}`}
-                  >
-                    {e.paymentMethod}
-                  </span>
-                </td>
-                <td className="px-3 py-2 text-right font-mono text-sm tabular-nums">
+                </p>
+                <p className="num mt-0.5 truncate text-xs text-ink-2">
+                  {new Date(e.date).toLocaleDateString()} · {e.category.name}
+                  {e.supplier ? ` · ${e.supplier.name}` : ""}
+                </p>
+              </div>
+              <div className="flex shrink-0 flex-col items-end gap-1">
+                <span className="num text-[15px] font-bold text-ink">
                   {formatRWF(e.amount)}
-                </td>
-              </tr>
-            ))}
-            {expenses.length === 0 && (
-              <tr>
-                <td colSpan={5} className="px-3 py-6 text-center text-zinc-500">
-                  No expenses match. Try clearing the filters, or log one above.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+                </span>
+                <StatusPill
+                  tone={METHOD_TONE[e.paymentMethod] ?? "neutral"}
+                  icon={<MethodIcon method={e.paymentMethod} />}
+                >
+                  {methodLabel[e.paymentMethod] ?? e.paymentMethod}
+                </StatusPill>
+              </div>
+            </div>
+          ))}
+        </Card>
+      )}
     </main>
   );
 }

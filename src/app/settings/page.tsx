@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { getTranslations } from "next-intl/server";
 import { requireOwner } from "@/lib/auth-guards";
 import { getSettings } from "@/lib/settings/queries";
@@ -13,19 +12,12 @@ export default async function SettingsPage() {
     getWorkingCapital(),
   ]);
   const t = await getTranslations("settings");
-  const tc = await getTranslations("common");
 
   return (
-    <main className="mx-auto max-w-2xl space-y-5 p-4 sm:p-6">
+    <main className="mx-auto max-w-2xl space-y-3 p-4">
       <header>
-        <Link
-          href="/dashboard"
-          className="text-sm text-zinc-600 hover:underline"
-        >
-          ← {tc("dashboard")}
-        </Link>
-        <h1 className="mt-1 text-2xl font-semibold">{t("title")}</h1>
-        <p className="text-sm text-zinc-600">{t("subtitle")}</p>
+        <h1 className="text-xl font-bold text-ink">{t("title")}</h1>
+        <p className="text-[13px] text-ink-2">{t("subtitle")}</p>
       </header>
 
       <SettingsForm

@@ -2,9 +2,15 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
+import { Card, CaptionLabel, MoneyField } from "@/components/ui";
+import { cn } from "@/lib/cn";
 import { closeCashSession } from "@/lib/cash-sessions/actions";
 import { describeVariance } from "@/lib/copy";
 import { formatRWF } from "@/lib/format";
+
+const FIELD =
+  "mt-1.5 block h-11 w-full rounded-panel border border-rule bg-surface px-3 text-sm text-ink focus:border-rule-active focus:outline-none focus:ring-1 focus:ring-rule-active";
 
 export function CloseSessionForm({
   sessionId,
@@ -16,6 +22,7 @@ export function CloseSessionForm({
   cashSalesTotal: number;
 }) {
   const router = useRouter();
+  const t = useTranslations("cash");
   const [closingCount, setClosingCount] = useState(
     openingFloat + cashSalesTotal,
   );
@@ -49,53 +56,60 @@ export function CloseSessionForm({
   }
 
   return (
-    <div className="rounded-2xl border border-zinc-200 bg-white p-4">
-      <h2 className="text-lg font-medium">Close till</h2>
+    <Card className="p-4">
+      <p className="text-[15px] font-bold text-ink">{t("closeTillBtn")}</p>
 
       {error && (
-        <div className="mt-3 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="mt-3 rounded-panel bg-error-wash px-3.5 py-2.5 text-sm font-semibold text-error">
           {error}
         </div>
       )}
 
-      <dl className="mt-4 grid grid-cols-2 gap-y-1 text-sm">
-        <dt className="text-zinc-600">Opening float</dt>
-        <dd className="text-right font-mono tabular-nums">
-          {formatRWF(openingFloat)}
-        </dd>
-        <dt className="text-zinc-600">Cash sales (so far)</dt>
-        <dd className="text-right font-mono tabular-nums">
-          {formatRWF(cashSalesTotal)}
-        </dd>
-        <dt className="font-medium text-zinc-800">Expected cash</dt>
-        <dd className="text-right font-mono font-medium tabular-nums">
-          {formatRWF(expected)}
-        </dd>
+      <dl className="mt-3 space-y-2">
+        <div className="flex items-baseline justify-between gap-3">
+          <dt>
+            <CaptionLabel>{t("openingFloat")}</CaptionLabel>
+          </dt>
+          <dd className="num text-[15px] font-semibold text-ink">
+            {formatRWF(openingFloat)}
+          </dd>
+        </div>
+        <div className="flex items-baseline justify-between gap-3">
+          <dt>
+            <CaptionLabel>{t("cashSalesPlain")}</CaptionLabel>
+          </dt>
+          <dd className="num text-[15px] font-semibold text-ink">
+            {formatRWF(cashSalesTotal)}
+          </dd>
+        </div>
+        <div className="flex items-baseline justify-between gap-3 border-t border-rule-hair pt-2">
+          <dt>
+            <CaptionLabel>{t("form.expected")}</CaptionLabel>
+          </dt>
+          <dd className="num text-base font-bold text-ink">
+            {formatRWF(expected)}
+          </dd>
+        </div>
       </dl>
 
-      <div className="mt-4 space-y-3">
-        <label className="block">
-          <span className="text-sm font-medium">Counted cash (RWF)</span>
-          <input
-            type="number"
-            min={0}
-            step={1}
-            value={closingCount}
-            onChange={(e) => setClosingCount(Number(e.target.value || 0))}
-            className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-lg font-mono tabular-nums focus:border-zinc-900 focus:ring-1 focus:ring-zinc-900"
-          />
-        </label>
+      <div className="mt-3.5 space-y-3">
+        <MoneyField
+          label={t("form.closingCount")}
+          value={closingCount}
+          onChange={(e) => setClosingCount(Number(e.target.value || 0))}
+          inputClassName="mt-1.5"
+        />
 
         <VarianceCallout variance={variance} />
 
         <label className="block">
-          <span className="text-sm font-medium">Note (optional)</span>
+          <CaptionLabel>{t("form.noteOptional")}</CaptionLabel>
           <input
             type="text"
             value={note}
             onChange={(e) => setNote(e.target.value)}
-            placeholder="explain a variance if any"
-            className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+            placeholder={t("form.notePlaceholder")}
+            className={FIELD}
           />
         </label>
 
@@ -103,27 +117,30 @@ export function CloseSessionForm({
           type="button"
           onClick={handleSubmit}
           disabled={isPending}
-          className="w-full rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-60"
+          className="h-12 w-full rounded-full bg-fab px-4 text-sm font-bold text-white shadow-fab active:translate-y-[2px] disabled:opacity-60"
         >
-          {isPending ? "Closing..." : "Close till"}
+          {isPending ? t("form.closing") : t("closeTillBtn")}
         </button>
       </div>
-    </div>
+    </Card>
   );
 }
 
 function VarianceCallout({ variance }: { variance: number }) {
   const { tone, label, sentence } = describeVariance(variance);
-  const styles =
-    tone === "balanced"
-      ? "border-green-200 bg-green-50 text-green-800"
-      : tone === "over"
-        ? "border-amber-200 bg-amber-50 text-amber-800"
-        : "border-red-200 bg-red-50 text-red-700";
   return (
-    <div className={`rounded-lg border px-4 py-3 text-sm ${styles}`}>
-      <span className="font-semibold">{label}</span>{" "}
-      <span>{sentence}</span>
+    <div
+      className={cn(
+        "rounded-panel px-3.5 py-2.5 text-sm",
+        tone === "balanced"
+          ? "bg-success-wash text-success"
+          : tone === "over"
+            ? "bg-warning-wash text-warning"
+            : "bg-error-wash text-error",
+      )}
+    >
+      <span className="font-bold">{label}</span>{" "}
+      <span className="font-semibold">{sentence}</span>
     </div>
   );
 }

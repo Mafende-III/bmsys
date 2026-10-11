@@ -1,4 +1,3 @@
-import Link from "next/link";
 import {
   AlertTriangle,
   CheckCircle2,
@@ -12,6 +11,8 @@ import { requireSeller } from "@/lib/auth-guards";
 import { getStockList } from "@/lib/analytics/queries";
 import { getMyDay } from "@/lib/sales/my-day";
 import { formatRWF } from "@/lib/format";
+import { Card, CaptionLabel, StatusPill } from "@/components/ui";
+import { cn } from "@/lib/cn";
 
 export const dynamic = "force-dynamic";
 
@@ -29,40 +30,32 @@ export default async function MyDayPage() {
   const lowCount = stock.filter((s) => s.status === "low").length;
 
   return (
-    <main className="mx-auto max-w-3xl p-4 sm:p-6">
-      <header className="mb-4 flex items-center justify-between gap-3">
-        <div>
-          <Link
-            href={session.role === "OWNER" ? "/dashboard" : "/sell"}
-            className="text-sm text-zinc-600 hover:underline"
-          >
-            ← {t("back")}
-          </Link>
-          <h1 className="mt-1 text-2xl font-semibold">{t("title")}</h1>
-          <p className="text-sm text-zinc-600">
-            {t("subtitle", { name: session.name ?? "" })}
-          </p>
-        </div>
+    <main className="mx-auto max-w-2xl space-y-3 p-4">
+      <header>
+        <h1 className="text-xl font-bold text-ink">{t("title")}</h1>
+        <p className="text-[13px] text-ink-2">
+          {t("subtitle", { name: session.name ?? "" })}
+        </p>
       </header>
 
       {/* Hero cards: today — stack on tiny phones (320px), 3 cols sm+ */}
       <section
         data-tour="my-day-today"
-        className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-2 sm:grid-cols-3"
+        className="grid grid-cols-1 gap-2.5 min-[420px]:grid-cols-2 sm:grid-cols-3"
       >
         <KpiCard
-          icon={<ShoppingCart className="h-5 w-5" strokeWidth={1.75} />}
+          icon={<ShoppingCart className="h-3.5 w-3.5" strokeWidth={2} />}
           label={t("salesToday")}
           value={String(data.today.salesCount)}
         />
         <KpiCard
-          icon={<TrendingUp className="h-5 w-5" strokeWidth={1.75} />}
+          icon={<TrendingUp className="h-3.5 w-3.5" strokeWidth={2} />}
           label={t("totalToday")}
           value={formatRWF(data.today.total)}
           tone="dark"
         />
         <KpiCard
-          icon={<Star className="h-5 w-5" strokeWidth={1.75} />}
+          icon={<Star className="h-3.5 w-3.5" strokeWidth={2} />}
           label={t("topItem")}
           value={data.topProductToday?.name ?? t("noTopItem")}
           sub={
@@ -74,23 +67,20 @@ export default async function MyDayPage() {
       </section>
 
       {/* 7-day mini trend */}
-      <section
-        data-tour="my-day-trend"
-        className="mt-6 rounded-2xl border border-zinc-200 bg-white p-4"
-      >
+      <Card data-tour="my-day-trend" className="p-4">
         <div className="flex items-end justify-between gap-2">
           <div>
-            <h2 className="text-base font-medium">{t("trendTitle")}</h2>
-            <p className="mt-0.5 text-xs text-zinc-600">{t("trendSubtitle")}</p>
+            <CaptionLabel>{t("trendTitle")}</CaptionLabel>
+            <p className="mt-0.5 text-xs text-ink-2">{t("trendSubtitle")}</p>
           </div>
-          <div className="text-right text-xs text-zinc-600">
+          <div className="text-right text-xs text-ink-2">
             <p>
-              <span className="font-medium">{data.weekToDate.salesCount}</span>{" "}
+              <span className="num font-bold text-ink">
+                {data.weekToDate.salesCount}
+              </span>{" "}
               {t("salesShort")}
             </p>
-            <p className="font-mono tabular-nums">
-              {formatRWF(data.weekToDate.total)}
-            </p>
+            <p className="num">{formatRWF(data.weekToDate.total)}</p>
           </div>
         </div>
 
@@ -108,20 +98,22 @@ export default async function MyDayPage() {
               >
                 <div className="flex h-24 w-full items-end">
                   <div
-                    className={`w-full rounded-t ${
+                    className={cn(
+                      "w-full rounded-t",
                       isToday
-                        ? "bg-zinc-900"
+                        ? "bg-ink"
                         : d.total > 0
-                          ? "bg-zinc-400"
-                          : "bg-zinc-200"
-                    }`}
+                          ? "bg-[rgba(13,27,42,0.35)]"
+                          : "bg-surface-sunk",
+                    )}
                     style={{ height: `${Math.max(2, pct)}%` }}
                   />
                 </div>
                 <p
-                  className={`text-[10px] ${
-                    isToday ? "font-semibold text-zinc-900" : "text-zinc-500"
-                  }`}
+                  className={cn(
+                    "text-[10px]",
+                    isToday ? "font-bold text-ink" : "text-ink-2",
+                  )}
                 >
                   {d.label}
                 </p>
@@ -131,53 +123,50 @@ export default async function MyDayPage() {
         </ol>
 
         {data.weekToDate.salesCount === 0 && (
-          <p className="mt-4 text-center text-xs text-zinc-500">
+          <p className="mt-4 text-center text-xs text-ink-2">
             {t("noSalesYet")}
           </p>
         )}
-      </section>
+      </Card>
 
       {/* Stock to watch — status banner + full inventory list */}
-      <section
-        data-tour="my-day-stock"
-        className="mt-6 rounded-2xl border border-zinc-200 bg-white p-4"
-      >
-        <h2 className="text-base font-medium">{t("stockTitle")}</h2>
-        <p className="mt-0.5 text-xs text-zinc-600">{t("stockSubtitle")}</p>
+      <Card data-tour="my-day-stock" className="p-4">
+        <CaptionLabel>{t("stockTitle")}</CaptionLabel>
+        <p className="mt-0.5 text-xs text-ink-2">{t("stockSubtitle")}</p>
 
         {outCount + lowCount === 0 ? (
-          <div className="mt-3 flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-800">
-            <CheckCircle2 className="h-4 w-4 shrink-0" strokeWidth={2} />
+          <div className="mt-3 flex items-center gap-2 rounded-panel bg-success-wash px-3.5 py-2.5 text-sm font-semibold text-success">
+            <CheckCircle2 className="h-4 w-4 shrink-0" strokeWidth={2.2} />
             <span>{t("stockAllOk")}</span>
           </div>
         ) : (
-          <div className="mt-3 flex flex-wrap items-center gap-3 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs">
+          <div className="mt-3 flex flex-wrap items-center gap-3 rounded-panel bg-warning-wash px-3.5 py-2.5 text-xs font-semibold">
             {outCount > 0 && (
-              <span className="inline-flex items-center gap-1 text-red-800">
-                <PackageX className="h-3.5 w-3.5" strokeWidth={2} />
+              <span className="inline-flex items-center gap-1 text-error">
+                <PackageX className="h-3.5 w-3.5" strokeWidth={2.2} />
                 {t("stockOutCount", { count: outCount })}
               </span>
             )}
             {lowCount > 0 && (
-              <span className="inline-flex items-center gap-1 text-amber-900">
-                <AlertTriangle className="h-3.5 w-3.5" strokeWidth={2} />
+              <span className="inline-flex items-center gap-1 text-warning">
+                <AlertTriangle className="h-3.5 w-3.5" strokeWidth={2.2} />
                 {t("stockLowCount", { count: lowCount })}
               </span>
             )}
-            <span className="ml-auto text-zinc-600">
+            <span className="ml-auto text-ink-2">
               {t("stockTotalProducts", { count: stock.length })}
             </span>
           </div>
         )}
 
-        <ul className="mt-3 divide-y divide-zinc-100 overflow-hidden rounded-lg border border-zinc-200">
-          {stock.map((row) => {
+        <ul className="mt-3 overflow-hidden rounded-panel ring-1 ring-inset ring-rule-hair">
+          {stock.map((row, i) => {
             const tone =
               row.status === "out"
-                ? "bg-red-100 text-red-800"
+                ? "error"
                 : row.status === "low"
-                  ? "bg-amber-100 text-amber-800"
-                  : "bg-zinc-100 text-zinc-700";
+                  ? "warning"
+                  : "neutral";
             const Icon =
               row.status === "out"
                 ? PackageX
@@ -187,25 +176,24 @@ export default async function MyDayPage() {
             return (
               <li
                 key={row.productId}
-                className="flex items-center justify-between gap-3 bg-white px-3 py-2 text-sm"
+                className={cn(
+                  "flex items-center justify-between gap-3 px-3 py-2 text-sm",
+                  i > 0 && "border-t border-rule-hair",
+                )}
               >
                 <div className="min-w-0 flex-1">
-                  <p className="truncate font-medium text-zinc-800">
-                    {row.name}
-                  </p>
-                  <p className="font-mono text-[10px] text-zinc-500">
-                    {row.sku}
-                  </p>
+                  <p className="truncate font-bold text-ink">{row.name}</p>
+                  <p className="num text-[10px] text-ink-2">{row.sku}</p>
                 </div>
                 <div className="shrink-0 text-right">
-                  <span
-                    className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${tone}`}
+                  <StatusPill
+                    tone={tone}
+                    icon={<Icon className="h-3 w-3" strokeWidth={2.5} />}
                   >
-                    <Icon className="h-3 w-3" strokeWidth={2.5} />
-                    <span className="font-mono tabular-nums">{row.units}</span>
-                  </span>
+                    <span className="num">{row.units}</span>
+                  </StatusPill>
                   {row.status === "low" && row.threshold > 0 && (
-                    <p className="mt-0.5 font-mono text-[10px] text-zinc-500">
+                    <p className="num mt-0.5 text-[10px] text-ink-2">
                       {t("stockThreshold", { threshold: row.threshold })}
                     </p>
                   )}
@@ -214,14 +202,14 @@ export default async function MyDayPage() {
             );
           })}
           {stock.length === 0 && (
-            <li className="bg-white px-3 py-6 text-center text-xs text-zinc-500">
+            <li className="px-3 py-6 text-center text-xs text-ink-2">
               {t("stockEmpty")}
             </li>
           )}
         </ul>
-      </section>
+      </Card>
 
-      <p className="mt-6 text-center text-xs text-zinc-500">{t("scopeNote")}</p>
+      <p className="text-center text-xs text-ink-2">{t("scopeNote")}</p>
     </main>
   );
 }
@@ -239,30 +227,41 @@ function KpiCard({
   sub?: string;
   tone?: "light" | "dark";
 }) {
-  const cls =
-    tone === "dark"
-      ? "border-zinc-900 bg-zinc-900 text-white"
-      : "border-zinc-200 bg-white text-zinc-900";
+  const emphasized = tone === "dark";
   return (
     <div
-      className={`rounded-2xl border-2 p-4 ${cls} ${tone === "dark" ? "" : "shadow-sm"}`}
+      className={cn(
+        "rounded-card p-4 ring-1 ring-inset",
+        emphasized
+          ? "bg-success-wash ring-[#bbe7c8]"
+          : "bg-surface ring-rule-hair",
+      )}
     >
       <div
-        className={`flex items-center gap-1.5 text-xs uppercase tracking-wide ${
-          tone === "dark" ? "text-zinc-300" : "text-zinc-500"
-        }`}
+        className={cn(
+          "flex items-center gap-1.5",
+          emphasized ? "text-success" : "text-ink-2",
+        )}
       >
         {icon}
-        <span>{label}</span>
+        <CaptionLabel className={emphasized ? "text-success" : undefined}>
+          {label}
+        </CaptionLabel>
       </div>
-      <p className="mt-2 line-clamp-2 text-xl font-semibold tabular-nums">
+      <p
+        className={cn(
+          "num mt-2 line-clamp-2 text-xl font-bold",
+          emphasized ? "text-success" : "text-ink",
+        )}
+      >
         {value}
       </p>
       {sub && (
         <p
-          className={`mt-1 text-xs ${
-            tone === "dark" ? "text-zinc-300" : "text-zinc-500"
-          }`}
+          className={cn(
+            "mt-1 text-xs",
+            emphasized ? "text-success" : "text-ink-2",
+          )}
         >
           {sub}
         </p>

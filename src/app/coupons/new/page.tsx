@@ -1,5 +1,4 @@
-import Link from "next/link";
-import { Ticket } from "lucide-react";
+import { getTranslations } from "next-intl/server";
 import { requireOwner } from "@/lib/auth-guards";
 import { prisma } from "@/lib/prisma";
 import { CouponForm } from "../_components/CouponForm";
@@ -22,24 +21,13 @@ export default async function NewCouponPage() {
     },
     orderBy: [{ name: "asc" }],
   });
+  const t = await getTranslations("coupons.form");
 
   return (
-    <main className="mx-auto max-w-xl space-y-5 p-4 sm:p-6">
+    <main className="mx-auto max-w-2xl space-y-3 p-4">
       <header>
-        <Link
-          href="/coupons"
-          className="text-sm text-zinc-600 hover:underline"
-        >
-          ← Coupons
-        </Link>
-        <h1 className="mt-1 flex items-center gap-2 text-2xl font-semibold">
-          <Ticket className="h-6 w-6" strokeWidth={2} />
-          New coupon
-        </h1>
-        <p className="text-sm text-zinc-600">
-          Set the discount, share the code with the customer, the cashier
-          types it at checkout.
-        </p>
+        <h1 className="text-xl font-bold text-ink">{t("newTitle")}</h1>
+        <p className="text-[13px] text-ink-2">{t("newSubtitle")}</p>
       </header>
 
       <CouponForm products={products} />

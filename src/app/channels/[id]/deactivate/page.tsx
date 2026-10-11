@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { requireOwner } from "@/lib/auth-guards";
 import { deactivateChannel } from "@/lib/channels/actions";
 import { getChannel, getChannelUsage } from "@/lib/channels/queries";
+import { Card } from "@/components/ui";
 
 export default async function DeactivateChannelPage({
   params,
@@ -19,19 +21,15 @@ export default async function DeactivateChannelPage({
   const usage = await getChannelUsage(id);
   const canDeactivate = usage.recentSales === 0;
   const idempotencyKey = crypto.randomUUID();
+  const t = await getTranslations("channels");
+  const tc = await getTranslations("common");
 
   return (
-    <main className="mx-auto max-w-md p-4 sm:p-6">
-      <header className="mb-4">
-        <Link
-          href={`/channels/${id}`}
-          className="text-sm text-zinc-600 hover:underline"
-        >
-          ← Back to channel
-        </Link>
-        <h1 className="mt-1 text-2xl font-semibold">Deactivate channel</h1>
-        <p className="text-sm text-zinc-600">
-          <span className="font-mono">{channel.slug}</span> — {channel.name}
+    <main className="mx-auto max-w-2xl space-y-3 p-4">
+      <header>
+        <h1 className="text-xl font-bold text-ink">{t("deactivateTitle")}</h1>
+        <p className="text-[13px] text-ink-2">
+          <span className="num">{channel.slug}</span> — {channel.name}
         </p>
       </header>
 
@@ -43,55 +41,42 @@ export default async function DeactivateChannelPage({
             if (!result.ok) throw new Error(result.error);
             redirect("/channels");
           }}
-          className="space-y-4"
+          className="space-y-3"
         >
-          <p className="text-sm text-zinc-700">
-            This sets the channel to <strong>inactive</strong>. It is hidden
-            from active filters and excluded from new sales, but all history
-            (audit log, prior sales) is preserved. You can reactivate it
-            later from the edit page.
-          </p>
+          <Card className="p-4 text-sm text-ink">{t("deactivateBody")}</Card>
           {usage.customerCount > 0 && (
-            <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-xs text-amber-800">
-              {usage.customerCount} customer
-              {usage.customerCount === 1 ? "" : "s"} still have this as their
-              primary channel. They are not deleted; you can reassign them
-              later.
+            <div className="rounded-panel bg-warning-wash px-3.5 py-2.5 text-xs font-semibold text-warning">
+              {t("deactivateCustomersWarn", { count: usage.customerCount })}
             </div>
           )}
-          <div className="flex gap-2">
+          <div className="flex gap-2.5">
             <Link
               href={`/channels/${id}`}
-              className="flex-1 rounded-lg border border-zinc-300 bg-white px-4 py-2 text-center text-sm font-medium hover:bg-zinc-50"
+              className="flex h-12 flex-1 items-center justify-center rounded-full bg-surface px-5 text-sm font-semibold text-ink-2 ring-1 ring-inset ring-rule"
             >
-              Cancel
+              {tc("cancel")}
             </Link>
             <button
               type="submit"
-              className="flex-1 rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700"
+              className="h-12 flex-1 rounded-full bg-error px-4 text-sm font-bold text-white"
             >
-              Deactivate
+              {t("deactivate")}
             </button>
           </div>
         </form>
       ) : (
-        <div className="rounded-2xl border border-amber-200 bg-amber-50 p-4">
-          <p className="text-sm font-medium text-amber-900">
-            Cannot deactivate yet
+        <div className="rounded-panel bg-warning-wash p-4">
+          <p className="text-sm font-bold text-warning">
+            {t("cannotDeactivateTitle")}
           </p>
-          <ul className="mt-2 list-disc pl-5 text-sm text-amber-800">
-            <li>
-              {usage.recentSales} sale
-              {usage.recentSales === 1 ? "" : "s"} on this channel in the
-              last 30 days. Wait until activity dies down, or pick a
-              different channel for new sales first.
-            </li>
-          </ul>
+          <p className="mt-2 text-sm font-semibold text-warning">
+            {t("cannotDeactivateReason", { count: usage.recentSales })}
+          </p>
           <Link
             href={`/channels/${id}`}
-            className="mt-3 inline-block text-sm text-amber-900 underline"
+            className="mt-3 inline-block text-sm font-bold text-warning underline"
           >
-            ← Back to channel
+            ← {t("backToChannel")}
           </Link>
         </div>
       )}

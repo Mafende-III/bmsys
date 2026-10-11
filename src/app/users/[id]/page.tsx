@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireOwner } from "@/lib/auth-guards";
 import { prisma } from "@/lib/prisma";
@@ -25,13 +24,10 @@ export default async function EditUserPage({
   if (!user) notFound();
 
   return (
-    <main className="mx-auto max-w-xl p-4 sm:p-6">
-      <header className="mb-4">
-        <Link href="/users" className="text-sm text-zinc-600 hover:underline">
-          ← Users
-        </Link>
-        <h1 className="mt-1 text-2xl font-semibold">{user.name}</h1>
-        <p className="font-mono text-xs text-zinc-500">{user.phone}</p>
+    <main className="mx-auto max-w-2xl space-y-3 p-4">
+      <header>
+        <h1 className="text-xl font-bold text-ink">{user.name}</h1>
+        <p className="num text-[13px] text-ink-2">{user.phone}</p>
       </header>
       <UserForm
         mode={{

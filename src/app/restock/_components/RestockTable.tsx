@@ -2,8 +2,10 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
-import { FileInput, RotateCcw } from "lucide-react";
+import { AlertTriangle, Check, Clock, FileInput, RotateCcw, X } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { Card, CaptionLabel, StatusPill, type StatusTone } from "@/components/ui";
+import { cn } from "@/lib/cn";
 import { formatRWF } from "@/lib/format";
 import { savePurchaseDraft } from "@/lib/purchases/actions";
 import type { RestockRow } from "@/lib/restock/queries";
@@ -14,6 +16,9 @@ type Draft = {
 };
 
 export type SupplierOption = { id: string; name: string };
+
+const CELL_FIELD =
+  "num rounded-panel border border-rule bg-surface px-2 text-right text-sm font-semibold text-ink focus:border-rule-active focus:outline-none focus:ring-1 focus:ring-rule-active";
 
 /**
  * Editable order sheet. The server's suggestion seeds each row; the
@@ -129,152 +134,150 @@ export function RestockTable({
     });
   }
 
+  function urgencyPill(r: RestockRow) {
+    let tone: StatusTone;
+    let icon: React.ReactNode;
+    let label: string;
+    if (r.urgency === "OUT") {
+      tone = "error";
+      icon = <X className="h-3 w-3" strokeWidth={3} />;
+      label = t("badgeOut");
+    } else if (r.urgency === "CRITICAL") {
+      tone = "error";
+      icon = <AlertTriangle className="h-3 w-3" strokeWidth={2.6} />;
+      label = t("badgeDays", { count: r.daysToOut ?? 0 });
+    } else if (r.urgency === "LOW") {
+      tone = "warning";
+      icon = <Clock className="h-3 w-3" strokeWidth={2.6} />;
+      label = t("badgeDays", { count: r.daysToOut ?? 0 });
+    } else {
+      tone = "neutral";
+      icon = <Check className="h-3 w-3" strokeWidth={3} />;
+      label =
+        r.daysToOut == null
+          ? t("badgeNoSales")
+          : t("badgeDays", { count: r.daysToOut });
+    }
+    return (
+      <StatusPill tone={tone} icon={icon} className="num">
+        {label}
+      </StatusPill>
+    );
+  }
+
+  const urgentCount = rows.filter(
+    (r) => r.urgency === "OUT" || r.urgency === "CRITICAL",
+  ).length;
+
   return (
     <>
       {/* Order summary (live) */}
       <section
         data-tour="restock-summary"
-        className="grid grid-cols-3 gap-2 rounded-2xl border border-zinc-200 bg-white p-3 text-xs"
+        className="grid grid-cols-3 gap-2.5"
       >
-        <div>
-          <p className="text-[10px] uppercase tracking-wide text-zinc-500">
-            {t("statUrgent")}
-          </p>
+        <Card className="p-3">
+          <CaptionLabel>{t("statUrgent")}</CaptionLabel>
           <p
-            className={`mt-0.5 font-mono text-lg font-semibold tabular-nums ${
-              rows.some(
-                (r) => r.urgency === "OUT" || r.urgency === "CRITICAL",
-              )
-                ? "text-red-700"
-                : "text-green-700"
-            }`}
+            className={cn(
+              "num mt-0.5 text-lg font-bold",
+              urgentCount > 0 ? "text-error" : "text-success",
+            )}
           >
-            {
-              rows.filter(
-                (r) => r.urgency === "OUT" || r.urgency === "CRITICAL",
-              ).length
-            }
+            {urgentCount}
           </p>
-        </div>
-        <div>
-          <p className="text-[10px] uppercase tracking-wide text-zinc-500">
-            {t("statToOrder")}
-          </p>
-          <p className="mt-0.5 font-mono text-lg font-semibold tabular-nums">
+        </Card>
+        <Card className="p-3">
+          <CaptionLabel>{t("statToOrder")}</CaptionLabel>
+          <p className="num mt-0.5 text-lg font-bold text-ink">
             {totals.products}
           </p>
-        </div>
-        <div>
-          <p className="text-[10px] uppercase tracking-wide text-zinc-500">
-            {t("statOrderCost")}
-          </p>
-          <p className="mt-0.5 font-mono text-lg font-semibold tabular-nums">
+        </Card>
+        <Card className="p-3">
+          <CaptionLabel>{t("statOrderCost")}</CaptionLabel>
+          <p className="num mt-0.5 text-lg font-bold text-ink">
             {formatRWF(totals.cost)}
           </p>
-        </div>
+        </Card>
       </section>
 
       {/* Plan table */}
-      <section
-        data-tour="restock-table"
-        className="overflow-hidden rounded-2xl border border-zinc-200 bg-white"
-      >
-        <div className="flex items-center justify-between border-b border-zinc-100 px-4 py-2">
-          <p className="text-xs text-zinc-500">{t("editHint")}</p>
+      <Card data-tour="restock-table" className="overflow-hidden">
+        <div className="flex items-center justify-between gap-2 border-b border-rule-hair px-4 py-2.5">
+          <p className="text-xs text-ink-2">{t("editHint")}</p>
           <button
             type="button"
             onClick={resetAll}
-            className="inline-flex items-center gap-1 rounded-lg border border-zinc-300 bg-white px-2.5 py-1 text-xs font-medium text-zinc-700 hover:bg-zinc-50"
+            className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full bg-surface px-3 text-xs font-bold text-primary ring-1 ring-inset ring-rule"
           >
-            <RotateCcw className="h-3.5 w-3.5" strokeWidth={2} />
+            <RotateCcw className="h-3.5 w-3.5" strokeWidth={2.2} />
             {t("resetSuggestions")}
           </button>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="bg-zinc-50 text-xs text-zinc-600">
+            <thead className="bg-ground text-[11px] uppercase tracking-wide text-ink-2">
               <tr>
-                <th className="px-4 py-2 text-left font-medium">
+                <th className="px-4 py-2 text-left font-semibold">
                   {t("colProduct")}
                 </th>
-                <th className="px-3 py-2 text-right font-medium">
+                <th className="px-3 py-2 text-right font-semibold">
                   {t("colStock")}
                 </th>
-                <th className="px-3 py-2 text-right font-medium">
+                <th className="px-3 py-2 text-right font-semibold">
                   {t("colBurn")}
                 </th>
-                <th className="px-3 py-2 text-right font-medium">
+                <th className="px-3 py-2 text-right font-semibold">
                   {t("colDaysLeft")}
                 </th>
-                <th className="px-3 py-2 text-right font-medium">
+                <th className="px-3 py-2 text-right font-semibold">
                   {t("colOrderCartons")}
                 </th>
-                <th className="px-3 py-2 text-right font-medium">
+                <th className="px-3 py-2 text-right font-semibold">
                   {t("colCostPerCarton")}
                 </th>
-                <th className="px-4 py-2 text-right font-medium">
+                <th className="px-4 py-2 text-right font-semibold">
                   {t("colLineCost")}
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-zinc-100">
-              {rows.map((r) => {
+            <tbody>
+              {rows.map((r, i) => {
                 const d = drafts[r.productId]!;
                 const n = lineNumbers(r);
-                const badge =
-                  r.urgency === "OUT"
-                    ? { label: t("badgeOut"), cls: "bg-red-100 text-red-700" }
-                    : r.urgency === "CRITICAL"
-                      ? {
-                          label: t("badgeDays", { count: r.daysToOut ?? 0 }),
-                          cls: "bg-red-100 text-red-700",
-                        }
-                      : r.urgency === "LOW"
-                        ? {
-                            label: t("badgeDays", { count: r.daysToOut ?? 0 }),
-                            cls: "bg-amber-100 text-amber-800",
-                          }
-                        : {
-                            label:
-                              r.daysToOut == null
-                                ? t("badgeNoSales")
-                                : t("badgeDays", { count: r.daysToOut }),
-                            cls: "bg-zinc-100 text-zinc-600",
-                          };
                 const edited =
                   n.cartons !==
                     (r.suggestedCartons > 0 ? r.suggestedCartons : 0) ||
                   n.cost !== r.costPerCarton;
                 return (
-                  <tr key={r.productId}>
+                  <tr
+                    key={r.productId}
+                    className={cn(i > 0 && "border-t border-rule-hair")}
+                  >
                     <td className="px-4 py-2.5">
-                      <p className="font-medium text-zinc-800">
+                      <p className="font-bold text-ink">
                         {r.name}
                         {edited && (
-                          <span className="ml-1.5 align-middle text-[10px] font-normal text-blue-700">
+                          <span className="ml-1.5 align-middle text-[10px] font-bold text-primary">
                             {t("editedBadge")}
                           </span>
                         )}
                       </p>
-                      <p className="font-mono text-[10px] text-zinc-500">
+                      <p className="num text-[10px] text-ink-2">
                         {r.sku}
                         {r.unitsPerCarton > 1
                           ? ` · ${r.unitsPerCarton}/carton`
                           : ""}
                       </p>
                     </td>
-                    <td className="px-3 py-2.5 text-right font-mono tabular-nums text-zinc-700">
+                    <td className="num px-3 py-2.5 text-right text-ink-2">
                       {r.stockUnits}
                     </td>
-                    <td className="px-3 py-2.5 text-right font-mono tabular-nums text-zinc-500">
+                    <td className="num px-3 py-2.5 text-right text-ink-2">
                       {r.dailyBurn.toFixed(1)}/d
                     </td>
                     <td className="px-3 py-2.5 text-right">
-                      <span
-                        className={`inline-block rounded-md px-1.5 py-0.5 font-mono text-xs tabular-nums ${badge.cls}`}
-                      >
-                        {badge.label}
-                      </span>
+                      {urgencyPill(r)}
                     </td>
                     <td className="px-3 py-2.5 text-right">
                       <input
@@ -287,7 +290,7 @@ export function RestockTable({
                           setDraft(r.productId, { cartonsRaw: e.target.value })
                         }
                         placeholder="0"
-                        className="h-9 w-16 rounded-lg border border-zinc-300 bg-white px-2 text-right font-mono text-sm tabular-nums"
+                        className={cn(CELL_FIELD, "h-10 w-16")}
                       />
                     </td>
                     <td className="px-3 py-2.5 text-right">
@@ -300,10 +303,10 @@ export function RestockTable({
                         onChange={(e) =>
                           setDraft(r.productId, { costRaw: e.target.value })
                         }
-                        className="h-9 w-24 rounded-lg border border-zinc-300 bg-white px-2 text-right font-mono text-sm tabular-nums"
+                        className={cn(CELL_FIELD, "h-10 w-24")}
                       />
                     </td>
-                    <td className="px-4 py-2.5 text-right font-mono font-semibold tabular-nums text-zinc-900">
+                    <td className="num px-4 py-2.5 text-right font-bold text-ink">
                       {n.lineTotal > 0 ? formatRWF(n.lineTotal) : "—"}
                     </td>
                   </tr>
@@ -311,15 +314,15 @@ export function RestockTable({
               })}
             </tbody>
             {totals.cost > 0 && (
-              <tfoot className="border-t-2 border-zinc-200 bg-zinc-50">
+              <tfoot className="border-t border-rule bg-ground">
                 <tr>
                   <td
                     colSpan={6}
-                    className="px-4 py-2.5 text-right text-sm font-medium"
+                    className="px-4 py-2.5 text-right text-sm font-semibold text-ink"
                   >
                     {t("totalOrderCost")}
                   </td>
-                  <td className="px-4 py-2.5 text-right font-mono text-base font-semibold tabular-nums">
+                  <td className="num px-4 py-2.5 text-right text-base font-bold text-ink">
                     {formatRWF(totals.cost)}
                   </td>
                 </tr>
@@ -327,25 +330,22 @@ export function RestockTable({
             )}
           </table>
         </div>
-      </section>
+      </Card>
 
       {/* Send to purchase draft */}
-      <section
-        data-tour="restock-draft"
-        className="rounded-2xl border border-zinc-200 bg-white p-3"
-      >
+      <Card data-tour="restock-draft" className="p-4">
         {draftError && (
-          <p className="mb-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+          <p className="mb-2.5 rounded-panel bg-error-wash px-3.5 py-2.5 text-sm font-semibold text-error">
             {draftError}
           </p>
         )}
-        <div className="flex flex-wrap items-end gap-2">
-          <label className="block flex-1 text-xs">
-            <span className="text-zinc-600">{t("draftSupplier")}</span>
+        <div className="flex flex-wrap items-end gap-2.5">
+          <label className="block min-w-0 flex-1">
+            <CaptionLabel>{t("draftSupplier")}</CaptionLabel>
             <select
               value={supplierId}
               onChange={(e) => setSupplierId(e.target.value)}
-              className="mt-0.5 block w-full rounded-lg border border-zinc-300 px-2 py-2 text-sm"
+              className="mt-1.5 block h-11 w-full rounded-panel border border-rule bg-surface px-3 text-sm text-ink focus:border-rule-active focus:outline-none focus:ring-1 focus:ring-rule-active"
             >
               <option value="">{t("draftPickSupplier")}</option>
               {suppliers.map((s) => (
@@ -359,14 +359,14 @@ export function RestockTable({
             type="button"
             onClick={createDraft}
             disabled={isPending || totals.products === 0}
-            className="inline-flex items-center gap-1.5 rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
+            className="flex h-11 shrink-0 items-center gap-2 rounded-full bg-fab px-4 text-sm font-bold text-white shadow-fab active:translate-y-[2px] disabled:opacity-50"
           >
-            <FileInput className="h-4 w-4" strokeWidth={2} />
+            <FileInput className="h-4 w-4" strokeWidth={2.2} />
             {isPending ? t("draftCreating") : t("draftCreate")}
           </button>
         </div>
-        <p className="mt-2 text-[11px] text-zinc-500">{t("draftHint")}</p>
-      </section>
+        <p className="mt-2 text-[11px] text-ink-2">{t("draftHint")}</p>
+      </Card>
     </>
   );
 }

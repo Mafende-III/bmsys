@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { CheckCircle2, Wallet } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { Card, CaptionLabel, MoneyField } from "@/components/ui";
 import { formatRWF } from "@/lib/format";
 import { setTreasuryCheckpoints } from "@/lib/treasury/actions";
 
@@ -48,78 +49,64 @@ export function TreasuryCheckpointForm({
   }
 
   return (
-    <section className="rounded-2xl border border-zinc-200 bg-white p-4 sm:p-5">
-      <h2 className="flex items-center gap-2 text-base font-semibold">
-        <Wallet className="h-4 w-4" strokeWidth={2} />
-        {t("checkpointTitle")}
-      </h2>
-      <p className="mt-1 text-sm text-zinc-600">{t("checkpointHint")}</p>
+    <Card className="p-4">
+      <div className="flex items-center gap-2">
+        <Wallet className="h-4 w-4 text-ink-2" strokeWidth={2.2} />
+        <CaptionLabel>{t("checkpointTitle")}</CaptionLabel>
+      </div>
+      <p className="mt-1 text-xs text-ink-2">{t("checkpointHint")}</p>
 
       {error && (
-        <p className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+        <p className="mt-3 rounded-panel bg-error-wash px-3.5 py-2.5 text-sm font-semibold text-error">
           {error}
         </p>
       )}
       {saved && (
-        <p className="mt-3 flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-800">
-          <CheckCircle2 className="h-4 w-4" strokeWidth={2} />
+        <p className="mt-3 flex items-center gap-2 rounded-panel bg-success-wash px-3.5 py-2.5 text-sm font-semibold text-success">
+          <CheckCircle2 className="h-4 w-4 shrink-0" strokeWidth={2.2} />
           {t("checkpointSaved")}
         </p>
       )}
 
-      <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
-        <label className="block">
-          <span className="text-sm font-medium text-zinc-800">
-            {t("momoBalanceLabel")}
-          </span>
-          <input
-            type="number"
-            inputMode="numeric"
-            min={0}
-            step={100}
-            value={momoRaw}
-            onChange={(e) => setMomoRaw(e.target.value)}
-            placeholder={
-              momo.initialised
-                ? t("currentDerived", { amount: formatRWF(momo.balance) })
-                : t("notSet")
-            }
-            className="mt-1 block w-full rounded-xl border-2 border-zinc-300 px-3 py-2.5 font-mono text-base tabular-nums"
-          />
-        </label>
-        <label className="block">
-          <span className="text-sm font-medium text-zinc-800">
-            {t("bankBalanceLabel")}
-          </span>
-          <input
-            type="number"
-            inputMode="numeric"
-            min={0}
-            step={100}
-            value={bankRaw}
-            onChange={(e) => setBankRaw(e.target.value)}
-            placeholder={
-              bank.initialised
-                ? t("currentDerived", { amount: formatRWF(bank.balance) })
-                : t("notSet")
-            }
-            className="mt-1 block w-full rounded-xl border-2 border-zinc-300 px-3 py-2.5 font-mono text-base tabular-nums"
-          />
-        </label>
+      <div className="mt-3.5 grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <MoneyField
+          label={t("momoBalanceLabel")}
+          min={0}
+          step={100}
+          value={momoRaw}
+          onChange={(e) => setMomoRaw(e.target.value)}
+          placeholder={
+            momo.initialised
+              ? t("currentDerived", { amount: formatRWF(momo.balance) })
+              : t("notSet")
+          }
+          inputClassName="mt-1.5"
+        />
+        <MoneyField
+          label={t("bankBalanceLabel")}
+          min={0}
+          step={100}
+          value={bankRaw}
+          onChange={(e) => setBankRaw(e.target.value)}
+          placeholder={
+            bank.initialised
+              ? t("currentDerived", { amount: formatRWF(bank.balance) })
+              : t("notSet")
+          }
+          inputClassName="mt-1.5"
+        />
       </div>
 
-      <div className="mt-3 flex justify-end">
-        <button
-          type="button"
-          onClick={submit}
-          disabled={
-            isPending || (momoRaw.trim() === "" && bankRaw.trim() === "")
-          }
-          className="rounded-xl bg-zinc-900 px-4 py-2 text-sm font-medium text-white disabled:opacity-50"
-        >
-          {isPending ? t("checkpointSaving") : t("checkpointSave")}
-        </button>
-      </div>
-    </section>
+      <button
+        type="button"
+        onClick={submit}
+        disabled={
+          isPending || (momoRaw.trim() === "" && bankRaw.trim() === "")
+        }
+        className="mt-3.5 h-12 w-full rounded-full bg-fab px-4 text-sm font-bold text-white shadow-fab active:translate-y-[2px] disabled:opacity-50"
+      >
+        {isPending ? t("checkpointSaving") : t("checkpointSave")}
+      </button>
+    </Card>
   );
 }

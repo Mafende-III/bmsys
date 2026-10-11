@@ -1,9 +1,12 @@
 import Link from "next/link";
+import { Download } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { requireOwner } from "@/lib/auth-guards";
 import { formatRWF } from "@/lib/format";
 import { computeDailySummary } from "@/lib/reports/daily";
 import { STOCK_REASON_LABEL } from "@/lib/copy";
+import { Card, CaptionLabel } from "@/components/ui";
+import { cn } from "@/lib/cn";
 
 function parseDateParam(s?: string): Date {
   if (!s) return new Date();
@@ -46,92 +49,103 @@ export default async function ReportsPage({
   const tc = await getTranslations("common");
 
   return (
-    <main className="mx-auto max-w-5xl p-4 sm:p-6">
+    <main className="mx-auto max-w-5xl space-y-3 p-4">
       <header className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <Link
-            href="/dashboard"
-            className="text-sm text-zinc-600 hover:underline"
-          >
-            ← {tc("dashboard")}
-          </Link>
-          <h1 className="mt-1 text-2xl font-semibold">{t("title")}</h1>
-          <p className="text-sm text-zinc-600">{dateLabel}</p>
+        <div className="min-w-0">
+          <h1 className="text-xl font-bold text-ink">{t("title")}</h1>
+          <p className="text-[13px] text-ink-2">{dateLabel}</p>
           <Link
             href="/reports/register"
-            className="mt-1 inline-block text-sm font-medium text-blue-700 underline hover:no-underline"
+            className="mt-2 inline-flex h-9 items-center gap-1.5 rounded-full bg-surface px-3.5 text-[13px] font-bold text-primary ring-1 ring-inset ring-rule"
           >
-            {t("registerLink")} →
+            <Download className="h-3.5 w-3.5" strokeWidth={2.2} />
+            {t("registerLink")}
           </Link>
         </div>
-        <form method="get" className="flex items-end gap-2">
+        <form method="get" className="flex items-center gap-2">
           <Link
             href={`/reports?date=${adjustDate(date, -1)}`}
-            className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm font-medium hover:bg-zinc-50"
+            className="flex h-10 items-center rounded-full bg-surface px-3.5 text-[13px] font-bold text-ink-2 ring-1 ring-inset ring-rule"
           >
-            ← Prev
+            ← {t("prev")}
           </Link>
-          <label className="block">
-            <span className="text-xs font-medium text-zinc-700">Date</span>
-            <input
-              type="date"
-              name="date"
-              defaultValue={toDateInput(date)}
-              className="mt-1 block rounded-lg border border-zinc-300 px-3 py-2 text-sm"
-            />
-          </label>
+          <input
+            type="date"
+            name="date"
+            defaultValue={toDateInput(date)}
+            aria-label={tc("date")}
+            className="h-10 rounded-panel border border-rule bg-surface px-2.5 text-[13px] text-ink-2"
+          />
           <button
             type="submit"
-            className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm font-medium hover:bg-zinc-50"
+            className="h-10 rounded-full bg-surface px-4 text-[13px] font-bold text-primary ring-1 ring-inset ring-rule"
           >
-            Go
+            {t("go")}
           </button>
           <Link
             href={`/reports?date=${adjustDate(date, 1)}`}
-            className="rounded-lg border border-zinc-300 bg-white px-3 py-2 text-sm font-medium hover:bg-zinc-50"
+            className="flex h-10 items-center rounded-full bg-surface px-3.5 text-[13px] font-bold text-ink-2 ring-1 ring-inset ring-rule"
           >
-            Next →
+            {t("next")} →
           </Link>
         </form>
       </header>
 
-      <section className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-4">
-        <Card label="Sales" value={formatRWF(summary.totals.salesTotal)} hint={`${summary.totals.salesCount} sales`} />
-        <Card label="Cash sales" value={formatRWF(summary.totals.cashSalesTotal)} />
-        <Card label="Expenses" value={formatRWF(summary.totals.expensesTotal)} hint={`incl. ${formatRWF(summary.totals.cashExpensesTotal)} cash`} />
-        <Card label="Net cash flow" value={formatRWF(summary.totals.netCash)} tone={summary.totals.netCash >= 0 ? "ok" : "warn"} />
+      <section className="grid grid-cols-2 gap-2.5 sm:grid-cols-4">
+        <StatCard
+          label={t("statSales")}
+          value={formatRWF(summary.totals.salesTotal)}
+          hint={t("salesCountHint", { count: summary.totals.salesCount })}
+        />
+        <StatCard
+          label={t("statCashSales")}
+          value={formatRWF(summary.totals.cashSalesTotal)}
+        />
+        <StatCard
+          label={t("statExpenses")}
+          value={formatRWF(summary.totals.expensesTotal)}
+          hint={t("inclCashHint", {
+            amount: formatRWF(summary.totals.cashExpensesTotal),
+          })}
+        />
+        <StatCard
+          label={t("statNetCash")}
+          value={formatRWF(summary.totals.netCash)}
+          tone={summary.totals.netCash >= 0 ? "ok" : "warn"}
+        />
       </section>
 
       {summary.totals.discountedLineCount > 0 && (
-        <section className="mt-3 rounded-2xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+        <section className="rounded-panel bg-warning-wash px-3.5 py-2.5 text-sm font-semibold text-warning">
           <p>
-            <span className="font-semibold">
-              {formatRWF(summary.totals.discountsTotal)}
-            </span>{" "}
-            in discounts on {summary.totals.discountedLineCount} line
-            {summary.totals.discountedLineCount === 1 ? "" : "s"}
+            {t("discounts", {
+              amount: formatRWF(summary.totals.discountsTotal),
+              count: summary.totals.discountedLineCount,
+            })}
             {summary.totals.floorOverrideCount > 0
-              ? ` — ${summary.totals.floorOverrideCount} broke the margin floor`
+              ? ` — ${t("discountOverrides", {
+                  count: summary.totals.floorOverrideCount,
+                })}`
               : ""}
             .
           </p>
         </section>
       )}
 
-      <section className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-2">
+      <section className="grid grid-cols-1 gap-3 lg:grid-cols-2">
         <Table
-          title="Sales by channel"
-          headers={["Channel", "#", "Total"]}
+          title={t("salesByChannel")}
+          headers={[t("colChannel"), t("colCount"), t("colTotal")]}
           rows={summary.salesByChannel.map((r) => [
             r.channelName,
             r.count.toString(),
             formatRWF(r.total),
           ])}
-          empty="No sales on this day."
+          empty={t("emptySales")}
         />
         <Table
-          title="Sales by payment method"
-          headers={["Method", "#", "Total"]}
+          title={t("salesByMethod")}
+          headers={[t("colMethod"), t("colCount"), t("colTotal")]}
           rows={summary.salesByMethod.map((r) => [
             r.paymentMethod,
             r.count.toString(),
@@ -140,42 +154,51 @@ export default async function ReportsPage({
           empty="—"
         />
         <Table
-          title="Top products"
-          headers={["Product", "Qty", "Revenue"]}
+          title={t("topProducts")}
+          headers={[t("colProduct"), t("colQty"), t("colRevenue")]}
           rows={summary.topProducts.map((r) => [
             `${r.name} (${r.sku})`,
             r.unitsSold.toString(),
             formatRWF(r.saleLineTotal),
           ])}
-          empty="No sales on this day."
+          empty={t("emptySales")}
         />
         <Table
-          title="Expenses by category"
-          headers={["Category", "#", "Total"]}
+          title={t("expensesByCategory")}
+          headers={[t("colCategory"), t("colCount"), t("colTotal")]}
           rows={summary.expensesByCategory.map((r) => [
             r.categoryName,
             r.count.toString(),
             formatRWF(r.total),
           ])}
-          empty="No expenses on this day."
+          empty={t("emptyExpenses")}
         />
         <Table
-          title="Stock movements"
-          headers={["Reason", "#", "Net units"]}
+          title={t("stockMoves")}
+          headers={[t("colReason"), t("colCount"), t("colNetUnits")]}
           rows={summary.stockMovesByReason.map((r) => [
             STOCK_REASON_LABEL[r.reason] ?? r.reason,
             r.moveCount.toString(),
             r.netUnits > 0 ? `+${r.netUnits}` : r.netUnits.toString(),
           ])}
-          empty="No stock movements."
+          empty={t("emptyMoves")}
         />
-        <CashSessionsCard sessions={summary.cashSessions} />
+        <CashSessionsCard
+          sessions={summary.cashSessions}
+          title={t("cashSessions")}
+          empty={t("emptySessions")}
+          stillOpen={t("stillOpen")}
+          floatLabel={(amount) => t("sessionFloat", { amount })}
+          expectedLabel={(expected, counted) =>
+            t("sessionExpected", { expected, counted })
+          }
+        />
       </section>
     </main>
   );
 }
 
-function Card({
+function StatCard({
   label,
   value,
   hint,
@@ -186,19 +209,41 @@ function Card({
   hint?: string;
   tone?: "ok" | "warn";
 }) {
-  const tint =
-    tone === "warn"
-      ? "border-amber-200 bg-amber-50"
-      : tone === "ok"
-        ? "border-green-200 bg-green-50"
-        : "border-zinc-200 bg-white";
   return (
-    <div className={`rounded-2xl border p-4 ${tint}`}>
-      <p className="text-xs uppercase tracking-wide text-zinc-500">{label}</p>
-      <p className="mt-1 font-mono text-xl font-medium tabular-nums">
+    <div
+      className={cn(
+        "rounded-card p-4 ring-1 ring-inset",
+        tone === "warn"
+          ? "bg-warning-wash ring-rule-hair"
+          : tone === "ok"
+            ? "bg-success-wash ring-[#bbe7c8]"
+            : "bg-surface ring-rule-hair",
+      )}
+    >
+      <CaptionLabel
+        className={
+          tone === "warn"
+            ? "text-warning"
+            : tone === "ok"
+              ? "text-success"
+              : undefined
+        }
+      >
+        {label}
+      </CaptionLabel>
+      <p
+        className={cn(
+          "num mt-1 text-xl font-bold",
+          tone === "warn"
+            ? "text-warning"
+            : tone === "ok"
+              ? "text-success"
+              : "text-ink",
+        )}
+      >
         {value}
       </p>
-      {hint && <p className="mt-1 text-xs text-zinc-500">{hint}</p>}
+      {hint && <p className="num mt-1 text-xs text-ink-2">{hint}</p>}
     </div>
   );
 }
@@ -215,50 +260,61 @@ function Table({
   empty: string;
 }) {
   return (
-    <section className="overflow-hidden rounded-2xl border border-zinc-200 bg-white">
-      <h2 className="border-b border-zinc-200 bg-zinc-50 px-3 py-2 text-sm font-medium">
+    <Card className="overflow-hidden">
+      <h2 className="border-b border-rule-hair bg-ground px-3.5 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-ink-2">
         {title}
       </h2>
       {rows.length === 0 ? (
-        <p className="px-3 py-6 text-center text-sm text-zinc-500">{empty}</p>
+        <p className="px-3 py-6 text-center text-sm text-ink-2">{empty}</p>
       ) : (
         <div className="overflow-x-auto">
-        <table className="w-full text-sm">
-          <thead className="bg-zinc-50 text-left text-xs font-medium uppercase text-zinc-600">
-            <tr>
-              {headers.map((h, i) => (
-                <th
-                  key={i}
-                  className={`px-3 py-2 ${i > 0 ? "text-right" : ""}`}
-                >
-                  {h}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {rows.map((row, i) => (
-              <tr key={i} className="border-t border-zinc-200">
-                {row.map((cell, j) => (
-                  <td
-                    key={j}
-                    className={`px-3 py-2 ${j > 0 ? "text-right font-mono tabular-nums" : ""}`}
+          <table className="w-full text-sm">
+            <thead className="bg-ground text-[11px] uppercase tracking-wide text-ink-2">
+              <tr>
+                {headers.map((h, i) => (
+                  <th
+                    key={i}
+                    className={cn(
+                      "px-3 py-2 text-left font-semibold",
+                      i > 0 && "text-right",
+                    )}
                   >
-                    {cell}
-                  </td>
+                    {h}
+                  </th>
                 ))}
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {rows.map((row, i) => (
+                <tr key={i} className={cn(i > 0 && "border-t border-rule-hair")}>
+                  {row.map((cell, j) => (
+                    <td
+                      key={j}
+                      className={cn(
+                        "px-3 py-2 text-ink",
+                        j > 0 && "num text-right",
+                      )}
+                    >
+                      {cell}
+                    </td>
+                  ))}
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       )}
-    </section>
+    </Card>
   );
 }
 
 function CashSessionsCard({
   sessions,
+  title,
+  empty,
+  stillOpen,
+  floatLabel,
+  expectedLabel,
 }: {
   sessions: Array<{
     id: string;
@@ -271,46 +327,59 @@ function CashSessionsCard({
     openedBy: string;
     closedBy: string | null;
   }>;
+  title: string;
+  empty: string;
+  stillOpen: string;
+  floatLabel: (amount: string) => string;
+  expectedLabel: (expected: string, counted: string) => string;
 }) {
   return (
-    <section className="overflow-hidden rounded-2xl border border-zinc-200 bg-white">
-      <h2 className="border-b border-zinc-200 bg-zinc-50 px-3 py-2 text-sm font-medium">
-        Cash sessions
+    <Card className="overflow-hidden">
+      <h2 className="border-b border-rule-hair bg-ground px-3.5 py-2.5 text-[11px] font-semibold uppercase tracking-wide text-ink-2">
+        {title}
       </h2>
       {sessions.length === 0 ? (
-        <p className="px-3 py-6 text-center text-sm text-zinc-500">
-          No cash sessions touched this day.
-        </p>
+        <p className="px-3 py-6 text-center text-sm text-ink-2">{empty}</p>
       ) : (
-        <ul className="divide-y divide-zinc-200">
-          {sessions.map((s) => (
-            <li key={s.id} className="px-3 py-2 text-sm">
-              <div className="flex items-center justify-between">
-                <p className="font-medium">
+        <ul>
+          {sessions.map((s, i) => (
+            <li
+              key={s.id}
+              className={cn(
+                "px-3.5 py-2.5 text-sm",
+                i > 0 && "border-t border-rule-hair",
+              )}
+            >
+              <div className="flex items-center justify-between gap-2">
+                <p className="num font-bold text-ink">
                   {new Date(s.openedAt).toLocaleTimeString()} →{" "}
                   {s.closedAt
                     ? new Date(s.closedAt).toLocaleTimeString()
-                    : "still open"}
+                    : stillOpen}
                 </p>
                 {s.variance !== null && (
                   <span
-                    className={`font-mono text-xs tabular-nums ${
+                    className={cn(
+                      "num text-xs font-bold",
                       s.variance === 0
-                        ? "text-green-700"
+                        ? "text-success"
                         : s.variance > 0
-                          ? "text-amber-700"
-                          : "text-red-700"
-                    }`}
+                          ? "text-warning"
+                          : "text-error",
+                    )}
                   >
                     {s.variance >= 0 ? "+" : ""}
                     {formatRWF(s.variance)}
                   </span>
                 )}
               </div>
-              <p className="text-[10px] text-zinc-500">
-                Float {formatRWF(s.openingFloat)}
+              <p className="num mt-0.5 text-[10px] text-ink-2">
+                {floatLabel(formatRWF(s.openingFloat))}
                 {s.expectedCash !== null
-                  ? ` · expected ${formatRWF(s.expectedCash)} · counted ${formatRWF(s.closingCount ?? 0)}`
+                  ? ` · ${expectedLabel(
+                      formatRWF(s.expectedCash),
+                      formatRWF(s.closingCount ?? 0),
+                    )}`
                   : ""}{" "}
                 · {s.openedBy}
                 {s.closedBy && ` → ${s.closedBy}`}
@@ -319,6 +388,6 @@ function CashSessionsCard({
           ))}
         </ul>
       )}
-    </section>
+    </Card>
   );
 }

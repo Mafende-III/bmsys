@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { getTranslations } from "next-intl/server";
+import { AlertTriangle, LogIn, ShieldAlert } from "lucide-react";
 import { requireOwner } from "@/lib/auth-guards";
 import {
   AUDIT_CATEGORIES,
@@ -8,6 +8,8 @@ import {
 } from "@/lib/audit/categories";
 import { listSecurityEvents } from "@/lib/audit/queries";
 import { formatRWF } from "@/lib/format";
+import { Card, StatusPill, type StatusTone } from "@/components/ui";
+import { cn } from "@/lib/cn";
 
 type SearchParams = { category?: string };
 
@@ -39,79 +41,51 @@ export default async function AuditPage({
   };
 
   return (
-    <main className="mx-auto max-w-4xl p-4 sm:p-6">
-      <header className="mb-4">
-        <Link
-          href="/dashboard"
-          className="text-sm text-zinc-600 hover:underline"
-        >
-          ← {tc("dashboard")}
-        </Link>
-        <h1 className="mt-1 text-2xl font-semibold">{t("title")}</h1>
-        <p className="text-sm text-zinc-600">{t("subtitle")}</p>
+    <main className="mx-auto max-w-2xl space-y-3 p-4">
+      <header>
+        <h1 className="text-xl font-bold text-ink">{t("title")}</h1>
+        <p className="text-[13px] text-ink-2">{t("subtitle")}</p>
       </header>
 
-      <form method="get" className="mt-2 flex gap-2" data-tour="audit-filter">
-        <label className="block">
-          <span className="text-xs font-medium text-zinc-700">
-            {t("filterCategory")}
-          </span>
-          <select
-            name="category"
-            defaultValue={category}
-            className="mt-1 block rounded-lg border border-zinc-300 px-3 py-2 text-sm"
-          >
-            <option value="all">{t("filterAll")}</option>
-            {AUDIT_CATEGORIES.map((c) => (
-              <option key={c} value={c}>
-                {categoryLabel[c]}
-              </option>
-            ))}
-          </select>
-        </label>
+      <form method="get" className="flex gap-2" data-tour="audit-filter">
+        <select
+          name="category"
+          defaultValue={category}
+          aria-label={t("filterCategory")}
+          className="h-10 min-w-0 flex-1 rounded-panel border border-rule bg-surface px-2.5 text-[13px] text-ink-2"
+        >
+          <option value="all">{t("filterAll")}</option>
+          {AUDIT_CATEGORIES.map((c) => (
+            <option key={c} value={c}>
+              {categoryLabel[c]}
+            </option>
+          ))}
+        </select>
         <button
           type="submit"
-          className="self-end rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-medium hover:bg-zinc-50"
+          className="h-10 shrink-0 rounded-full bg-surface px-4 text-[13px] font-bold text-primary ring-1 ring-inset ring-rule"
         >
           {tc("filter")}
         </button>
       </form>
 
-      <div
-        data-tour="audit-table"
-        className="mt-4 overflow-x-auto rounded-2xl border border-zinc-200 bg-white"
-      >
-        <table className="w-full text-sm">
-          <thead className="bg-zinc-50 text-left text-xs font-medium uppercase text-zinc-600">
-            <tr>
-              <th className="px-3 py-2">{t("headerWhen")}</th>
-              <th className="px-3 py-2">{t("headerEvent")}</th>
-              <th className="px-3 py-2">{t("headerWho")}</th>
-              <th className="px-3 py-2">{t("headerDetails")}</th>
-            </tr>
-          </thead>
-          <tbody>
-            {events.map((e) => (
-              <EventRow
-                key={e.id}
-                event={e}
-                label={categoryLabel[e.category]}
-                anonymousLabel={t("anonymousAttempt")}
-              />
-            ))}
-            {events.length === 0 && (
-              <tr>
-                <td
-                  colSpan={4}
-                  className="px-3 py-6 text-center text-zinc-500"
-                >
-                  {t("empty")}
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
+      {events.length === 0 ? (
+        <Card data-tour="audit-table" className="p-6 text-center text-sm text-ink-2">
+          {t("empty")}
+        </Card>
+      ) : (
+        <Card data-tour="audit-table" className="px-3.5 py-1">
+          {events.map((e, i) => (
+            <EventRow
+              key={e.id}
+              event={e}
+              label={categoryLabel[e.category]}
+              anonymousLabel={t("anonymousAttempt")}
+              divider={i > 0}
+            />
+          ))}
+        </Card>
+      )}
     </main>
   );
 }
@@ -120,6 +94,7 @@ function EventRow({
   event,
   label,
   anonymousLabel,
+  divider,
 }: {
   event: {
     id: string;
@@ -131,34 +106,42 @@ function EventRow({
   };
   label: string;
   anonymousLabel: string;
+  divider: boolean;
 }) {
   const tone = AUDIT_TONE[event.category];
-  const toneClass =
-    tone === "alert"
-      ? "bg-red-100 text-red-800"
-      : tone === "warn"
-        ? "bg-amber-100 text-amber-800"
-        : "bg-zinc-100 text-zinc-700";
+  const pillTone: StatusTone =
+    tone === "alert" ? "error" : tone === "warn" ? "warning" : "neutral";
+  const icon =
+    event.category === "CASH_LARGE_VARIANCE" ? (
+      <AlertTriangle className="h-3 w-3" strokeWidth={2.6} />
+    ) : tone === "alert" ? (
+      <ShieldAlert className="h-3 w-3" strokeWidth={2.6} />
+    ) : (
+      <LogIn className="h-3 w-3" strokeWidth={2.6} />
+    );
 
   return (
-    <tr className="border-t border-zinc-200">
-      <td className="px-3 py-2 text-xs text-zinc-600 whitespace-nowrap">
-        {new Date(event.createdAt).toLocaleString()}
-      </td>
-      <td className="px-3 py-2">
-        <span
-          className={`rounded-full px-2 py-0.5 text-[10px] uppercase ${toneClass}`}
-        >
-          {label}
-        </span>
-      </td>
-      <td className="px-3 py-2 text-xs text-zinc-700">
-        {event.userName ?? anonymousLabel}
-      </td>
-      <td className="px-3 py-2 text-xs text-zinc-600">
-        <EventDetails category={event.category} changes={event.changes} />
-      </td>
-    </tr>
+    <div
+      className={cn(
+        "flex items-center gap-3 py-3",
+        divider && "border-t border-rule-hair",
+      )}
+    >
+      <div className="min-w-0 flex-1">
+        <p className="num text-[13px] font-bold text-ink">
+          {new Date(event.createdAt).toLocaleString()}
+        </p>
+        <p className="mt-0.5 truncate text-xs text-ink-2">
+          {event.userName ?? anonymousLabel}
+          <span className="ml-2">
+            <EventDetails category={event.category} changes={event.changes} />
+          </span>
+        </p>
+      </div>
+      <StatusPill tone={pillTone} icon={icon} className="shrink-0">
+        {label}
+      </StatusPill>
+    </div>
   );
 }
 
@@ -177,8 +160,8 @@ function EventDetails({
     const reason = typeof c.reason === "string" ? c.reason : null;
     return (
       <span>
-        <span className="font-mono">{phone}</span>
-        {reason && <span className="ml-2 text-zinc-500">· {reason}</span>}
+        <span className="num">{phone}</span>
+        {reason && <span className="ml-2 text-ink-2">· {reason}</span>}
       </span>
     );
   }
@@ -186,7 +169,7 @@ function EventDetails({
   if (category === "CASH_LARGE_VARIANCE") {
     const v = typeof c.variance === "number" ? c.variance : 0;
     return (
-      <span className={v < 0 ? "text-red-700" : "text-amber-700"}>
+      <span className={cn("num font-bold", v < 0 ? "text-error" : "text-warning")}>
         {v >= 0 ? "+" : ""}
         {formatRWF(v)}
       </span>

@@ -1,23 +1,16 @@
-import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import { requireOwner } from "@/lib/auth-guards";
 import { ChannelForm } from "../_components/ChannelForm";
 
 export default async function NewChannelPage() {
   await requireOwner();
+  const t = await getTranslations("channels");
 
   return (
-    <main className="mx-auto max-w-xl p-4 sm:p-6">
-      <header className="mb-4">
-        <Link
-          href="/channels"
-          className="text-sm text-zinc-600 hover:underline"
-        >
-          ← Channels
-        </Link>
-        <h1 className="mt-1 text-2xl font-semibold">New channel</h1>
-        <p className="text-sm text-zinc-600">
-          A sales channel (e.g. retail, wholesale, delivery, online).
-        </p>
+    <main className="mx-auto max-w-2xl space-y-3 p-4">
+      <header>
+        <h1 className="text-xl font-bold text-ink">{t("newTitle")}</h1>
+        <p className="text-[13px] text-ink-2">{t("newSubtitle")}</p>
       </header>
       <ChannelForm mode={{ kind: "create" }} />
     </main>

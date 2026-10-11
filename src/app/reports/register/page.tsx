@@ -1,9 +1,9 @@
-import Link from "next/link";
 import { getTranslations } from "next-intl/server";
-import { Table2 } from "lucide-react";
 import { requireOwner } from "@/lib/auth-guards";
 import { getRegisterReport } from "@/lib/reports/register";
 import { formatRWF } from "@/lib/format";
+import { Card, CaptionLabel } from "@/components/ui";
+import { cn } from "@/lib/cn";
 import { CsvButton } from "./_components/CsvButton";
 
 export const dynamic = "force-dynamic";
@@ -65,7 +65,6 @@ export default async function RegisterReportPage({
 
   const report = await getRegisterReport(from, to);
   const t = await getTranslations("register");
-  const tc = await getTranslations("common");
 
   const rangeSlug = `${toYmd(from)}_${toYmd(to)}`;
 
@@ -158,63 +157,54 @@ export default async function RegisterReportPage({
     ]),
   );
 
-  const thCls = "px-3 py-2 text-right font-medium whitespace-nowrap";
-  const tdNum = "px-3 py-2 text-right font-mono tabular-nums whitespace-nowrap";
+  const thCls = "px-3 py-2 text-right font-semibold whitespace-nowrap";
+  const tdNum = "num px-3 py-2 text-right whitespace-nowrap";
 
   return (
-    <main className="mx-auto max-w-6xl space-y-5 p-4 sm:p-6">
+    <main className="mx-auto max-w-5xl space-y-3 p-4">
       <header>
-        <Link href="/reports" className="text-sm text-zinc-600 hover:underline">
-          ← {t("backToReports")}
-        </Link>
-        <h1 className="mt-1 flex items-center gap-2 text-2xl font-semibold">
-          <Table2 className="h-6 w-6" strokeWidth={2} />
-          {t("title")}
-        </h1>
-        <p className="text-sm text-zinc-600">{t("subtitle")}</p>
+        <h1 className="text-xl font-bold text-ink">{t("title")}</h1>
+        <p className="text-[13px] text-ink-2">{t("subtitle")}</p>
       </header>
 
       {/* Date filter */}
       <form
         method="get"
         data-tour="register-filters"
-        className="flex flex-wrap items-end gap-2 rounded-2xl border border-zinc-200 bg-white p-3"
+        className="flex flex-wrap items-end gap-2"
       >
-        <label className="block text-xs">
-          <span className="text-zinc-600">{t("filterFrom")}</span>
+        <label className="block">
+          <CaptionLabel>{t("filterFrom")}</CaptionLabel>
           <input
             type="date"
             name="from"
             defaultValue={toYmd(from)}
-            className="mt-0.5 block rounded-lg border border-zinc-300 px-2 py-1.5 text-sm"
+            className="mt-0.5 block h-10 rounded-panel border border-rule bg-surface px-2.5 text-[13px] text-ink-2"
           />
         </label>
-        <label className="block text-xs">
-          <span className="text-zinc-600">{t("filterTo")}</span>
+        <label className="block">
+          <CaptionLabel>{t("filterTo")}</CaptionLabel>
           <input
             type="date"
             name="to"
             defaultValue={toYmd(toRaw)}
-            className="mt-0.5 block rounded-lg border border-zinc-300 px-2 py-1.5 text-sm"
+            className="mt-0.5 block h-10 rounded-panel border border-rule bg-surface px-2.5 text-[13px] text-ink-2"
           />
         </label>
         <button
           type="submit"
-          className="rounded-lg bg-zinc-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-zinc-800"
+          className="h-10 rounded-full bg-surface px-4 text-[13px] font-bold text-primary ring-1 ring-inset ring-rule"
         >
           {t("filterApply")}
         </button>
       </form>
 
       {/* ── Product summary ─────────────────────────────────────────── */}
-      <section
-        data-tour="register-summary"
-        className="overflow-hidden rounded-2xl border border-zinc-200 bg-white"
-      >
+      <Card data-tour="register-summary" className="overflow-hidden">
         <div className="flex items-center justify-between gap-2 p-4 pb-2">
           <div>
-            <h2 className="text-base font-medium">{t("summaryTitle")}</h2>
-            <p className="mt-0.5 text-xs text-zinc-600">{t("summaryHint")}</p>
+            <CaptionLabel>{t("summaryTitle")}</CaptionLabel>
+            <p className="mt-0.5 text-xs text-ink-2">{t("summaryHint")}</p>
           </div>
           <CsvButton
             csv={summaryCsv}
@@ -224,9 +214,9 @@ export default async function RegisterReportPage({
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
-            <thead className="bg-zinc-50 text-xs text-zinc-600">
+            <thead className="bg-ground text-[11px] uppercase tracking-wide text-ink-2">
               <tr>
-                <th className="px-4 py-2 text-left font-medium">
+                <th className="px-4 py-2 text-left font-semibold">
                   {t("colProduct")}
                 </th>
                 <th className={thCls}>{t("colPurchasedUnits")}</th>
@@ -237,50 +227,62 @@ export default async function RegisterReportPage({
                 <th className={`${thCls} pr-4`}>{t("colProfit")}</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-zinc-100">
-              {report.products.map((r) => (
-                <tr key={r.sku}>
+            <tbody>
+              {report.products.map((r, i) => (
+                <tr key={r.sku} className={cn(i > 0 && "border-t border-rule-hair")}>
                   <td className="px-4 py-2">
-                    <p className="font-medium text-zinc-800">{r.productName}</p>
-                    <p className="font-mono text-[10px] text-zinc-500">
-                      {r.sku}
-                    </p>
+                    <p className="font-bold text-ink">{r.productName}</p>
+                    <p className="num text-[10px] text-ink-2">{r.sku}</p>
                   </td>
-                  <td className={tdNum}>{r.purchasedUnits}</td>
-                  <td className={tdNum}>{formatRWF(r.purchaseCost)}</td>
-                  <td className={tdNum}>{r.soldUnits}</td>
-                  <td className={tdNum}>{formatRWF(r.salesRevenue)}</td>
-                  <td className={`${tdNum} text-zinc-500`}>
+                  <td className={cn(tdNum, "text-ink-2")}>{r.purchasedUnits}</td>
+                  <td className={cn(tdNum, "text-ink")}>
+                    {formatRWF(r.purchaseCost)}
+                  </td>
+                  <td className={cn(tdNum, "text-ink-2")}>{r.soldUnits}</td>
+                  <td className={cn(tdNum, "text-ink")}>
+                    {formatRWF(r.salesRevenue)}
+                  </td>
+                  <td className={cn(tdNum, "text-ink-2")}>
                     {formatRWF(r.salesCost)}
                   </td>
                   <td
-                    className={`${tdNum} pr-4 font-semibold ${
-                      r.profit >= 0 ? "text-green-700" : "text-red-700"
-                    }`}
+                    className={cn(
+                      tdNum,
+                      "pr-4 font-bold",
+                      r.profit >= 0 ? "text-success" : "text-error",
+                    )}
                   >
                     {formatRWF(r.profit)}
                   </td>
                 </tr>
               ))}
             </tbody>
-            <tfoot className="border-t-2 border-zinc-200 bg-zinc-50 font-medium">
+            <tfoot className="border-t border-rule bg-ground font-semibold">
               <tr>
-                <td className="px-4 py-2">{t("totalsRow")}</td>
-                <td className={tdNum}>{report.totals.purchases.units}</td>
-                <td className={tdNum}>
+                <td className="px-4 py-2 text-ink">{t("totalsRow")}</td>
+                <td className={cn(tdNum, "text-ink")}>
+                  {report.totals.purchases.units}
+                </td>
+                <td className={cn(tdNum, "text-ink")}>
                   {formatRWF(report.totals.purchases.cost)}
                 </td>
-                <td className={tdNum}>{report.totals.sales.units}</td>
-                <td className={tdNum}>{formatRWF(report.totals.sales.net)}</td>
-                <td className={`${tdNum} text-zinc-500`}>
+                <td className={cn(tdNum, "text-ink")}>
+                  {report.totals.sales.units}
+                </td>
+                <td className={cn(tdNum, "text-ink")}>
+                  {formatRWF(report.totals.sales.net)}
+                </td>
+                <td className={cn(tdNum, "text-ink-2")}>
                   {formatRWF(report.totals.sales.cost)}
                 </td>
                 <td
-                  className={`${tdNum} pr-4 font-semibold ${
+                  className={cn(
+                    tdNum,
+                    "pr-4 font-bold",
                     report.totals.sales.profit >= 0
-                      ? "text-green-700"
-                      : "text-red-700"
-                  }`}
+                      ? "text-success"
+                      : "text-error",
+                  )}
                 >
                   {formatRWF(report.totals.sales.profit)}
                 </td>
@@ -288,17 +290,14 @@ export default async function RegisterReportPage({
             </tfoot>
           </table>
         </div>
-      </section>
+      </Card>
 
       {/* ── Sales register ──────────────────────────────────────────── */}
-      <section
-        data-tour="register-sales"
-        className="overflow-hidden rounded-2xl border border-zinc-200 bg-white"
-      >
+      <Card data-tour="register-sales" className="overflow-hidden">
         <div className="flex items-center justify-between gap-2 p-4 pb-2">
           <div>
-            <h2 className="text-base font-medium">{t("salesTitle")}</h2>
-            <p className="mt-0.5 text-xs text-zinc-600">
+            <CaptionLabel>{t("salesTitle")}</CaptionLabel>
+            <p className="mt-0.5 text-xs text-ink-2">
               {t("salesHint", { count: report.totals.sales.lines })}
             </p>
           </div>
@@ -309,19 +308,19 @@ export default async function RegisterReportPage({
           />
         </div>
         {report.sales.length === 0 ? (
-          <p className="px-4 pb-4 text-sm text-zinc-500">{t("noData")}</p>
+          <p className="px-4 pb-4 text-sm text-ink-2">{t("noData")}</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-zinc-50 text-xs text-zinc-600">
+              <thead className="bg-ground text-[11px] uppercase tracking-wide text-ink-2">
                 <tr>
-                  <th className="px-4 py-2 text-left font-medium whitespace-nowrap">
+                  <th className="whitespace-nowrap px-4 py-2 text-left font-semibold">
                     {t("colDate")}
                   </th>
-                  <th className="px-3 py-2 text-left font-medium">
+                  <th className="px-3 py-2 text-left font-semibold">
                     {t("colProduct")}
                   </th>
-                  <th className="px-3 py-2 text-left font-medium">
+                  <th className="px-3 py-2 text-left font-semibold">
                     {t("colChannel")}
                   </th>
                   <th className={thCls}>{t("colQty")}</th>
@@ -333,66 +332,82 @@ export default async function RegisterReportPage({
                   <th className={`${thCls} pr-4`}>{t("colProfit")}</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-zinc-100">
+              <tbody>
                 {report.sales.map((r, i) => (
-                  <tr key={`${r.saleId}-${i}`}>
-                    <td className="px-4 py-2 whitespace-nowrap text-zinc-700">
+                  <tr
+                    key={`${r.saleId}-${i}`}
+                    className={cn(i > 0 && "border-t border-rule-hair")}
+                  >
+                    <td className="num whitespace-nowrap px-4 py-2 text-ink-2">
                       {fmtDateTime(r.date)}
                     </td>
                     <td className="px-3 py-2">
-                      <p className="text-zinc-800">{r.productName}</p>
-                      <p className="font-mono text-[10px] text-zinc-500">
-                        {r.sku} · {r.saleUnit === "CARTON" ? t("unitCarton") : t("unitSingle")}
+                      <p className="font-semibold text-ink">{r.productName}</p>
+                      <p className="num text-[10px] text-ink-2">
+                        {r.sku} ·{" "}
+                        {r.saleUnit === "CARTON"
+                          ? t("unitCarton")
+                          : t("unitSingle")}
                       </p>
                     </td>
-                    <td className="px-3 py-2 text-zinc-600 whitespace-nowrap">
+                    <td className="whitespace-nowrap px-3 py-2 text-ink-2">
                       {r.channelName} · {r.paymentMethod}
                     </td>
-                    <td className={tdNum}>{r.qty}</td>
-                    <td className={tdNum}>{r.units}</td>
-                    <td className={tdNum}>{formatRWF(r.unitPrice)}</td>
-                    <td className={`${tdNum} text-amber-700`}>
+                    <td className={cn(tdNum, "text-ink-2")}>{r.qty}</td>
+                    <td className={cn(tdNum, "text-ink-2")}>{r.units}</td>
+                    <td className={cn(tdNum, "text-ink")}>
+                      {formatRWF(r.unitPrice)}
+                    </td>
+                    <td className={cn(tdNum, "text-warning")}>
                       {r.discount > 0 ? `−${formatRWF(r.discount)}` : "—"}
                     </td>
-                    <td className={tdNum}>{formatRWF(r.net)}</td>
-                    <td className={`${tdNum} text-zinc-500`}>
+                    <td className={cn(tdNum, "text-ink")}>
+                      {formatRWF(r.net)}
+                    </td>
+                    <td className={cn(tdNum, "text-ink-2")}>
                       {formatRWF(r.cost)}
                     </td>
                     <td
-                      className={`${tdNum} pr-4 font-semibold ${
-                        r.profit >= 0 ? "text-green-700" : "text-red-700"
-                      }`}
+                      className={cn(
+                        tdNum,
+                        "pr-4 font-bold",
+                        r.profit >= 0 ? "text-success" : "text-error",
+                      )}
                     >
                       {formatRWF(r.profit)}
                     </td>
                   </tr>
                 ))}
               </tbody>
-              <tfoot className="border-t-2 border-zinc-200 bg-zinc-50 font-medium">
+              <tfoot className="border-t border-rule bg-ground font-semibold">
                 <tr>
-                  <td colSpan={3} className="px-4 py-2">
+                  <td colSpan={3} className="px-4 py-2 text-ink">
                     {t("totalsRow")}
                   </td>
-                  <td className={tdNum}>—</td>
-                  <td className={tdNum}>{report.totals.sales.units}</td>
-                  <td className={tdNum}>—</td>
-                  <td className={`${tdNum} text-amber-700`}>
+                  <td className={cn(tdNum, "text-ink-2")}>—</td>
+                  <td className={cn(tdNum, "text-ink")}>
+                    {report.totals.sales.units}
+                  </td>
+                  <td className={cn(tdNum, "text-ink-2")}>—</td>
+                  <td className={cn(tdNum, "text-warning")}>
                     {report.totals.sales.discount > 0
                       ? `−${formatRWF(report.totals.sales.discount)}`
                       : "—"}
                   </td>
-                  <td className={tdNum}>
+                  <td className={cn(tdNum, "text-ink")}>
                     {formatRWF(report.totals.sales.net)}
                   </td>
-                  <td className={`${tdNum} text-zinc-500`}>
+                  <td className={cn(tdNum, "text-ink-2")}>
                     {formatRWF(report.totals.sales.cost)}
                   </td>
                   <td
-                    className={`${tdNum} pr-4 font-semibold ${
+                    className={cn(
+                      tdNum,
+                      "pr-4 font-bold",
                       report.totals.sales.profit >= 0
-                        ? "text-green-700"
-                        : "text-red-700"
-                    }`}
+                        ? "text-success"
+                        : "text-error",
+                    )}
                   >
                     {formatRWF(report.totals.sales.profit)}
                   </td>
@@ -401,17 +416,14 @@ export default async function RegisterReportPage({
             </table>
           </div>
         )}
-      </section>
+      </Card>
 
       {/* ── Purchase register ───────────────────────────────────────── */}
-      <section
-        data-tour="register-purchases"
-        className="overflow-hidden rounded-2xl border border-zinc-200 bg-white"
-      >
+      <Card data-tour="register-purchases" className="overflow-hidden">
         <div className="flex items-center justify-between gap-2 p-4 pb-2">
           <div>
-            <h2 className="text-base font-medium">{t("purchasesTitle")}</h2>
-            <p className="mt-0.5 text-xs text-zinc-600">
+            <CaptionLabel>{t("purchasesTitle")}</CaptionLabel>
+            <p className="mt-0.5 text-xs text-ink-2">
               {t("purchasesHint", { count: report.totals.purchases.lines })}
             </p>
           </div>
@@ -422,19 +434,19 @@ export default async function RegisterReportPage({
           />
         </div>
         {report.purchases.length === 0 ? (
-          <p className="px-4 pb-4 text-sm text-zinc-500">{t("noData")}</p>
+          <p className="px-4 pb-4 text-sm text-ink-2">{t("noData")}</p>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
-              <thead className="bg-zinc-50 text-xs text-zinc-600">
+              <thead className="bg-ground text-[11px] uppercase tracking-wide text-ink-2">
                 <tr>
-                  <th className="px-4 py-2 text-left font-medium whitespace-nowrap">
+                  <th className="whitespace-nowrap px-4 py-2 text-left font-semibold">
                     {t("colDate")}
                   </th>
-                  <th className="px-3 py-2 text-left font-medium">
+                  <th className="px-3 py-2 text-left font-semibold">
                     {t("colSupplier")}
                   </th>
-                  <th className="px-3 py-2 text-left font-medium">
+                  <th className="px-3 py-2 text-left font-semibold">
                     {t("colProduct")}
                   </th>
                   <th className={thCls}>{t("colCartons")}</th>
@@ -444,39 +456,44 @@ export default async function RegisterReportPage({
                   <th className={`${thCls} pr-4`}>{t("colLineTotal")}</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-zinc-100">
+              <tbody>
                 {report.purchases.map((r, i) => (
-                  <tr key={`${r.purchaseId}-${i}`}>
-                    <td className="px-4 py-2 whitespace-nowrap text-zinc-700">
+                  <tr
+                    key={`${r.purchaseId}-${i}`}
+                    className={cn(i > 0 && "border-t border-rule-hair")}
+                  >
+                    <td className="num whitespace-nowrap px-4 py-2 text-ink-2">
                       {fmtDateTime(r.date)}
                     </td>
-                    <td className="px-3 py-2 text-zinc-600">
-                      {r.supplierName}
-                    </td>
+                    <td className="px-3 py-2 text-ink-2">{r.supplierName}</td>
                     <td className="px-3 py-2">
-                      <p className="text-zinc-800">{r.productName}</p>
-                      <p className="font-mono text-[10px] text-zinc-500">
-                        {r.sku}
-                      </p>
+                      <p className="font-semibold text-ink">{r.productName}</p>
+                      <p className="num text-[10px] text-ink-2">{r.sku}</p>
                     </td>
-                    <td className={tdNum}>{r.qtyCartons}</td>
-                    <td className={tdNum}>{r.qtyLooseUnits}</td>
-                    <td className={tdNum}>{r.units}</td>
-                    <td className={tdNum}>{formatRWF(r.costPerCarton)}</td>
-                    <td className={`${tdNum} pr-4 font-semibold`}>
+                    <td className={cn(tdNum, "text-ink-2")}>{r.qtyCartons}</td>
+                    <td className={cn(tdNum, "text-ink-2")}>
+                      {r.qtyLooseUnits}
+                    </td>
+                    <td className={cn(tdNum, "text-ink-2")}>{r.units}</td>
+                    <td className={cn(tdNum, "text-ink")}>
+                      {formatRWF(r.costPerCarton)}
+                    </td>
+                    <td className={cn(tdNum, "pr-4 font-bold text-ink")}>
                       {formatRWF(r.lineTotal)}
                     </td>
                   </tr>
                 ))}
               </tbody>
-              <tfoot className="border-t-2 border-zinc-200 bg-zinc-50 font-medium">
+              <tfoot className="border-t border-rule bg-ground font-semibold">
                 <tr>
-                  <td colSpan={5} className="px-4 py-2">
+                  <td colSpan={5} className="px-4 py-2 text-ink">
                     {t("totalsRow")}
                   </td>
-                  <td className={tdNum}>{report.totals.purchases.units}</td>
-                  <td className={tdNum}>—</td>
-                  <td className={`${tdNum} pr-4 font-semibold`}>
+                  <td className={cn(tdNum, "text-ink")}>
+                    {report.totals.purchases.units}
+                  </td>
+                  <td className={cn(tdNum, "text-ink-2")}>—</td>
+                  <td className={cn(tdNum, "pr-4 font-bold text-ink")}>
                     {formatRWF(report.totals.purchases.cost)}
                   </td>
                 </tr>
@@ -484,9 +501,9 @@ export default async function RegisterReportPage({
             </table>
           </div>
         )}
-      </section>
+      </Card>
 
-      <p className="text-center text-xs text-zinc-500">{t("scopeNote")}</p>
+      <p className="text-center text-xs text-ink-2">{t("scopeNote")}</p>
     </main>
   );
 }

@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import type { Category } from "@prisma/client";
+import { CaptionLabel } from "@/components/ui";
+import { cn } from "@/lib/cn";
 import {
   createCategory,
   removeCategoryIcon,
@@ -26,9 +28,13 @@ function slugify(name: string): string {
     .slice(0, 50);
 }
 
+const FIELD =
+  "mt-1.5 block h-11 w-full rounded-panel border border-rule bg-surface px-3 text-sm text-ink focus:border-rule-active focus:outline-none focus:ring-1 focus:ring-rule-active";
+
 export function CategoryForm({ mode }: { mode: Mode }) {
   const router = useRouter();
   const tForm = useTranslations("categories.form");
+  const tc = useTranslations("common");
 
   const editingId = mode.kind === "edit" ? mode.id : null;
   const initialImageUrl =
@@ -110,32 +116,32 @@ export function CategoryForm({ mode }: { mode: Mode }) {
   }
 
   return (
-    <form action={handleSubmit} className="space-y-4">
+    <form action={handleSubmit} className="space-y-3">
       {error && (
-        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="rounded-panel bg-error-wash px-3.5 py-2.5 text-sm font-semibold text-error">
           {error}
         </div>
       )}
 
       <label className="block">
-        <span className="text-sm font-medium">Name</span>
+        <CaptionLabel>{tForm("name")}</CaptionLabel>
         <input
           type="text"
           required
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="e.g. Soft drinks"
-          className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+          placeholder={tForm("namePlaceholder")}
+          className={FIELD}
         />
       </label>
 
       <label className="block">
-        <span className="text-sm font-medium">Slug</span>
+        <CaptionLabel>{tForm("slug")}</CaptionLabel>
         {mode.kind === "edit" ? (
           <input
             value={initial.slug}
             disabled
-            className="mt-1 block w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm font-mono text-zinc-500"
+            className={cn(FIELD, "num bg-ground text-ink-2")}
           />
         ) : (
           <input
@@ -146,12 +152,12 @@ export function CategoryForm({ mode }: { mode: Mode }) {
               slugTouched.current = true;
               setSlug(e.target.value);
             }}
-            placeholder="auto-derived"
-            className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm font-mono"
+            placeholder={tForm("slugPlaceholder")}
+            className={cn(FIELD, "num")}
           />
         )}
-        <span className="mt-1 block text-xs text-zinc-500">
-          Used in /sell URLs. Cannot be changed after creation.
+        <span className="mt-1 block text-xs text-ink-2">
+          {tForm("slugHint")}
         </span>
       </label>
 
@@ -169,71 +175,72 @@ export function CategoryForm({ mode }: { mode: Mode }) {
       )}
 
       <div data-tour="category-icon">
-        <span className="text-sm font-medium">Icon</span>
-        <div className="mt-1">
+        <CaptionLabel>{tForm("icon")}</CaptionLabel>
+        <div className="mt-1.5">
           <IconPicker value={iconKey} onChange={setIconKey} />
         </div>
-        <details className="mt-2 text-xs text-zinc-600">
-          <summary className="cursor-pointer">Emoji fallback (optional)</summary>
+        <details className="mt-2 text-xs text-ink-2">
+          <summary className="cursor-pointer font-semibold">
+            {tForm("emojiFallback")}
+          </summary>
           <div className="mt-2 flex items-center gap-2">
             <input
               type="text"
               value={iconEmoji}
               onChange={(e) => setIconEmoji(e.target.value)}
               maxLength={10}
-              className="block w-20 rounded-lg border border-zinc-300 px-2 py-1 text-center text-xl"
-              aria-label="Emoji fallback"
+              className="block h-11 w-20 rounded-panel border border-rule bg-surface px-2 text-center text-xl focus:border-rule-active focus:outline-none focus:ring-1 focus:ring-rule-active"
+              aria-label={tForm("emojiFallback")}
             />
-            <span className="text-zinc-500">
-              Shown if a device can&apos;t render the icon above.
-            </span>
+            <span className="text-ink-2">{tForm("emojiFallbackHint")}</span>
           </div>
         </details>
       </div>
 
       <label className="block">
-        <span className="text-sm font-medium">Sort order</span>
+        <CaptionLabel>{tForm("sortOrder")}</CaptionLabel>
         <input
           type="number"
           step={1}
+          inputMode="numeric"
           value={sortOrder}
           onChange={(e) => setSortOrder(e.target.value)}
-          className="mt-1 block w-32 rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+          className={cn(FIELD, "num w-32 text-right font-semibold")}
         />
-        <span className="mt-1 block text-xs text-zinc-500">
-          Lower numbers appear first in the /sell grid. Same numbers sort by name.
+        <span className="mt-1 block text-xs text-ink-2">
+          {tForm("sortHint")}
         </span>
       </label>
 
       {mode.kind === "edit" && (
-        <label className="flex items-center gap-2 text-sm">
+        <label className="flex items-center gap-2.5 rounded-panel bg-ground px-3.5 py-3 text-sm font-semibold text-ink">
           <input
             type="checkbox"
             checked={active}
             onChange={(e) => setActive(e.target.checked)}
-            className="h-4 w-4 rounded border-zinc-300"
+            className="h-4 w-4 rounded border-rule"
           />
-          Active (visible in /sell)
+          {tForm("activeLabel")}
         </label>
       )}
 
-      <div className="flex gap-2 pt-2">
+      <div className="flex gap-2.5 pt-1">
         <Link
           href="/categories"
-          className="flex-1 rounded-lg border border-zinc-300 bg-white px-4 py-2 text-center text-sm font-medium hover:bg-zinc-50"
+          className="flex h-12 flex-1 items-center justify-center rounded-full bg-surface px-5 text-sm font-semibold text-ink-2 ring-1 ring-inset ring-rule"
         >
-          Cancel
+          {tc("cancel")}
         </Link>
         <button
           type="submit"
           disabled={isPending}
-          className="flex-1 rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-60"
+          className="h-12 flex-1 rounded-full bg-fab px-4 text-sm font-bold text-white shadow-fab active:translate-y-[2px] disabled:opacity-60"
         >
           {isPending
-            ? "Saving..."
+            ? tForm("saving")
             : mode.kind === "create"
-              ? "Create category"
-              : "Save changes"}
+              ? tForm("create")
+              : tc("save")}
         </button>
       </div>
     </form>

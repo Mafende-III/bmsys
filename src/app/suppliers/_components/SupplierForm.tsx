@@ -3,15 +3,22 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import type { Supplier } from "@prisma/client";
+import { CaptionLabel } from "@/components/ui";
 import { createSupplier, updateSupplier } from "@/lib/suppliers/actions";
 
 type Mode =
   | { kind: "create" }
   | { kind: "edit"; id: string; supplier: Supplier };
 
+const FIELD =
+  "mt-1.5 block h-11 w-full rounded-panel border border-rule bg-surface px-3 text-sm text-ink focus:border-rule-active focus:outline-none focus:ring-1 focus:ring-rule-active";
+
 export function SupplierForm({ mode }: { mode: Mode }) {
   const router = useRouter();
+  const t = useTranslations("suppliers.form");
+  const tc = useTranslations("common");
 
   const initial =
     mode.kind === "edit"
@@ -58,64 +65,64 @@ export function SupplierForm({ mode }: { mode: Mode }) {
   }
 
   return (
-    <form action={handleSubmit} className="space-y-4">
+    <form action={handleSubmit} className="space-y-3">
       {error && (
-        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="rounded-panel bg-error-wash px-3.5 py-2.5 text-sm font-semibold text-error">
           {error}
         </div>
       )}
 
       <label className="block">
-        <span className="text-sm font-medium">Name</span>
+        <CaptionLabel>{t("name")}</CaptionLabel>
         <input
           type="text"
           name="name"
           required
           defaultValue={initial.name}
-          placeholder="e.g. Bralirwa, Inyange Industries"
-          className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:ring-1 focus:ring-zinc-900"
+          placeholder={t("namePlaceholder")}
+          className={FIELD}
         />
       </label>
 
       <label className="block">
-        <span className="text-sm font-medium">Phone (optional)</span>
+        <CaptionLabel>{t("phoneOptional")}</CaptionLabel>
         <input
           type="tel"
           name="phone"
           defaultValue={initial.phone}
-          placeholder="+250788000000"
-          className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:ring-1 focus:ring-zinc-900"
+          placeholder={t("phonePlaceholder")}
+          className={FIELD}
         />
       </label>
 
       <label className="block">
-        <span className="text-sm font-medium">Notes (optional)</span>
+        <CaptionLabel>{t("notesOptional")}</CaptionLabel>
         <textarea
           name="notes"
           defaultValue={initial.notes}
           rows={4}
-          placeholder="Payment terms, delivery cadence, contact person, etc."
-          className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:ring-1 focus:ring-zinc-900"
+          placeholder={t("notesPlaceholder")}
+          className="mt-1.5 block w-full rounded-panel border border-rule bg-surface px-3 py-2.5 text-sm text-ink focus:border-rule-active focus:outline-none focus:ring-1 focus:ring-rule-active"
         />
       </label>
 
-      <div className="flex gap-2 pt-2">
+      <div className="flex gap-2.5 pt-1">
         <Link
           href="/suppliers"
-          className="flex-1 rounded-lg border border-zinc-300 bg-white px-4 py-2 text-center text-sm font-medium hover:bg-zinc-50"
+          className="flex h-12 flex-1 items-center justify-center rounded-full bg-surface px-5 text-sm font-semibold text-ink-2 ring-1 ring-inset ring-rule"
         >
-          Cancel
+          {tc("cancel")}
         </Link>
         <button
           type="submit"
           disabled={isPending}
-          className="flex-1 rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-60"
+          className="h-12 flex-1 rounded-full bg-fab px-4 text-sm font-bold text-white shadow-fab active:translate-y-[2px] disabled:opacity-60"
         >
           {isPending
-            ? "Saving..."
+            ? t("saving")
             : mode.kind === "create"
-              ? "Create supplier"
-              : "Save changes"}
+              ? t("create")
+              : tc("save")}
         </button>
       </div>
     </form>

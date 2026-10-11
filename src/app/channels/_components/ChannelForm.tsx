@@ -3,7 +3,10 @@
 import { useEffect, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { useTranslations } from "next-intl";
 import type { Channel } from "@prisma/client";
+import { CaptionLabel } from "@/components/ui";
+import { cn } from "@/lib/cn";
 import { createChannel, updateChannel } from "@/lib/channels/actions";
 
 type Mode =
@@ -18,8 +21,13 @@ function slugify(name: string): string {
     .slice(0, 50);
 }
 
+const FIELD =
+  "mt-1.5 block h-11 w-full rounded-panel border border-rule bg-surface px-3 text-sm text-ink focus:border-rule-active focus:outline-none focus:ring-1 focus:ring-rule-active";
+
 export function ChannelForm({ mode }: { mode: Mode }) {
   const router = useRouter();
+  const tf = useTranslations("channels.form");
+  const tc = useTranslations("common");
 
   const initial =
     mode.kind === "edit"
@@ -74,33 +82,33 @@ export function ChannelForm({ mode }: { mode: Mode }) {
   }
 
   return (
-    <form action={handleSubmit} className="space-y-4">
+    <form action={handleSubmit} className="space-y-3">
       {error && (
-        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="rounded-panel bg-error-wash px-3.5 py-2.5 text-sm font-semibold text-error">
           {error}
         </div>
       )}
 
       <label className="block">
-        <span className="text-sm font-medium">Name</span>
+        <CaptionLabel>{tf("name")}</CaptionLabel>
         <input
           type="text"
           name="name"
           required
           value={name}
           onChange={(e) => setName(e.target.value)}
-          placeholder="e.g. Wholesale Premium"
-          className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm focus:border-zinc-900 focus:ring-1 focus:ring-zinc-900"
+          placeholder={tf("namePlaceholder")}
+          className={FIELD}
         />
       </label>
 
       <label className="block">
-        <span className="text-sm font-medium">Slug</span>
+        <CaptionLabel>{tf("slug")}</CaptionLabel>
         {mode.kind === "edit" ? (
           <input
             value={initial.slug}
             disabled
-            className="mt-1 block w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm font-mono text-zinc-500"
+            className={cn(FIELD, "num bg-ground text-ink-2")}
           />
         ) : (
           <input
@@ -112,34 +120,32 @@ export function ChannelForm({ mode }: { mode: Mode }) {
               slugTouched.current = true;
               setSlug(e.target.value);
             }}
-            placeholder="auto-derived from name"
-            className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm font-mono focus:border-zinc-900 focus:ring-1 focus:ring-zinc-900"
+            placeholder={tf("slugPlaceholder")}
+            className={cn(FIELD, "num")}
           />
         )}
-        <span className="mt-1 block text-xs text-zinc-500">
-          {mode.kind === "edit"
-            ? "Cannot be changed — referenced in URLs and reports."
-            : "Lowercase letters, digits, and dashes only. Cannot be changed after creation."}
+        <span className="mt-1 block text-xs text-ink-2">
+          {mode.kind === "edit" ? tf("slugHintEdit") : tf("slugHintCreate")}
         </span>
       </label>
 
-      <div className="flex gap-2 pt-2">
+      <div className="flex gap-2.5 pt-1">
         <Link
           href="/channels"
-          className="flex-1 rounded-lg border border-zinc-300 bg-white px-4 py-2 text-center text-sm font-medium hover:bg-zinc-50"
+          className="flex h-12 flex-1 items-center justify-center rounded-full bg-surface px-5 text-sm font-semibold text-ink-2 ring-1 ring-inset ring-rule"
         >
-          Cancel
+          {tc("cancel")}
         </Link>
         <button
           type="submit"
           disabled={isPending}
-          className="flex-1 rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-60"
+          className="h-12 flex-1 rounded-full bg-fab px-4 text-sm font-bold text-white shadow-fab active:translate-y-[2px] disabled:opacity-60"
         >
           {isPending
-            ? "Saving..."
+            ? tf("saving")
             : mode.kind === "create"
-              ? "Create channel"
-              : "Save changes"}
+              ? tf("create")
+              : tc("save")}
         </button>
       </div>
     </form>

@@ -4,6 +4,8 @@ import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { CheckCircle2 } from "lucide-react";
+import { Card, CaptionLabel } from "@/components/ui";
+import { cn } from "@/lib/cn";
 import { runStockTake } from "@/lib/stock-takes/actions";
 import type { StockTakeRow } from "@/lib/stock-takes/queries";
 
@@ -18,6 +20,9 @@ type LineState = {
   cartonsRaw: string; // string so empty stays empty (not 0)
   looseRaw: string;
 };
+
+const COUNT_FIELD =
+  "num mt-0.5 block h-11 w-16 rounded-panel border border-rule bg-surface px-2 text-center text-base font-semibold text-ink focus:border-rule-active focus:outline-none focus:ring-1 focus:ring-rule-active";
 
 export function StockTakeForm({ rows }: { rows: StockTakeRow[] }) {
   const router = useRouter();
@@ -140,11 +145,11 @@ export function StockTakeForm({ rows }: { rows: StockTakeRow[] }) {
   }
 
   return (
-    <form action={handleSubmit} className="space-y-5">
+    <form action={handleSubmit} className="space-y-3">
       {error && (
         <div
           role="alert"
-          className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700"
+          className="rounded-panel bg-error-wash px-3.5 py-2.5 text-sm font-semibold text-error"
         >
           {error}
         </div>
@@ -152,9 +157,9 @@ export function StockTakeForm({ rows }: { rows: StockTakeRow[] }) {
       {success && (
         <div
           role="status"
-          className="flex items-center gap-2 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800"
+          className="flex items-center gap-2 rounded-panel bg-success-wash px-3.5 py-2.5 text-sm font-semibold text-success"
         >
-          <CheckCircle2 className="h-4 w-4 shrink-0" strokeWidth={2} />
+          <CheckCircle2 className="h-4 w-4 shrink-0" strokeWidth={2.2} />
           <span>{success}</span>
         </div>
       )}
@@ -162,7 +167,7 @@ export function StockTakeForm({ rows }: { rows: StockTakeRow[] }) {
       {/* Summary strip */}
       <section
         data-tour="stock-take-summary"
-        className="grid grid-cols-2 gap-2 rounded-2xl border border-zinc-200 bg-white p-3 text-xs sm:grid-cols-4"
+        className="grid grid-cols-2 gap-2.5 sm:grid-cols-4"
       >
         <SummaryStat label={t("statTotal")} value={lines.length} />
         <SummaryStat
@@ -179,130 +184,121 @@ export function StockTakeForm({ rows }: { rows: StockTakeRow[] }) {
       </section>
 
       {/* Lines */}
-      <section
-        data-tour="stock-take-lines"
-        className="overflow-hidden rounded-2xl border border-zinc-200 bg-white"
-      >
-        <ul className="divide-y divide-zinc-100">
-          {lines.map((l) => {
-            const counted = lineCountedTotal(l);
-            const variance =
-              counted == null ? null : counted - l.systemTotalUnits;
-            const varianceTone =
-              variance == null
-                ? "text-zinc-400"
-                : variance === 0
-                  ? "text-green-700"
-                  : variance > 0
-                    ? "text-amber-700"
-                    : "text-red-700";
-            const upcDisplay = l.unitsPerCarton;
-            return (
-              <li
-                key={l.productId}
-                className="flex flex-col gap-3 p-3 sm:flex-row sm:items-start sm:justify-between"
-              >
-                {/* Name + system breakdown */}
-                <div className="min-w-0 flex-1">
-                  <p className="truncate text-sm font-medium text-zinc-800">
-                    {l.name}
-                  </p>
-                  <p className="font-mono text-[10px] text-zinc-500">{l.sku}</p>
-                  <p className="mt-1 text-[11px] text-zinc-600">
-                    {t("systemBreakdown", {
-                      cartons: l.systemSealedCartons,
-                      loose: l.systemLooseUnits,
-                      total: l.systemTotalUnits,
-                      unitsPerCarton: upcDisplay,
-                    })}
-                  </p>
-                </div>
+      <Card data-tour="stock-take-lines" className="px-3.5 py-1">
+        {lines.map((l, i) => {
+          const counted = lineCountedTotal(l);
+          const variance =
+            counted == null ? null : counted - l.systemTotalUnits;
+          const varianceTone =
+            variance == null
+              ? "text-ink-2"
+              : variance === 0
+                ? "text-success"
+                : variance > 0
+                  ? "text-warning"
+                  : "text-error";
+          const upcDisplay = l.unitsPerCarton;
+          return (
+            <div
+              key={l.productId}
+              className={cn(
+                "flex flex-col gap-3 py-3 sm:flex-row sm:items-start sm:justify-between",
+                i > 0 && "border-t border-rule-hair",
+              )}
+            >
+              {/* Name + system breakdown */}
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-bold text-ink">
+                  {l.name}
+                </p>
+                <p className="num text-[10px] text-ink-2">{l.sku}</p>
+                <p className="num mt-1 text-[11px] text-ink-2">
+                  {t("systemBreakdown", {
+                    cartons: l.systemSealedCartons,
+                    loose: l.systemLooseUnits,
+                    total: l.systemTotalUnits,
+                    unitsPerCarton: upcDisplay,
+                  })}
+                </p>
+              </div>
 
-                {/* Counted inputs + computed total + variance */}
-                <div className="flex shrink-0 items-end gap-2">
-                  <div className="text-center">
-                    <p className="text-[10px] uppercase tracking-wide text-zinc-500">
-                      {t("cartonsLabel")}
-                    </p>
-                    <input
-                      type="number"
-                      inputMode="numeric"
-                      min={0}
-                      step={1}
-                      value={l.cartonsRaw}
-                      onChange={(e) => setCartons(l.productId, e.target.value)}
-                      placeholder="—"
-                      className="mt-0.5 block h-10 w-16 rounded-lg border border-zinc-300 bg-white px-2 text-center font-mono text-base tabular-nums"
-                    />
-                  </div>
-                  <div className="text-center">
-                    <p className="text-[10px] uppercase tracking-wide text-zinc-500">
-                      {t("looseLabel")}
-                    </p>
-                    <input
-                      type="number"
-                      inputMode="numeric"
-                      min={0}
-                      step={1}
-                      value={l.looseRaw}
-                      onChange={(e) => setLoose(l.productId, e.target.value)}
-                      placeholder="—"
-                      className="mt-0.5 block h-10 w-16 rounded-lg border border-zinc-300 bg-white px-2 text-center font-mono text-base tabular-nums"
-                    />
-                  </div>
-                  <div className="w-20 text-right">
-                    <p className="text-[10px] uppercase tracking-wide text-zinc-500">
-                      {t("countedTotalLabel")}
-                    </p>
-                    <p className="mt-0.5 font-mono text-sm font-semibold tabular-nums text-zinc-800">
-                      {counted == null ? "—" : counted}
-                    </p>
-                    <p
-                      className={`text-[11px] font-mono font-semibold tabular-nums ${varianceTone}`}
-                    >
-                      {variance == null
-                        ? ""
-                        : variance > 0
-                          ? `+${variance}`
-                          : variance}
-                    </p>
-                  </div>
+              {/* Counted inputs + computed total + variance */}
+              <div className="flex shrink-0 items-end gap-2">
+                <label className="block text-center">
+                  <CaptionLabel>{t("cartonsLabel")}</CaptionLabel>
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    min={0}
+                    step={1}
+                    value={l.cartonsRaw}
+                    onChange={(e) => setCartons(l.productId, e.target.value)}
+                    placeholder="—"
+                    className={COUNT_FIELD}
+                  />
+                </label>
+                <label className="block text-center">
+                  <CaptionLabel>{t("looseLabel")}</CaptionLabel>
+                  <input
+                    type="number"
+                    inputMode="numeric"
+                    min={0}
+                    step={1}
+                    value={l.looseRaw}
+                    onChange={(e) => setLoose(l.productId, e.target.value)}
+                    placeholder="—"
+                    className={COUNT_FIELD}
+                  />
+                </label>
+                <div className="w-20 text-right">
+                  <CaptionLabel>{t("countedTotalLabel")}</CaptionLabel>
+                  <p className="num mt-0.5 text-sm font-bold text-ink">
+                    {counted == null ? "—" : counted}
+                  </p>
+                  <p
+                    className={cn(
+                      "num text-[11px] font-bold",
+                      varianceTone,
+                    )}
+                  >
+                    {variance == null
+                      ? ""
+                      : variance > 0
+                        ? `+${variance}`
+                        : variance}
+                  </p>
                 </div>
-              </li>
-            );
-          })}
-        </ul>
-      </section>
+              </div>
+            </div>
+          );
+        })}
+      </Card>
 
       {/* Note */}
       <label className="block" data-tour="stock-take-note">
-        <span className="text-sm font-medium">{t("noteLabel")}</span>
+        <CaptionLabel>{t("noteLabel")}</CaptionLabel>
         <textarea
           value={note}
           onChange={(e) => setNote(e.target.value)}
           rows={2}
           required
           placeholder={t("notePlaceholder")}
-          className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+          className="mt-1.5 block w-full rounded-panel border border-rule bg-surface px-3 py-2.5 text-sm text-ink focus:border-rule-active focus:outline-none focus:ring-1 focus:ring-rule-active"
         />
-        <span className="mt-1 block text-xs text-zinc-500">
-          {t("noteHint")}
-        </span>
+        <span className="mt-1 block text-xs text-ink-2">{t("noteHint")}</span>
       </label>
 
-      <div className="flex justify-end">
-        <button
-          type="submit"
-          disabled={isPending || !allCounted || note.trim() === ""}
-          className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-60"
-        >
-          {isPending
-            ? t("saving")
-            : t("save", { count: summary.negative + summary.positive })}
-        </button>
-      </div>
+      <button
+        type="submit"
+        disabled={isPending || !allCounted || note.trim() === ""}
+        className="h-12 w-full rounded-full bg-fab px-4 text-sm font-bold text-white shadow-fab active:translate-y-[2px] disabled:opacity-60"
+      >
+        {isPending
+          ? t("saving")
+          : t("save", { count: summary.negative + summary.positive })}
+      </button>
 
-      <p className="text-center text-xs text-zinc-500">{t("scopeNote")}</p>
+      <p className="text-center text-xs text-ink-2">{t("scopeNote")}</p>
     </form>
   );
 }
@@ -318,18 +314,14 @@ function SummaryStat({
 }) {
   const valueCls =
     tone === "warn"
-      ? "text-amber-700"
+      ? "text-warning"
       : tone === "ok"
-        ? "text-green-700"
-        : "text-zinc-900";
+        ? "text-success"
+        : "text-ink";
   return (
-    <div>
-      <p className="text-[10px] uppercase tracking-wide text-zinc-500">
-        {label}
-      </p>
-      <p className={`mt-0.5 font-mono text-lg font-semibold tabular-nums ${valueCls}`}>
-        {value}
-      </p>
-    </div>
+    <Card className="p-3">
+      <CaptionLabel>{label}</CaptionLabel>
+      <p className={cn("num mt-0.5 text-lg font-bold", valueCls)}>{value}</p>
+    </Card>
   );
 }

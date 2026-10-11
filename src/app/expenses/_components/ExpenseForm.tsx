@@ -3,6 +3,10 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { Banknote, Landmark, Smartphone } from "lucide-react";
+import { useTranslations } from "next-intl";
+import { CaptionLabel, MoneyField } from "@/components/ui";
+import { cn } from "@/lib/cn";
 import { createExpense } from "@/lib/expenses/actions";
 import {
   PAYMENT_METHODS,
@@ -20,6 +24,9 @@ function todayISO() {
   return `${y}-${m}-${day}`;
 }
 
+const FIELD =
+  "mt-1.5 block h-11 w-full rounded-panel border border-rule bg-surface px-3 text-sm text-ink focus:border-rule-active focus:outline-none focus:ring-1 focus:ring-rule-active";
+
 export function ExpenseForm({
   categories,
   suppliers,
@@ -28,6 +35,9 @@ export function ExpenseForm({
   suppliers: SupplierOption[];
 }) {
   const router = useRouter();
+  const t = useTranslations("expenses.form");
+  const tc = useTranslations("common");
+  const tt = useTranslations("treasury");
 
   const [date, setDate] = useState(todayISO());
   const [amount, setAmount] = useState(0);
@@ -42,6 +52,24 @@ export function ExpenseForm({
   const [idempotencyKey, setIdempotencyKey] = useState(() =>
     crypto.randomUUID(),
   );
+
+  const methodMeta: Record<
+    ExpensePaymentMethod,
+    { label: string; icon: React.ReactNode }
+  > = {
+    CASH: {
+      label: tt("cash"),
+      icon: <Banknote className="h-4 w-4" strokeWidth={2.2} />,
+    },
+    MOMO: {
+      label: tt("momo"),
+      icon: <Smartphone className="h-4 w-4" strokeWidth={2.2} />,
+    },
+    BANK: {
+      label: tt("bank"),
+      icon: <Landmark className="h-4 w-4" strokeWidth={2.2} />,
+    },
+  };
 
   function handleSubmit() {
     setError(null);
@@ -65,44 +93,39 @@ export function ExpenseForm({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       {error && (
-        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="rounded-panel bg-error-wash px-3.5 py-2.5 text-sm font-semibold text-error">
           {error}
         </div>
       )}
 
       <div className="grid grid-cols-2 gap-3">
         <label className="block">
-          <span className="text-sm font-medium">Date</span>
+          <CaptionLabel>{t("date")}</CaptionLabel>
           <input
             type="date"
             value={date}
             onChange={(e) => setDate(e.target.value)}
             required
-            className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+            className={FIELD}
           />
         </label>
-        <label className="block">
-          <span className="text-sm font-medium">Amount (RWF)</span>
-          <input
-            type="number"
-            min={1}
-            step={1}
-            value={amount}
-            onChange={(e) => setAmount(Number(e.target.value || 0))}
-            required
-            className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-lg font-mono tabular-nums"
-          />
-        </label>
+        <MoneyField
+          label={t("amount")}
+          value={amount}
+          onChange={(e) => setAmount(Number(e.target.value || 0))}
+          required
+          inputClassName="mt-1.5"
+        />
       </div>
 
       <label className="block">
-        <span className="text-sm font-medium">Category</span>
+        <CaptionLabel>{t("category")}</CaptionLabel>
         <select
           value={categoryId}
           onChange={(e) => setCategoryId(e.target.value)}
-          className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+          className={FIELD}
         >
           {categories.map((c) => (
             <option key={c.id} value={c.id}>
@@ -113,32 +136,37 @@ export function ExpenseForm({
       </label>
 
       <label className="block">
-        <span className="text-sm font-medium">Description</span>
+        <CaptionLabel>{t("note")}</CaptionLabel>
         <input
           type="text"
           value={description}
           onChange={(e) => setDescription(e.target.value)}
           required
-          placeholder="e.g. November rent, fuel for delivery bike"
-          className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+          placeholder={t("notePlaceholder")}
+          className={FIELD}
         />
       </label>
 
       <fieldset>
-        <legend className="text-sm font-medium">Payment method</legend>
-        <div className="mt-1 grid grid-cols-3 gap-2">
+        <legend>
+          <CaptionLabel>{t("method")}</CaptionLabel>
+        </legend>
+        <div className="mt-1.5 grid grid-cols-3 gap-2">
           {PAYMENT_METHODS.map((m) => (
             <button
               key={m}
               type="button"
+              aria-pressed={paymentMethod === m}
               onClick={() => setPaymentMethod(m)}
-              className={`rounded-2xl border px-3 py-3 text-sm font-medium transition ${
+              className={cn(
+                "flex h-12 items-center justify-center gap-2 rounded-panel text-sm",
                 paymentMethod === m
-                  ? "border-zinc-900 bg-zinc-900 text-white"
-                  : "border-zinc-300 bg-white hover:bg-zinc-50"
-              }`}
+                  ? "bg-ink font-bold text-white"
+                  : "bg-surface font-semibold text-ink-2 ring-1 ring-inset ring-rule",
+              )}
             >
-              {m === "CASH" ? "💵 Cash" : m === "MOMO" ? "📱 MoMo" : "🏦 Bank"}
+              {methodMeta[m].icon}
+              {methodMeta[m].label}
             </button>
           ))}
         </div>
@@ -146,25 +174,25 @@ export function ExpenseForm({
 
       {paymentMethod !== "CASH" && (
         <label className="block">
-          <span className="text-sm font-medium">Reference (optional)</span>
+          <CaptionLabel>{t("reference")}</CaptionLabel>
           <input
             type="text"
             value={paymentReference}
             onChange={(e) => setPaymentReference(e.target.value)}
-            placeholder="Txn id, MoMo code, bank ref"
-            className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+            placeholder={t("referencePlaceholder")}
+            className={FIELD}
           />
         </label>
       )}
 
       <label className="block">
-        <span className="text-sm font-medium">Supplier (optional)</span>
+        <CaptionLabel>{t("supplier")}</CaptionLabel>
         <select
           value={supplierId}
           onChange={(e) => setSupplierId(e.target.value)}
-          className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+          className={FIELD}
         >
-          <option value="">— None —</option>
+          <option value="">{t("noSupplier")}</option>
           {suppliers.map((s) => (
             <option key={s.id} value={s.id}>
               {s.name}
@@ -173,20 +201,20 @@ export function ExpenseForm({
         </select>
       </label>
 
-      <div className="flex gap-2 pt-2">
+      <div className="flex gap-2.5 pt-1">
         <Link
           href="/expenses"
-          className="flex-1 rounded-lg border border-zinc-300 bg-white px-4 py-2 text-center text-sm font-medium hover:bg-zinc-50"
+          className="flex h-12 flex-1 items-center justify-center rounded-full bg-surface px-5 text-sm font-semibold text-ink-2 ring-1 ring-inset ring-rule"
         >
-          Cancel
+          {tc("cancel")}
         </Link>
         <button
           type="button"
           onClick={handleSubmit}
           disabled={isPending || amount <= 0 || description.trim() === ""}
-          className="flex-1 rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-60"
+          className="h-12 flex-1 rounded-full bg-fab px-4 text-sm font-bold text-white shadow-fab active:translate-y-[2px] disabled:opacity-60"
         >
-          {isPending ? "Recording..." : "Record expense"}
+          {isPending ? t("creating") : t("create")}
         </button>
       </div>
     </div>

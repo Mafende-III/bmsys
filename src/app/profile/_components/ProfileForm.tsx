@@ -2,7 +2,10 @@
 
 import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
+import { Check } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { Card, CaptionLabel } from "@/components/ui";
+import { cn } from "@/lib/cn";
 import { updateMyProfile } from "@/lib/users/actions";
 import type { Locale } from "@/i18n/config";
 import { LanguageToggle } from "@/app/_components/LanguageToggle";
@@ -13,6 +16,9 @@ type Initial = {
   role: "OWNER" | "SELLER";
   language: Locale;
 };
+
+const FIELD =
+  "mt-1.5 block h-11 w-full rounded-panel border border-rule bg-surface px-3 text-sm text-ink focus:border-rule-active focus:outline-none focus:ring-1 focus:ring-rule-active";
 
 export function ProfileForm({ initial }: { initial: Initial }) {
   const router = useRouter();
@@ -56,126 +62,116 @@ export function ProfileForm({ initial }: { initial: Initial }) {
   }
 
   return (
-    <form action={handleSubmit} className="space-y-5">
+    <form action={handleSubmit} className="space-y-3">
       {error && (
-        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="rounded-panel bg-error-wash px-3.5 py-2.5 text-sm font-semibold text-error">
           {error}
         </div>
       )}
       {savedAt && (
-        <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
+        <div className="flex items-center gap-2 rounded-panel bg-success-wash px-3.5 py-2.5 text-sm font-semibold text-success">
+          <Check className="h-4 w-4 shrink-0" strokeWidth={2.6} />
           {tc("saved")}
         </div>
       )}
 
-      <section
-        data-tour="profile-identity"
-        className="rounded-2xl border border-zinc-200 bg-white p-4 space-y-3"
-      >
+      <Card data-tour="profile-identity" className="space-y-3 p-4">
         <label className="block">
-          <span className="text-sm font-medium">{t("name")}</span>
+          <CaptionLabel>{t("name")}</CaptionLabel>
           <input
             type="text"
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
             maxLength={100}
-            className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+            className={FIELD}
           />
         </label>
 
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           <label className="block">
-            <span className="text-sm font-medium">{t("phone")}</span>
+            <CaptionLabel>{t("phone")}</CaptionLabel>
             <input
               type="tel"
               value={initial.phone}
               disabled
-              className="mt-1 block w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-500"
+              className={cn(FIELD, "num bg-ground text-ink-2")}
             />
-            <span className="mt-1 block text-xs text-zinc-500">
+            <span className="mt-1 block text-xs text-ink-2">
               {t("phoneNote")}
             </span>
           </label>
           <label className="block">
-            <span className="text-sm font-medium">{t("role")}</span>
+            <CaptionLabel>{t("role")}</CaptionLabel>
             <input
               type="text"
               value={
                 initial.role === "OWNER" ? tu("roleOwner") : tu("roleSeller")
               }
               disabled
-              className="mt-1 block w-full rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm text-zinc-500"
+              className={cn(FIELD, "bg-ground text-ink-2")}
             />
           </label>
         </div>
-      </section>
+      </Card>
 
-      <section
-        data-tour="profile-language"
-        className="rounded-2xl border border-zinc-200 bg-white p-4"
-      >
-        <h2 className="text-base font-medium">{t("language")}</h2>
-        <p className="mt-0.5 text-xs text-zinc-600">{t("languageHint")}</p>
+      <Card data-tour="profile-language" className="p-4">
+        <CaptionLabel>{t("language")}</CaptionLabel>
+        <p className="mt-0.5 text-xs text-ink-2">{t("languageHint")}</p>
         <div className="mt-3">
           <LanguageToggle current={initial.language} />
         </div>
-      </section>
+      </Card>
 
-      <section
-        data-tour="profile-pin"
-        className="rounded-2xl border border-zinc-200 bg-white p-4 space-y-3"
-      >
+      <Card data-tour="profile-pin" className="space-y-3 p-4">
         <div>
-          <h2 className="text-base font-medium">{t("changePin")}</h2>
-          <p className="mt-0.5 text-xs text-zinc-600">{t("changePinHint")}</p>
+          <CaptionLabel>{t("changePin")}</CaptionLabel>
+          <p className="mt-0.5 text-xs text-ink-2">{t("changePinHint")}</p>
         </div>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <label className="block">
-            <span className="text-sm font-medium">{t("currentPin")}</span>
+            <CaptionLabel>{t("currentPin")}</CaptionLabel>
             <input
               type="password"
               value={currentPin}
               onChange={(e) => setCurrentPin(e.target.value)}
               inputMode="numeric"
               autoComplete="current-password"
-              className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+              className={cn(FIELD, "num")}
             />
           </label>
           <label className="block">
-            <span className="text-sm font-medium">{t("newPin")}</span>
+            <CaptionLabel>{t("newPin")}</CaptionLabel>
             <input
               type="password"
               value={newPin}
               onChange={(e) => setNewPin(e.target.value)}
               inputMode="numeric"
               autoComplete="new-password"
-              className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+              className={cn(FIELD, "num")}
             />
           </label>
           <label className="block">
-            <span className="text-sm font-medium">{t("confirmPin")}</span>
+            <CaptionLabel>{t("confirmPin")}</CaptionLabel>
             <input
               type="password"
               value={confirmPin}
               onChange={(e) => setConfirmPin(e.target.value)}
               inputMode="numeric"
               autoComplete="new-password"
-              className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+              className={cn(FIELD, "num")}
             />
           </label>
         </div>
-      </section>
+      </Card>
 
-      <div className="flex justify-end">
-        <button
-          type="submit"
-          disabled={isPending}
-          className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-60"
-        >
-          {isPending ? `${t("save")}…` : t("save")}
-        </button>
-      </div>
+      <button
+        type="submit"
+        disabled={isPending}
+        className="h-12 w-full rounded-full bg-fab px-4 text-sm font-bold text-white shadow-fab active:translate-y-[2px] disabled:opacity-60"
+      >
+        {isPending ? `${t("save")}…` : t("save")}
+      </button>
     </form>
   );
 }

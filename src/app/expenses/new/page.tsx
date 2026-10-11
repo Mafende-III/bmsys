@@ -1,4 +1,4 @@
-import Link from "next/link";
+import { getTranslations } from "next-intl/server";
 import { requireOwner } from "@/lib/auth-guards";
 import { prisma } from "@/lib/prisma";
 import { listExpenseCategories } from "@/lib/expenses/queries";
@@ -14,20 +14,13 @@ export default async function NewExpensePage() {
       select: { id: true, name: true },
     }),
   ]);
+  const t = await getTranslations("expenses");
 
   return (
-    <main className="mx-auto max-w-xl p-4 sm:p-6">
-      <header className="mb-4">
-        <Link
-          href="/expenses"
-          className="text-sm text-zinc-600 hover:underline"
-        >
-          ← Expenses
-        </Link>
-        <h1 className="mt-1 text-2xl font-semibold">New expense</h1>
-        <p className="text-sm text-zinc-600">
-          Rent, salaries, transport, utilities — anything that's not stock.
-        </p>
+    <main className="mx-auto max-w-2xl space-y-3 p-4">
+      <header>
+        <h1 className="text-xl font-bold text-ink">{t("newTitle")}</h1>
+        <p className="text-[13px] text-ink-2">{t("newSubtitle")}</p>
       </header>
       <ExpenseForm categories={categories} suppliers={suppliers} />
     </main>

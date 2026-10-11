@@ -1,7 +1,10 @@
 import Link from "next/link";
+import { Check, Pause, Search } from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { requireOwner } from "@/lib/auth-guards";
 import { listChannelsWithUsage } from "@/lib/channels/queries";
+import { Card, StatusPill } from "@/components/ui";
+import { cn } from "@/lib/cn";
 
 type SearchParams = {
   search?: string;
@@ -29,159 +32,97 @@ export default async function ChannelsPage({
   const tc = await getTranslations("common");
 
   return (
-    <main className="mx-auto max-w-4xl p-4 sm:p-6">
-      <header className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <Link
-            href="/dashboard"
-            className="text-sm text-zinc-600 hover:underline"
-          >
-            ← {tc("dashboard")}
-          </Link>
-          <h1 className="mt-1 text-2xl font-semibold">{t("title")}</h1>
-          <p className="text-sm text-zinc-600">{t("subtitle")}</p>
+    <main className="mx-auto max-w-2xl space-y-3 p-4">
+      <header className="flex items-center justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="text-xl font-bold text-ink">{t("title")}</h1>
+          <p className="text-[13px] text-ink-2">{t("subtitle")}</p>
         </div>
         <Link
           href="/channels/new"
-          className="self-start rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 sm:self-auto"
+          className="flex h-11 shrink-0 items-center rounded-full bg-fab px-4 text-sm font-bold text-white shadow-fab active:translate-y-[2px]"
         >
           {t("new")}
         </Link>
       </header>
 
-      <form
-        method="get"
-        className="mt-4 flex flex-col gap-2 sm:flex-row sm:items-end"
-      >
-        <label className="block flex-1">
-          <span className="text-xs font-medium text-zinc-700">Search</span>
+      <form method="get" className="flex gap-2">
+        <div className="relative min-w-0 flex-1">
+          <Search
+            className="pointer-events-none absolute left-4 top-3 h-[18px] w-[18px] text-ink-2"
+            strokeWidth={2.2}
+          />
           <input
             type="search"
             name="search"
             defaultValue={search ?? ""}
-            placeholder="Name or slug"
-            className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+            placeholder={t("searchPlaceholder")}
+            className="block h-11 w-full rounded-[14px] border border-rule bg-surface pl-11 pr-4 text-[15px] text-ink focus:border-rule-active focus:outline-none focus:ring-1 focus:ring-rule-active"
           />
-        </label>
-        <label className="block sm:w-32">
-          <span className="text-xs font-medium text-zinc-700">Status</span>
-          <select
-            name="active"
-            defaultValue={params.active ?? "true"}
-            className="mt-1 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
-          >
-            <option value="true">Active</option>
-            <option value="false">Inactive</option>
-            <option value="all">All</option>
-          </select>
-        </label>
+        </div>
+        <select
+          name="active"
+          defaultValue={params.active ?? "true"}
+          aria-label={tc("status")}
+          className="h-11 w-28 rounded-panel border border-rule bg-surface px-2.5 text-[13px] text-ink-2"
+        >
+          <option value="true">{tc("active")}</option>
+          <option value="false">{t("inactive")}</option>
+          <option value="all">{tc("all")}</option>
+        </select>
         <button
           type="submit"
-          className="rounded-lg border border-zinc-300 bg-white px-4 py-2 text-sm font-medium hover:bg-zinc-50"
+          className="h-11 shrink-0 rounded-full bg-surface px-4 text-[13px] font-bold text-primary ring-1 ring-inset ring-rule"
         >
-          Filter
+          {tc("filter")}
         </button>
       </form>
 
-      {/* Desktop table */}
-      <div className="mt-4 hidden overflow-hidden rounded-2xl border border-zinc-200 bg-white sm:block">
-        <table className="w-full text-sm">
-          <thead className="bg-zinc-50 text-left text-xs font-medium uppercase text-zinc-600">
-            <tr>
-              <th className="px-3 py-2">Name</th>
-              <th className="px-3 py-2">Slug</th>
-              <th className="px-3 py-2 text-right">Customers</th>
-              <th className="px-3 py-2 text-right">Sales (30d)</th>
-              <th className="px-3 py-2 text-right">Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {channels.map((c) => (
-              <tr
-                key={c.id}
-                className="border-t border-zinc-200 hover:bg-zinc-50"
-              >
-                <td className="px-3 py-2">
-                  <Link
-                    href={`/channels/${c.id}`}
-                    className="font-medium text-zinc-900 hover:underline"
-                  >
-                    {c.name}
-                  </Link>
-                </td>
-                <td className="px-3 py-2 font-mono text-xs text-zinc-600">
-                  {c.slug}
-                </td>
-                <td className="px-3 py-2 text-right tabular-nums">
-                  {c.customerCount}
-                </td>
-                <td className="px-3 py-2 text-right tabular-nums">
-                  {c.recentSales}
-                </td>
-                <td className="px-3 py-2 text-right">
-                  {c.active ? (
-                    <span className="rounded-full bg-green-100 px-2 py-0.5 text-xs text-green-800">
-                      Active
-                    </span>
-                  ) : (
-                    <span className="rounded-full bg-zinc-100 px-2 py-0.5 text-xs text-zinc-700">
-                      Inactive
-                    </span>
-                  )}
-                </td>
-              </tr>
-            ))}
-            {channels.length === 0 && (
-              <tr>
-                <td
-                  colSpan={5}
-                  className="px-3 py-6 text-center text-zinc-500"
-                >
-                  Nothing matches. Try changing the status filter, or add a channel above.
-                </td>
-              </tr>
-            )}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Mobile cards */}
-      <div className="mt-4 space-y-2 sm:hidden">
-        {channels.map((c) => (
-          <Link
-            key={c.id}
-            href={`/channels/${c.id}`}
-            className="block rounded-2xl border border-zinc-200 bg-white p-3"
-          >
-            <div className="flex items-start justify-between gap-2">
-              <div className="min-w-0">
-                <p className="truncate font-medium">{c.name}</p>
-                <p className="font-mono text-xs text-zinc-500">{c.slug}</p>
+      {channels.length === 0 ? (
+        <Card className="p-6 text-center text-sm text-ink-2">
+          {t("empty")}
+        </Card>
+      ) : (
+        <Card className="px-3.5 py-1">
+          {channels.map((c, i) => (
+            <Link
+              key={c.id}
+              href={`/channels/${c.id}`}
+              className={cn(
+                "flex items-center gap-3 py-3",
+                i > 0 && "border-t border-rule-hair",
+              )}
+            >
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-[15px] font-bold text-ink">
+                  {c.name}
+                </p>
+                <p className="num mt-0.5 truncate text-xs text-ink-2">
+                  {c.slug} · {t("headerCustomers")} {c.customerCount} ·{" "}
+                  {t("headerSales30")} {c.recentSales}
+                </p>
               </div>
               {c.active ? (
-                <span className="shrink-0 rounded-full bg-green-100 px-2 py-0.5 text-xs text-green-800">
-                  Active
-                </span>
+                <StatusPill
+                  tone="success"
+                  icon={<Check className="h-3 w-3" strokeWidth={3} />}
+                  className="shrink-0"
+                >
+                  {tc("active")}
+                </StatusPill>
               ) : (
-                <span className="shrink-0 rounded-full bg-zinc-100 px-2 py-0.5 text-xs text-zinc-700">
-                  Inactive
-                </span>
+                <StatusPill
+                  tone="neutral"
+                  icon={<Pause className="h-3 w-3" strokeWidth={2.6} />}
+                  className="shrink-0"
+                >
+                  {t("inactive")}
+                </StatusPill>
               )}
-            </div>
-            <dl className="mt-2 grid grid-cols-2 gap-y-1 text-xs text-zinc-700">
-              <dt>Customers</dt>
-              <dd className="text-right tabular-nums">{c.customerCount}</dd>
-              <dt>Sales (30d)</dt>
-              <dd className="text-right tabular-nums">{c.recentSales}</dd>
-            </dl>
-          </Link>
-        ))}
-        {channels.length === 0 && (
-          <p className="rounded-2xl border border-zinc-200 bg-white p-6 text-center text-sm text-zinc-500">
-            Nothing matches. Try changing the status filter, or add a channel above.
-          </p>
-        )}
-      </div>
+            </Link>
+          ))}
+        </Card>
+      )}
     </main>
   );
 }

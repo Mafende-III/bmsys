@@ -33,9 +33,9 @@ export function CsvButton({
     <button
       type="button"
       onClick={download}
-      className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-300 bg-white px-2.5 py-1.5 text-xs font-medium text-zinc-700 hover:bg-zinc-50"
+      className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full bg-surface px-3 text-xs font-bold text-primary ring-1 ring-inset ring-rule"
     >
-      <Download className="h-3.5 w-3.5" strokeWidth={2} />
+      <Download className="h-3.5 w-3.5" strokeWidth={2.2} />
       {label}
     </button>
   );

@@ -1,9 +1,11 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { getTranslations } from "next-intl/server";
 import { requireOwner } from "@/lib/auth-guards";
 import { ChannelForm } from "../_components/ChannelForm";
 import { getChannel, getChannelUsage } from "@/lib/channels/queries";
 import { reactivateChannel } from "@/lib/channels/actions";
+import { Card, CaptionLabel } from "@/components/ui";
 
 export default async function EditChannelPage({
   params,
@@ -19,30 +21,25 @@ export default async function EditChannelPage({
   ]);
 
   if (!channel) notFound();
+  const t = await getTranslations("channels");
 
   const reactivateKey = crypto.randomUUID();
 
   return (
-    <main className="mx-auto max-w-xl p-4 sm:p-6">
-      <header className="mb-4 flex items-start justify-between gap-2">
+    <main className="mx-auto max-w-2xl space-y-3 p-4">
+      <header className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <Link
-            href="/channels"
-            className="text-sm text-zinc-600 hover:underline"
-          >
-            ← Channels
-          </Link>
-          <h1 className="mt-1 truncate text-2xl font-semibold">
+          <h1 className="truncate text-xl font-bold text-ink">
             {channel.name}
           </h1>
-          <p className="font-mono text-xs text-zinc-500">{channel.slug}</p>
+          <p className="num text-[13px] text-ink-2">{channel.slug}</p>
         </div>
         {channel.active ? (
           <Link
             href={`/channels/${id}/deactivate`}
-            className="shrink-0 rounded-lg border border-red-300 bg-white px-3 py-1.5 text-sm text-red-700 hover:bg-red-50"
+            className="flex h-11 shrink-0 items-center rounded-full bg-surface px-4 text-sm font-bold text-error ring-1 ring-inset ring-rule"
           >
-            Deactivate
+            {t("deactivate")}
           </Link>
         ) : (
           <form
@@ -54,9 +51,9 @@ export default async function EditChannelPage({
           >
             <button
               type="submit"
-              className="shrink-0 rounded-lg border border-green-300 bg-white px-3 py-1.5 text-sm text-green-700 hover:bg-green-50"
+              className="flex h-11 shrink-0 items-center rounded-full bg-surface px-4 text-sm font-bold text-success ring-1 ring-inset ring-rule"
             >
-              Reactivate
+              {t("reactivate")}
             </button>
           </form>
         )}
@@ -64,24 +61,28 @@ export default async function EditChannelPage({
 
       <ChannelForm mode={{ kind: "edit", id, channel }} />
 
-      <section className="mt-8 rounded-2xl border border-zinc-200 bg-white p-4">
-        <h2 className="text-sm font-medium text-zinc-800">Usage</h2>
-        <dl className="mt-3 grid grid-cols-2 gap-2 text-sm">
-          <dt className="text-zinc-600">Customers with this as primary</dt>
-          <dd className="text-right font-mono tabular-nums">
-            {usage.customerCount}
-          </dd>
-          <dt className="text-zinc-600">Sales in the last 30 days</dt>
-          <dd className="text-right font-mono tabular-nums">
-            {usage.recentSales}
-          </dd>
+      <Card className="p-4">
+        <CaptionLabel>{t("usageTitle")}</CaptionLabel>
+        <dl className="mt-3 space-y-2">
+          <div className="flex items-baseline justify-between gap-3">
+            <dt className="text-[13px] text-ink-2">{t("usageCustomers")}</dt>
+            <dd className="num text-[15px] font-bold text-ink">
+              {usage.customerCount}
+            </dd>
+          </div>
+          <div className="flex items-baseline justify-between gap-3">
+            <dt className="text-[13px] text-ink-2">{t("usageSales")}</dt>
+            <dd className="num text-[15px] font-bold text-ink">
+              {usage.recentSales}
+            </dd>
+          </div>
         </dl>
         {channel.active && usage.recentSales > 0 && (
-          <p className="mt-3 text-xs text-amber-700">
-            Cannot deactivate while there are recent sales.
+          <p className="mt-3 rounded-panel bg-warning-wash px-3.5 py-2.5 text-xs font-semibold text-warning">
+            {t("cannotDeactivateNote")}
           </p>
         )}
-      </section>
+      </Card>
     </main>
   );
 }

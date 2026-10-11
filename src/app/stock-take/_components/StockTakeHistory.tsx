@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { useTranslations } from "next-intl";
 import { ChevronDown, ChevronRight, History } from "lucide-react";
+import { Card, CaptionLabel } from "@/components/ui";
+import { cn } from "@/lib/cn";
 import type { StockTakeHistoryEntry } from "@/lib/stock-takes/queries";
 
 export function StockTakeHistory({
@@ -26,69 +28,69 @@ export function StockTakeHistory({
 
   if (entries.length === 0) {
     return (
-      <section
-        data-tour="stock-take-history"
-        className="rounded-2xl border border-zinc-200 bg-white p-4"
-      >
+      <Card data-tour="stock-take-history" className="p-4">
         <header className="flex items-center gap-2">
-          <History className="h-4 w-4 text-zinc-500" />
-          <h2 className="text-sm font-semibold text-zinc-800">
-            {t("historyTitle")}
-          </h2>
+          <History className="h-4 w-4 text-ink-2" strokeWidth={2.2} />
+          <h2 className="text-sm font-bold text-ink">{t("historyTitle")}</h2>
         </header>
-        <p className="mt-2 text-xs text-zinc-500">{t("historyEmpty")}</p>
-      </section>
+        <p className="mt-2 text-xs text-ink-2">{t("historyEmpty")}</p>
+      </Card>
     );
   }
 
   return (
-    <section
-      data-tour="stock-take-history"
-      className="overflow-hidden rounded-2xl border border-zinc-200 bg-white"
-    >
-      <header className="flex items-center gap-2 border-b border-zinc-100 px-4 py-3">
-        <History className="h-4 w-4 text-zinc-500" />
-        <h2 className="text-sm font-semibold text-zinc-800">
-          {t("historyTitle")}
-        </h2>
-        <span className="ml-auto text-[11px] text-zinc-500">
+    <Card data-tour="stock-take-history" className="overflow-hidden">
+      <header className="flex items-center gap-2 border-b border-rule-hair px-4 py-3">
+        <History className="h-4 w-4 text-ink-2" strokeWidth={2.2} />
+        <h2 className="text-sm font-bold text-ink">{t("historyTitle")}</h2>
+        <span className="ml-auto text-[11px] text-ink-2">
           {t("historySubtitle", { count: entries.length })}
         </span>
       </header>
-      <ul className="divide-y divide-zinc-100">
-        {entries.map((e) => {
+      <ul>
+        {entries.map((e, idx) => {
           const open = openId === e.id;
           const changedLines = e.lines.filter((l) => l.variance !== 0);
           const linesToShow = open ? e.lines : changedLines.slice(0, 0);
           return (
-            <li key={e.id} className="px-3 py-2 sm:px-4">
+            <li
+              key={e.id}
+              className={cn(
+                "px-3 py-2.5 sm:px-4",
+                idx > 0 && "border-t border-rule-hair",
+              )}
+            >
               <button
                 type="button"
                 onClick={() => setOpenId(open ? null : e.id)}
                 className="flex w-full items-start gap-2 text-left"
               >
                 {open ? (
-                  <ChevronDown className="mt-0.5 h-4 w-4 shrink-0 text-zinc-500" />
+                  <ChevronDown className="mt-0.5 h-4 w-4 shrink-0 text-ink-2" strokeWidth={2.2} />
                 ) : (
-                  <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-zinc-500" />
+                  <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-ink-2" strokeWidth={2.2} />
                 )}
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm text-zinc-800">
+                  <p className="num text-sm font-bold text-ink">
                     {fmtDateTime(e.createdAt)}
                     {e.userName ? (
-                      <span className="text-zinc-500"> · {e.userName}</span>
+                      <span className="font-semibold text-ink-2">
+                        {" "}
+                        · {e.userName}
+                      </span>
                     ) : null}
                   </p>
-                  <p className="truncate text-xs text-zinc-600">{e.note}</p>
+                  <p className="truncate text-xs text-ink-2">{e.note}</p>
                 </div>
                 <div className="shrink-0 text-right">
-                  <p className="text-[11px] text-zinc-500">
+                  <p className="num text-[11px] text-ink-2">
                     {t("historyLineCount", { count: e.lineCount })}
                   </p>
                   <p
-                    className={`text-[11px] font-medium ${
-                      e.adjustedCount > 0 ? "text-amber-700" : "text-green-700"
-                    }`}
+                    className={cn(
+                      "num text-[11px] font-bold",
+                      e.adjustedCount > 0 ? "text-warning" : "text-success",
+                    )}
                   >
                     {t("historyAdjustedCount", { count: e.adjustedCount })}
                   </p>
@@ -98,59 +100,63 @@ export function StockTakeHistory({
               {open && (
                 <div className="mt-3 space-y-3">
                   {e.note && (
-                    <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-3">
-                      <p className="text-[10px] uppercase tracking-wide text-zinc-500">
-                        {t("historyNoteLabel")}
-                      </p>
-                      <p className="mt-1 whitespace-pre-wrap text-xs text-zinc-800">
+                    <div className="rounded-panel bg-ground p-3">
+                      <CaptionLabel>{t("historyNoteLabel")}</CaptionLabel>
+                      <p className="mt-1 whitespace-pre-wrap text-xs text-ink">
                         {e.note}
                       </p>
                     </div>
                   )}
-                  <div className="overflow-x-auto rounded-lg border border-zinc-100">
+                  <div className="overflow-x-auto rounded-panel ring-1 ring-inset ring-rule-hair">
                     <table className="w-full text-xs">
-                      <thead className="bg-zinc-50 text-zinc-600">
+                      <thead className="bg-ground text-[11px] uppercase tracking-wide text-ink-2">
                         <tr>
-                          <th className="px-2 py-1.5 text-left font-medium">
+                          <th className="px-2 py-1.5 text-left font-semibold">
                             {t("historyColProduct")}
                           </th>
-                          <th className="px-2 py-1.5 text-right font-medium">
+                          <th className="px-2 py-1.5 text-right font-semibold">
                             {t("historyColSystem")}
                           </th>
-                          <th className="px-2 py-1.5 text-right font-medium">
+                          <th className="px-2 py-1.5 text-right font-semibold">
                             {t("historyColCounted")}
                           </th>
-                          <th className="px-2 py-1.5 text-right font-medium">
+                          <th className="px-2 py-1.5 text-right font-semibold">
                             {t("varianceLabel")}
                           </th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-zinc-100">
-                        {(open ? e.lines : linesToShow).map((l) => (
-                          <tr key={l.productId}>
+                      <tbody>
+                        {(open ? e.lines : linesToShow).map((l, li) => (
+                          <tr
+                            key={l.productId}
+                            className={cn(
+                              li > 0 && "border-t border-rule-hair",
+                            )}
+                          >
                             <td className="px-2 py-1.5">
-                              <p className="text-zinc-800">{l.name}</p>
-                              <p className="font-mono text-[10px] text-zinc-500">
+                              <p className="font-semibold text-ink">{l.name}</p>
+                              <p className="num text-[10px] text-ink-2">
                                 {l.sku}
                               </p>
                             </td>
-                            <td className="px-2 py-1.5 text-right font-mono tabular-nums text-zinc-700">
+                            <td className="num px-2 py-1.5 text-right text-ink-2">
                               {l.system}
                             </td>
-                            <td className="px-2 py-1.5 text-right font-mono tabular-nums text-zinc-700">
+                            <td className="num px-2 py-1.5 text-right text-ink-2">
                               <span>{l.counted}</span>
-                              <span className="ml-1 text-[10px] text-zinc-500">
+                              <span className="ml-1 text-[10px]">
                                 ({l.countedCartons}×c + {l.countedLooseUnits})
                               </span>
                             </td>
                             <td
-                              className={`px-2 py-1.5 text-right font-mono font-semibold tabular-nums ${
+                              className={cn(
+                                "num px-2 py-1.5 text-right font-bold",
                                 l.variance === 0
-                                  ? "text-zinc-400"
+                                  ? "text-ink-2"
                                   : l.variance > 0
-                                    ? "text-amber-700"
-                                    : "text-red-700"
-                              }`}
+                                    ? "text-warning"
+                                    : "text-error",
+                              )}
                             >
                               {l.variance > 0 ? `+${l.variance}` : l.variance}
                             </td>
@@ -165,6 +171,6 @@ export function StockTakeHistory({
           );
         })}
       </ul>
-    </section>
+    </Card>
   );
 }

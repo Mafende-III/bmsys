@@ -1,4 +1,3 @@
-import Link from "next/link";
 import { getLocale, getTranslations } from "next-intl/server";
 import { requireSeller } from "@/lib/auth-guards";
 import { prisma } from "@/lib/prisma";
@@ -9,7 +8,6 @@ import { ProfileForm } from "./_components/ProfileForm";
 export default async function ProfilePage() {
   const session = await requireSeller();
   const t = await getTranslations("profile");
-  const tc = await getTranslations("common");
   const locale = (await getLocale()) as Locale;
 
   const me = await prisma.user.findUniqueOrThrow({
@@ -18,16 +16,10 @@ export default async function ProfilePage() {
   });
 
   return (
-    <main className="mx-auto max-w-2xl p-4 sm:p-6">
-      <header className="mb-4">
-        <Link
-          href={session.role === "OWNER" ? "/dashboard" : "/sell"}
-          className="text-sm text-zinc-600 hover:underline"
-        >
-          ← {tc("dashboard")}
-        </Link>
-        <h1 className="mt-1 text-2xl font-semibold">{t("title")}</h1>
-        <p className="text-sm text-zinc-600">{t("subtitle")}</p>
+    <main className="mx-auto max-w-2xl space-y-3 p-4">
+      <header>
+        <h1 className="text-xl font-bold text-ink">{t("title")}</h1>
+        <p className="text-[13px] text-ink-2">{t("subtitle")}</p>
       </header>
 
       <ProfileForm

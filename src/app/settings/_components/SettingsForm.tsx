@@ -4,6 +4,8 @@ import { useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Check, ImagePlus, Trash2 } from "lucide-react";
 import { useTranslations } from "next-intl";
+import { Card, CaptionLabel } from "@/components/ui";
+import { cn } from "@/lib/cn";
 import {
   removeLogo,
   updateSettings,
@@ -21,6 +23,9 @@ type Initial = {
   logoUrl: string | null;
   defaultMinMarginBps: number;
 };
+
+const FIELD =
+  "block w-full rounded-panel border border-rule bg-surface px-3 text-sm text-ink focus:border-rule-active focus:outline-none focus:ring-1 focus:ring-rule-active";
 
 export function SettingsForm({ initial }: { initial: Initial }) {
   const router = useRouter();
@@ -68,41 +73,36 @@ export function SettingsForm({ initial }: { initial: Initial }) {
   }
 
   return (
-    <form action={handleSubmit} className="space-y-6">
+    <form action={handleSubmit} className="space-y-3">
       {error && (
-        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="rounded-panel bg-error-wash px-3.5 py-2.5 text-sm font-semibold text-error">
           {error}
         </div>
       )}
       {savedAt && (
-        <div className="rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
+        <div className="flex items-center gap-2 rounded-panel bg-success-wash px-3.5 py-2.5 text-sm font-semibold text-success">
+          <Check className="h-4 w-4 shrink-0" strokeWidth={2.6} />
           {t("refreshTabs")}
         </div>
       )}
 
-      <section
-        data-tour="settings-name"
-        className="rounded-2xl border border-zinc-200 bg-white p-4"
-      >
-        <h2 className="text-base font-medium">{t("shopName")}</h2>
-        <p className="mt-0.5 text-xs text-zinc-600">{t("shopNameHint")}</p>
+      <Card data-tour="settings-name" className="p-4">
+        <CaptionLabel>{t("shopName")}</CaptionLabel>
+        <p className="mt-0.5 text-xs text-ink-2">{t("shopNameHint")}</p>
         <input
           type="text"
           value={companyName}
           onChange={(e) => setCompanyName(e.target.value)}
           maxLength={80}
           required
-          className="mt-3 block w-full rounded-lg border border-zinc-300 px-3 py-2 text-sm"
+          className={cn(FIELD, "mt-3 h-11")}
           placeholder="HydroMart Shop"
         />
-      </section>
+      </Card>
 
-      <section
-        data-tour="settings-theme"
-        className="rounded-2xl border border-zinc-200 bg-white p-4"
-      >
-        <h2 className="text-base font-medium">{t("theme")}</h2>
-        <p className="mt-0.5 text-xs text-zinc-600">{t("themeHint")}</p>
+      <Card data-tour="settings-theme" className="p-4">
+        <CaptionLabel>{t("theme")}</CaptionLabel>
+        <p className="mt-0.5 text-xs text-ink-2">{t("themeHint")}</p>
         <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-5">
           {THEME_KEYS.map((key) => {
             const themeMeta = THEMES[key];
@@ -115,77 +115,75 @@ export function SettingsForm({ initial }: { initial: Initial }) {
                 aria-pressed={selected}
                 aria-label={themeMeta.label}
                 title={themeMeta.label}
-                className={`group flex flex-col items-center gap-1.5 rounded-xl border p-2 text-center transition ${
+                className={cn(
+                  "group flex flex-col items-center gap-1.5 rounded-sheet p-2 text-center transition",
                   selected
-                    ? "border-zinc-900 ring-2 ring-zinc-900"
-                    : "border-zinc-200 hover:border-zinc-400"
-                }`}
+                    ? "ring-2 ring-inset ring-ink"
+                    : "ring-1 ring-inset ring-rule-hair hover:ring-rule",
+                )}
               >
                 <span
                   aria-hidden
-                  className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-zinc-200 shadow-inner"
+                  className="relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full ring-1 ring-inset ring-rule shadow-inner"
                   style={{ background: themeMeta.preview }}
                 >
                   {selected && (
-                    <Check
-                      className="h-5 w-5 text-zinc-900"
-                      strokeWidth={3}
-                    />
+                    <Check className="h-5 w-5 text-ink" strokeWidth={3} />
                   )}
                 </span>
-                <span className="text-xs font-medium text-zinc-700">
+                <span
+                  className={cn(
+                    "text-xs",
+                    selected ? "font-bold text-ink" : "font-semibold text-ink-2",
+                  )}
+                >
                   {themeMeta.label}
                 </span>
               </button>
             );
           })}
         </div>
-      </section>
+      </Card>
 
-      <section
-        data-tour="settings-discount-floor"
-        className="rounded-2xl border border-zinc-200 bg-white p-4"
-      >
-        <h2 className="text-base font-medium">{t("discountFloor")}</h2>
-        <p className="mt-0.5 text-xs text-zinc-600">
-          {t("discountFloorHint")}
-        </p>
+      <Card data-tour="settings-discount-floor" className="p-4">
+        <CaptionLabel>{t("discountFloor")}</CaptionLabel>
+        <p className="mt-0.5 text-xs text-ink-2">{t("discountFloorHint")}</p>
         <div className="mt-3 flex items-end gap-3">
           <label className="block flex-1">
-            <span className="text-xs text-zinc-600">
-              {t("discountFloorLabel")}
-            </span>
-            <div className="relative mt-1">
+            <CaptionLabel>{t("discountFloorLabel")}</CaptionLabel>
+            <div className="relative mt-1.5">
               <input
                 type="number"
                 min={0}
                 max={100}
                 step="0.1"
+                inputMode="decimal"
                 value={defaultMarginPct}
                 onChange={(e) => setDefaultMarginPct(e.target.value)}
                 placeholder="0"
-                className="block w-full rounded-lg border border-zinc-300 pl-3 pr-8 py-2 text-sm"
+                className={cn(
+                  FIELD,
+                  "num h-11 pr-9 text-right text-base font-semibold",
+                )}
               />
-              <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-zinc-500">
+              <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[11px] font-bold text-ink-2">
                 %
               </span>
             </div>
           </label>
         </div>
-        <p className="mt-2 text-[11px] text-zinc-500">
+        <p className="mt-2 text-[11px] text-ink-2">
           {t("discountFloorExample")}
         </p>
-      </section>
+      </Card>
 
-      <div className="flex justify-end">
-        <button
-          type="submit"
-          disabled={isPending}
-          className="rounded-lg bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800 disabled:opacity-60"
-        >
-          {isPending ? `${tc("save")}…` : tc("save")}
-        </button>
-      </div>
+      <button
+        type="submit"
+        disabled={isPending}
+        className="h-12 w-full rounded-full bg-fab px-4 text-sm font-bold text-white shadow-fab active:translate-y-[2px] disabled:opacity-60"
+      >
+        {isPending ? `${tc("save")}…` : tc("save")}
+      </button>
 
       <LogoSection initialLogoUrl={initial.logoUrl} />
     </form>
@@ -232,21 +230,18 @@ function LogoSection({ initialLogoUrl }: { initialLogoUrl: string | null }) {
   }
 
   return (
-    <section
-      data-tour="settings-logo"
-      className="rounded-2xl border border-zinc-200 bg-white p-4"
-    >
-      <h2 className="text-base font-medium">{t("logo")}</h2>
-      <p className="mt-0.5 text-xs text-zinc-600">{t("logoHint")}</p>
+    <Card data-tour="settings-logo" className="p-4">
+      <CaptionLabel>{t("logo")}</CaptionLabel>
+      <p className="mt-0.5 text-xs text-ink-2">{t("logoHint")}</p>
 
       {error && (
-        <div className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+        <div className="mt-3 rounded-panel bg-error-wash px-3.5 py-2.5 text-xs font-semibold text-error">
           {error}
         </div>
       )}
 
       <div className="mt-3 flex items-center gap-4">
-        <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-zinc-200 bg-zinc-50">
+        <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-sheet bg-surface-sunk ring-1 ring-inset ring-rule-hair">
           {previewUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
@@ -255,12 +250,12 @@ function LogoSection({ initialLogoUrl }: { initialLogoUrl: string | null }) {
               className="max-h-16 max-w-16 object-contain"
             />
           ) : (
-            <ImagePlus className="h-7 w-7 text-zinc-400" strokeWidth={1.5} />
+            <ImagePlus className="h-7 w-7 text-ink-2" strokeWidth={1.5} />
           )}
         </div>
         <div className="flex flex-1 flex-wrap gap-2">
-          <label className="inline-flex cursor-pointer items-center gap-2 rounded-lg border border-zinc-300 bg-white px-3 py-1.5 text-sm hover:bg-zinc-50">
-            <ImagePlus className="h-4 w-4" strokeWidth={1.5} />
+          <label className="inline-flex h-10 cursor-pointer items-center gap-2 rounded-full bg-surface px-4 text-sm font-bold text-primary ring-1 ring-inset ring-rule">
+            <ImagePlus className="h-4 w-4" strokeWidth={2} />
             <span>{previewUrl ? t("replaceLogo") : t("uploadLogo")}</span>
             <input
               ref={inputRef}
@@ -279,14 +274,14 @@ function LogoSection({ initialLogoUrl }: { initialLogoUrl: string | null }) {
               type="button"
               onClick={onRemove}
               disabled={isPending}
-              className="inline-flex items-center gap-2 rounded-lg border border-red-200 bg-white px-3 py-1.5 text-sm text-red-700 hover:bg-red-50 disabled:opacity-60"
+              className="inline-flex h-10 items-center gap-2 rounded-full bg-surface px-4 text-sm font-bold text-error ring-1 ring-inset ring-rule disabled:opacity-60"
             >
-              <Trash2 className="h-4 w-4" strokeWidth={1.5} />
+              <Trash2 className="h-4 w-4" strokeWidth={2} />
               {t("remove")}
             </button>
           )}
         </div>
       </div>
-    </section>
+    </Card>
   );
 }

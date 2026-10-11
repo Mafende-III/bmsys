@@ -1,10 +1,10 @@
-import Link from "next/link";
 import { getTranslations, getLocale } from "next-intl/server";
 import { requireOwner } from "@/lib/auth-guards";
 import {
   listStockTakeRows,
   listStockTakeHistory,
 } from "@/lib/stock-takes/queries";
+import { Card } from "@/components/ui";
 import { StockTakeForm } from "./_components/StockTakeForm";
 import { StockTakeHistory } from "./_components/StockTakeHistory";
 
@@ -17,26 +17,19 @@ export default async function StockTakePage() {
     listStockTakeHistory(10),
   ]);
   const t = await getTranslations("stockTake");
-  const tc = await getTranslations("common");
   const locale = await getLocale();
 
   return (
-    <main className="mx-auto max-w-3xl space-y-6 p-4 sm:p-6">
+    <main className="mx-auto max-w-2xl space-y-3 p-4">
       <header>
-        <Link
-          href="/dashboard"
-          className="text-sm text-zinc-600 hover:underline"
-        >
-          ← {tc("dashboard")}
-        </Link>
-        <h1 className="mt-1 text-2xl font-semibold">{t("title")}</h1>
-        <p className="text-sm text-zinc-600">{t("subtitle")}</p>
+        <h1 className="text-xl font-bold text-ink">{t("title")}</h1>
+        <p className="text-[13px] text-ink-2">{t("subtitle")}</p>
       </header>
 
       {rows.length === 0 ? (
-        <p className="rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 p-6 text-center text-sm text-zinc-600">
+        <Card className="p-6 text-center text-sm text-ink-2">
           {t("empty")}
-        </p>
+        </Card>
       ) : (
         <StockTakeForm rows={rows} />
       )}

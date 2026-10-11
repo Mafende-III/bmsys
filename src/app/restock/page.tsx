@@ -1,10 +1,9 @@
-import Link from "next/link";
 import { getTranslations } from "next-intl/server";
-import { PackagePlus } from "lucide-react";
 import { requireOwner } from "@/lib/auth-guards";
 import { prisma } from "@/lib/prisma";
 import { getRestockPlan } from "@/lib/restock/queries";
 import { COVER_TARGET_DAYS, BURN_WINDOW_DAYS } from "@/lib/restock/plan";
+import { Card } from "@/components/ui";
 import { RestockTable } from "./_components/RestockTable";
 
 export const dynamic = "force-dynamic";
@@ -19,22 +18,12 @@ export default async function RestockPage() {
     }),
   ]);
   const t = await getTranslations("restock");
-  const tc = await getTranslations("common");
 
   return (
-    <main className="mx-auto max-w-4xl space-y-5 p-4 sm:p-6">
+    <main className="mx-auto max-w-5xl space-y-3 p-4">
       <header>
-        <Link
-          href="/dashboard"
-          className="text-sm text-zinc-600 hover:underline"
-        >
-          ← {tc("dashboard")}
-        </Link>
-        <h1 className="mt-1 flex items-center gap-2 text-2xl font-semibold">
-          <PackagePlus className="h-6 w-6" strokeWidth={2} />
-          {t("title")}
-        </h1>
-        <p className="text-sm text-zinc-600">
+        <h1 className="text-xl font-bold text-ink">{t("title")}</h1>
+        <p className="text-[13px] text-ink-2">
           {t("subtitle", {
             burnDays: BURN_WINDOW_DAYS,
             coverDays: COVER_TARGET_DAYS,
@@ -43,14 +32,14 @@ export default async function RestockPage() {
       </header>
 
       {plan.rows.length === 0 ? (
-        <p className="rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 p-8 text-center text-sm text-zinc-600">
+        <Card className="p-6 text-center text-sm text-ink-2">
           {t("empty")}
-        </p>
+        </Card>
       ) : (
         <RestockTable rows={plan.rows} suppliers={suppliers} />
       )}
 
-      <p className="text-center text-xs text-zinc-500">{t("scopeNote")}</p>
+      <p className="text-center text-xs text-ink-2">{t("scopeNote")}</p>
     </main>
   );
 }

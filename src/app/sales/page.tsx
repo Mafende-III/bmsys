@@ -1,11 +1,13 @@
 import Link from "next/link";
 import { getTranslations } from "next-intl/server";
-import { ReceiptText, Ticket } from "lucide-react";
+import { Ticket } from "lucide-react";
 import type { PaymentMethod } from "@prisma/client";
 import { requireOwner } from "@/lib/auth-guards";
 import { prisma } from "@/lib/prisma";
 import { listSales } from "@/lib/sales/history";
 import { formatRWF } from "@/lib/format";
+import { Card, CaptionLabel } from "@/components/ui";
+import { cn } from "@/lib/cn";
 
 export const dynamic = "force-dynamic";
 
@@ -32,6 +34,9 @@ function endOfDay(d: Date): Date {
 
 const PAYMENTS: PaymentMethod[] = ["CASH", "MOMO", "BANK"];
 
+const FILTER_FIELD =
+  "mt-0.5 block h-10 w-full rounded-panel border border-rule bg-surface px-2.5 text-[13px] text-ink focus:border-rule-active focus:outline-none focus:ring-1 focus:ring-rule-active";
+
 export default async function SalesPage({
   searchParams,
 }: {
@@ -56,57 +61,47 @@ export default async function SalesPage({
   ]);
 
   const t = await getTranslations("salesHistory");
-  const tc = await getTranslations("common");
 
   const totalRevenue = rows.reduce((a, r) => a + r.total, 0);
   const totalProfit = rows.reduce((a, r) => a + r.profit, 0);
 
   return (
-    <main className="mx-auto max-w-5xl space-y-5 p-4 sm:p-6">
+    <main className="mx-auto max-w-2xl space-y-3 p-4">
       <header>
-        <Link
-          href="/dashboard"
-          className="text-sm text-zinc-600 hover:underline"
-        >
-          ← {tc("dashboard")}
-        </Link>
-        <h1 className="mt-1 flex items-center gap-2 text-2xl font-semibold">
-          <ReceiptText className="h-6 w-6" strokeWidth={2} />
-          {t("title")}
-        </h1>
-        <p className="text-sm text-zinc-600">{t("subtitle")}</p>
+        <h1 className="text-xl font-bold text-ink">{t("title")}</h1>
+        <p className="text-[13px] text-ink-2">{t("subtitle")}</p>
       </header>
 
       {/* Filters */}
       <form
         method="get"
         data-tour="sales-filters"
-        className="grid grid-cols-2 gap-2 rounded-2xl border border-zinc-200 bg-white p-3 sm:grid-cols-5"
+        className="grid grid-cols-2 gap-2 sm:grid-cols-5"
       >
-        <label className="block text-xs">
-          <span className="text-zinc-600">{t("filterFrom")}</span>
+        <label className="block">
+          <CaptionLabel>{t("filterFrom")}</CaptionLabel>
           <input
             type="date"
             name="from"
             defaultValue={sp.from ?? ""}
-            className="mt-0.5 block w-full rounded-lg border border-zinc-300 px-2 py-1.5 text-sm"
+            className={FILTER_FIELD}
           />
         </label>
-        <label className="block text-xs">
-          <span className="text-zinc-600">{t("filterTo")}</span>
+        <label className="block">
+          <CaptionLabel>{t("filterTo")}</CaptionLabel>
           <input
             type="date"
             name="to"
             defaultValue={sp.to ?? ""}
-            className="mt-0.5 block w-full rounded-lg border border-zinc-300 px-2 py-1.5 text-sm"
+            className={FILTER_FIELD}
           />
         </label>
-        <label className="block text-xs">
-          <span className="text-zinc-600">{t("filterChannel")}</span>
+        <label className="block">
+          <CaptionLabel>{t("filterChannel")}</CaptionLabel>
           <select
             name="channel"
             defaultValue={sp.channel ?? ""}
-            className="mt-0.5 block w-full rounded-lg border border-zinc-300 px-2 py-1.5 text-sm"
+            className={FILTER_FIELD}
           >
             <option value="">{t("filterAll")}</option>
             {channels.map((c) => (
@@ -116,12 +111,12 @@ export default async function SalesPage({
             ))}
           </select>
         </label>
-        <label className="block text-xs">
-          <span className="text-zinc-600">{t("filterPayment")}</span>
+        <label className="block">
+          <CaptionLabel>{t("filterPayment")}</CaptionLabel>
           <select
             name="payment"
             defaultValue={sp.payment ?? ""}
-            className="mt-0.5 block w-full rounded-lg border border-zinc-300 px-2 py-1.5 text-sm"
+            className={FILTER_FIELD}
           >
             <option value="">{t("filterAll")}</option>
             {PAYMENTS.map((p) => (
@@ -131,10 +126,10 @@ export default async function SalesPage({
             ))}
           </select>
         </label>
-        <div className="flex items-end">
+        <div className="col-span-2 flex items-end sm:col-span-1">
           <button
             type="submit"
-            className="w-full rounded-lg bg-zinc-900 px-3 py-1.5 text-sm font-medium text-white hover:bg-zinc-800"
+            className="h-10 w-full rounded-full bg-surface px-4 text-[13px] font-bold text-primary ring-1 ring-inset ring-rule"
           >
             {t("filterApply")}
           </button>
@@ -142,97 +137,92 @@ export default async function SalesPage({
       </form>
 
       {/* Summary strip */}
-      <section className="grid grid-cols-3 gap-2 rounded-2xl border border-zinc-200 bg-white p-3 text-xs">
-        <div>
-          <p className="text-[10px] uppercase tracking-wide text-zinc-500">
-            {t("statCount")}
-          </p>
-          <p className="mt-0.5 font-mono text-lg font-semibold tabular-nums">
+      <section className="grid grid-cols-3 gap-2.5">
+        <Card className="p-3">
+          <CaptionLabel>{t("statCount")}</CaptionLabel>
+          <p className="num mt-0.5 text-lg font-bold text-ink">
             {rows.length}
           </p>
-        </div>
-        <div>
-          <p className="text-[10px] uppercase tracking-wide text-zinc-500">
-            {t("statRevenue")}
-          </p>
-          <p className="mt-0.5 font-mono text-lg font-semibold tabular-nums">
+        </Card>
+        <Card className="p-3">
+          <CaptionLabel>{t("statRevenue")}</CaptionLabel>
+          <p className="num mt-0.5 text-lg font-bold text-ink">
             {formatRWF(totalRevenue)}
           </p>
-        </div>
-        <div>
-          <p className="text-[10px] uppercase tracking-wide text-zinc-500">
-            {t("statProfit")}
-          </p>
+        </Card>
+        <Card className="p-3">
+          <CaptionLabel>{t("statProfit")}</CaptionLabel>
           <p
-            className={`mt-0.5 font-mono text-lg font-semibold tabular-nums ${
-              totalProfit >= 0 ? "text-green-700" : "text-red-700"
-            }`}
+            className={cn(
+              "num mt-0.5 text-lg font-bold",
+              totalProfit >= 0 ? "text-success" : "text-error",
+            )}
           >
             {formatRWF(totalProfit)}
           </p>
-        </div>
+        </Card>
       </section>
 
       {/* Sales list */}
       {rows.length === 0 ? (
-        <p className="rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 p-8 text-center text-sm text-zinc-600">
+        <Card className="p-6 text-center text-sm text-ink-2">
           {t("empty")}
-        </p>
+        </Card>
       ) : (
-        <section
-          data-tour="sales-list"
-          className="overflow-hidden rounded-2xl border border-zinc-200 bg-white"
-        >
-          <ul className="divide-y divide-zinc-100">
-            {rows.map((r) => (
-              <li key={r.id}>
-                <Link
-                  href={`/sales/${r.id}`}
-                  className="flex items-center gap-3 p-3 hover:bg-zinc-50 sm:px-4"
+        <Card data-tour="sales-list" className="px-3.5 py-1">
+          {rows.map((r, i) => (
+            <Link
+              key={r.id}
+              href={`/sales/${r.id}`}
+              className={cn(
+                "flex items-center gap-3 py-3",
+                i > 0 && "border-t border-rule-hair",
+              )}
+            >
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-sm font-bold text-ink">
+                  <span className="num">
+                    {new Date(r.date).toLocaleString(undefined, {
+                      month: "short",
+                      day: "numeric",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </span>
+                  <span className="ml-2 font-semibold text-ink-2">
+                    {r.channelName} · {r.paymentMethod} · {r.sellerName}
+                  </span>
+                </p>
+                <p className="mt-0.5 flex items-center gap-2 text-xs text-ink-2">
+                  {t("itemCount", { count: r.itemCount })}
+                  {r.couponCode && (
+                    <span className="inline-flex items-center gap-1 rounded-full bg-warning-wash px-2 py-0.5 text-[10px] font-bold text-warning">
+                      <Ticket className="h-3 w-3" strokeWidth={2.2} />
+                      {r.couponCode}
+                    </span>
+                  )}
+                </p>
+              </div>
+              <div className="shrink-0 text-right">
+                <p className="num text-sm font-bold text-ink">
+                  {formatRWF(r.total)}
+                </p>
+                <p
+                  className={cn(
+                    "num text-xs font-semibold",
+                    r.profit >= 0 ? "text-success" : "text-error",
+                  )}
                 >
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-medium text-zinc-800">
-                      {new Date(r.date).toLocaleString(undefined, {
-                        month: "short",
-                        day: "numeric",
-                        hour: "2-digit",
-                        minute: "2-digit",
-                      })}
-                      <span className="ml-2 font-normal text-zinc-500">
-                        {r.channelName} · {r.paymentMethod} · {r.sellerName}
-                      </span>
-                    </p>
-                    <p className="mt-0.5 flex items-center gap-2 text-xs text-zinc-500">
-                      {t("itemCount", { count: r.itemCount })}
-                      {r.couponCode && (
-                        <span className="inline-flex items-center gap-1 rounded bg-amber-50 px-1.5 py-0.5 text-[10px] font-medium text-amber-800">
-                          <Ticket className="h-3 w-3" strokeWidth={2} />
-                          {r.couponCode}
-                        </span>
-                      )}
-                    </p>
-                  </div>
-                  <div className="shrink-0 text-right">
-                    <p className="font-mono text-sm font-semibold tabular-nums">
-                      {formatRWF(r.total)}
-                    </p>
-                    <p
-                      className={`font-mono text-xs tabular-nums ${
-                        r.profit >= 0 ? "text-green-700" : "text-red-700"
-                      }`}
-                    >
-                      {r.profit >= 0 ? "+" : ""}
-                      {formatRWF(r.profit)}
-                    </p>
-                  </div>
-                </Link>
-              </li>
-            ))}
-          </ul>
-        </section>
+                  {r.profit >= 0 ? "+" : ""}
+                  {formatRWF(r.profit)}
+                </p>
+              </div>
+            </Link>
+          ))}
+        </Card>
       )}
 
-      <p className="text-center text-xs text-zinc-500">{t("scopeNote")}</p>
+      <p className="text-center text-xs text-ink-2">{t("scopeNote")}</p>
     </main>
   );
 }
