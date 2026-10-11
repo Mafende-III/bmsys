@@ -5,6 +5,12 @@ on:
     branches: [main]
   workflow_dispatch:
 
+# Never run two VPS deploys at once; a newer push supersedes a
+# queued (not yet started) older one.
+concurrency:
+  group: deploy-production
+  cancel-in-progress: false
+
 jobs:
   test:
     runs-on: ubuntu-latest

@@ -1,5 +1,14 @@
 import Link from "next/link";
-import { Check, Clock, Search, X } from "lucide-react";
+import {
+  AlertTriangle,
+  Check,
+  ClipboardList,
+  Clock,
+  Package,
+  PackagePlus,
+  Search,
+  X,
+} from "lucide-react";
 import { getTranslations } from "next-intl/server";
 import { requireOwner } from "@/lib/auth-guards";
 import { formatRWF } from "@/lib/format";
@@ -8,7 +17,7 @@ import {
   getProductsWithStock,
 } from "@/lib/products/queries";
 import { getRestockPlan } from "@/lib/restock/queries";
-import { Card, StatusPill } from "@/components/ui";
+import { Card, KeycapTile, StatusPill } from "@/components/ui";
 import { cn } from "@/lib/cn";
 
 type SearchParams = {
@@ -49,6 +58,8 @@ export default async function ProductsPage({
     getRestockPlan(),
   ]);
   const t = await getTranslations("products");
+  const ts = await getTranslations("shell");
+  const td = await getTranslations("dashboard");
 
   // Urgency per product from the same burn-rate math as /restock.
   const urgency = new Map(
@@ -96,7 +107,7 @@ export default async function ProductsPage({
     <main className="mx-auto max-w-2xl space-y-3 p-4">
       <header className="flex items-center justify-between gap-3">
         <div className="min-w-0">
-          <h1 className="text-xl font-bold text-ink">{t("title")}</h1>
+          <h1 className="text-xl font-bold text-ink">{ts("stock")}</h1>
           <p className="text-[13px] text-ink-2">
             {t("count", { count: products.length })}
           </p>
@@ -109,6 +120,25 @@ export default async function ProductsPage({
           {t("new")}
         </Link>
       </header>
+
+      {/* Every stock job, one tap from the Stock tab */}
+      <section
+        data-tour="stock-actions"
+        className="grid grid-cols-4 gap-2.5"
+      >
+        <KeycapTile href="/purchases/new" label={td("receiveStock")}>
+          <Package className="h-6 w-6" strokeWidth={2} />
+        </KeycapTile>
+        <KeycapTile href="/restock" label={td("restock")}>
+          <PackagePlus className="h-6 w-6" strokeWidth={2} />
+        </KeycapTile>
+        <KeycapTile href="/stock-take" label={td("stockTake")}>
+          <ClipboardList className="h-6 w-6" strokeWidth={2} />
+        </KeycapTile>
+        <KeycapTile href="/adjustments" label={td("losses")}>
+          <AlertTriangle className="h-6 w-6" strokeWidth={2} />
+        </KeycapTile>
+      </section>
 
       <form method="get" className="space-y-2.5">
         <div className="relative">

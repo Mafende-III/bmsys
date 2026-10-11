@@ -737,7 +737,8 @@
     "historyColProduct": "Product",
     "historyColSystem": "System",
     "historyColCounted": "Counted",
-    "historyNoteLabel": "Note from the count"
+    "historyNoteLabel": "Note from the count",
+    "uncategorised": "Uncategorised"
   },
   "myDay": {
     "title": "My day",

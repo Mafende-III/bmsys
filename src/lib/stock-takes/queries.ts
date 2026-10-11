@@ -8,6 +8,8 @@ export type StockTakeRow = {
   systemTotalUnits: number;
   systemSealedCartons: number;
   systemLooseUnits: number;
+  categoryName: string | null;
+  categoryIconEmoji: string | null;
 };
 
 export type StockTakeHistoryLine = {
@@ -47,7 +49,13 @@ export async function listStockTakeRows(): Promise<StockTakeRow[]> {
   const products = await prisma.product.findMany({
     where: { active: true },
     orderBy: { sku: "asc" },
-    select: { id: true, sku: true, name: true, unitsPerCarton: true },
+    select: {
+      id: true,
+      sku: true,
+      name: true,
+      unitsPerCarton: true,
+      category: { select: { name: true, iconEmoji: true } },
+    },
   });
 
   if (products.length === 0) return [];
@@ -90,6 +98,8 @@ export async function listStockTakeRows(): Promise<StockTakeRow[]> {
       systemTotalUnits: totalUnits,
       systemSealedCartons: sealedCartons,
       systemLooseUnits: Math.max(0, looseUnits),
+      categoryName: p.category?.name ?? null,
+      categoryIconEmoji: p.category?.iconEmoji ?? null,
     };
   });
 }

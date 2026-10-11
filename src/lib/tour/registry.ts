@@ -413,6 +413,12 @@ export const TOURS: TourDefinition[] = [
     match: /^\/products\/?$/,
     steps: [
       {
+        element: '[data-tour="stock-actions"]',
+        title: "All stock jobs live here",
+        body: "Receive a delivery, plan a restock, count the shelves, or record a loss — one tap each, right from the Stock tab.",
+        side: "bottom",
+      },
+      {
         element: '[data-tour="products-new"]',
         title: "Add a product",
         body: "Each product you sell needs an entry here. You can edit prices and stock movements after creation.",

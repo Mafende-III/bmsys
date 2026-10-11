@@ -3,7 +3,7 @@
 import { useMemo, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, ChevronDown } from "lucide-react";
 import { Card, CaptionLabel } from "@/components/ui";
 import { cn } from "@/lib/cn";
 import { runStockTake } from "@/lib/stock-takes/actions";
@@ -17,6 +17,8 @@ type LineState = {
   systemTotalUnits: number;
   systemSealedCartons: number;
   systemLooseUnits: number;
+  categoryName: string | null;
+  categoryIconEmoji: string | null;
   cartonsRaw: string; // string so empty stays empty (not 0)
   looseRaw: string;
 };
@@ -37,10 +39,13 @@ export function StockTakeForm({ rows }: { rows: StockTakeRow[] }) {
       systemTotalUnits: r.systemTotalUnits,
       systemSealedCartons: r.systemSealedCartons,
       systemLooseUnits: r.systemLooseUnits,
+      categoryName: r.categoryName,
+      categoryIconEmoji: r.categoryIconEmoji,
       cartonsRaw: "",
       looseRaw: "",
     })),
   );
+  const [collapsed, setCollapsed] = useState<Set<string>>(new Set());
   const [note, setNote] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -103,6 +108,38 @@ export function StockTakeForm({ rows }: { rows: StockTakeRow[] }) {
   }, [lines]);
 
   const allCounted = summary.uncounted === 0;
+
+  // Count the shop the way it's shelved: one collapsible section per
+  // category, each with its own counted-so-far chip.
+  const groups = useMemo(() => {
+    const map = new Map<
+      string,
+      { emoji: string | null; groupLines: LineState[] }
+    >();
+    for (const l of lines) {
+      const key = l.categoryName ?? "";
+      const g = map.get(key) ?? {
+        emoji: l.categoryIconEmoji,
+        groupLines: [],
+      };
+      g.groupLines.push(l);
+      map.set(key, g);
+    }
+    return [...map.entries()]
+      .sort(([a], [b]) =>
+        a === "" ? 1 : b === "" ? -1 : a.localeCompare(b),
+      )
+      .map(([name, g]) => ({ name, ...g }));
+  }, [lines]);
+
+  function toggleGroup(name: string) {
+    setCollapsed((prev) => {
+      const next = new Set(prev);
+      if (next.has(name)) next.delete(name);
+      else next.add(name);
+      return next;
+    });
+  }
 
   function handleSubmit() {
     setError(null);
@@ -183,29 +220,70 @@ export function StockTakeForm({ rows }: { rows: StockTakeRow[] }) {
         <SummaryStat label={t("statOver")} value={summary.positive} />
       </section>
 
-      {/* Lines */}
+      {/* Lines, grouped by category */}
       <Card data-tour="stock-take-lines" className="px-3.5 py-1">
-        {lines.map((l, i) => {
-          const counted = lineCountedTotal(l);
-          const variance =
-            counted == null ? null : counted - l.systemTotalUnits;
-          const varianceTone =
-            variance == null
-              ? "text-ink-2"
-              : variance === 0
-                ? "text-success"
-                : variance > 0
-                  ? "text-warning"
-                  : "text-error";
-          const upcDisplay = l.unitsPerCarton;
+        {groups.map((group, gi) => {
+          const groupName = group.name || t("uncategorised");
+          const groupKey = group.name;
+          const countedInGroup = group.groupLines.filter(
+            (l) => lineCountedTotal(l) != null,
+          ).length;
+          const groupDone = countedInGroup === group.groupLines.length;
+          const isCollapsed = collapsed.has(groupKey);
           return (
-            <div
-              key={l.productId}
-              className={cn(
-                "flex flex-col gap-3 py-3 sm:flex-row sm:items-start sm:justify-between",
-                i > 0 && "border-t border-rule-hair",
-              )}
-            >
+            <section key={groupKey || "__none"}>
+              <button
+                type="button"
+                onClick={() => toggleGroup(groupKey)}
+                aria-expanded={!isCollapsed}
+                className={cn(
+                  "flex w-full items-center gap-2.5 py-3",
+                  gi > 0 && "border-t border-rule-hair",
+                )}
+              >
+                {group.emoji ? (
+                  <span className="text-base">{group.emoji}</span>
+                ) : null}
+                <span className="flex-1 text-left text-sm font-bold text-ink">
+                  {groupName}
+                </span>
+                <span
+                  className={cn(
+                    "num rounded-full px-2.5 py-1 text-[11px] font-bold",
+                    groupDone
+                      ? "bg-success-wash text-success"
+                      : "bg-ground text-ink-2",
+                  )}
+                >
+                  {countedInGroup}/{group.groupLines.length}
+                </span>
+                <ChevronDown
+                  className={cn(
+                    "h-4 w-4 text-ink-2 transition-transform",
+                    isCollapsed && "-rotate-90",
+                  )}
+                  strokeWidth={2.2}
+                />
+              </button>
+              {!isCollapsed &&
+                group.groupLines.map((l) => {
+                  const counted = lineCountedTotal(l);
+                  const variance =
+                    counted == null ? null : counted - l.systemTotalUnits;
+                  const varianceTone =
+                    variance == null
+                      ? "text-ink-2"
+                      : variance === 0
+                        ? "text-success"
+                        : variance > 0
+                          ? "text-warning"
+                          : "text-error";
+                  const upcDisplay = l.unitsPerCarton;
+                  return (
+                    <div
+                      key={l.productId}
+                      className="flex flex-col gap-3 border-t border-rule-hair py-3 sm:flex-row sm:items-start sm:justify-between"
+                    >
               {/* Name + system breakdown */}
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-bold text-ink">
@@ -269,7 +347,10 @@ export function StockTakeForm({ rows }: { rows: StockTakeRow[] }) {
                   </p>
                 </div>
               </div>
-            </div>
+                    </div>
+                  );
+                })}
+            </section>
           );
         })}
       </Card>

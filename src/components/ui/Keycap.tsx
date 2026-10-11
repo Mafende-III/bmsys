@@ -118,7 +118,9 @@ export function KeycapTile({
   const inner = (
     <>
       <span className="text-primary">{children}</span>
-      <span className="text-xs font-semibold text-ink">{label}</span>
+      <span className="text-center text-xs font-semibold leading-tight text-ink">
+        {label}
+      </span>
     </>
   );
   const classes = cn(
